@@ -3,53 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PV-Planung Pro 4.1 (Modulare Akkus & Zuweisung)</title>
+    <title>PV-Planung Pro 4.2 (Prioritäten-Weiche & Effizienz)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="database.js"></script>
     <style>
-        /* Anti Pull-to-Refresh auf Systemebene */
         body { overscroll-behavior-y: none; }
-        
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #475569; }
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        
+        .tab-content { display: none; } .tab-content.active { display: block; }
         .slide-left { animation: slideLeft 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
         .slide-right { animation: slideRight 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
         @keyframes slideLeft { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes slideRight { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
-
-        .accordion-content { display: none; }
-        .accordion-content.open { display: block; }
-
+        .accordion-content { display: none; } .accordion-content.open { display: block; }
         .ttip { position: relative; display: inline-block; cursor: help; }
-        .ttip .ttip-text {
-            visibility: hidden; width: 220px; background-color: #1e293b; color: #fff;
-            text-align: left; border-radius: 6px; padding: 8px 12px; font-size: 11px;
-            font-weight: normal; font-family: sans-serif; position: absolute; z-index: 50; bottom: 125%; left: 50%; margin-left: -110px;
-            opacity: 0; transition: opacity 0.2s; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-        }
+        .ttip .ttip-text { visibility: hidden; width: 220px; background-color: #1e293b; color: #fff; text-align: left; border-radius: 6px; padding: 8px 12px; font-size: 11px; font-weight: normal; font-family: sans-serif; position: absolute; z-index: 50; bottom: 125%; left: 50%; margin-left: -110px; opacity: 0; transition: opacity 0.2s; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
         .ttip .ttip-text::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: #1e293b transparent transparent transparent; }
         .ttip:hover .ttip-text { visibility: visible; opacity: 1; }
-
         input[type="color"] { -webkit-appearance: none; border: none; width: 20px; height: 20px; border-radius: 50%; padding: 0; cursor: pointer; overflow: hidden; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: 2px solid #fff; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
         .spinner { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        
         input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #3b82f6; cursor: pointer; margin-top: -6px; }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #cbd5e1; border-radius: 2px; }
         input[type=range]:focus { outline: none; }
-
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .text-gradient { background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     </style>
@@ -60,8 +44,8 @@
         <div class="max-w-7xl mx-auto px-4 py-4">
             <div class="flex justify-between items-center mb-3">
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">PV-Planung <span class="text-blue-400">Pro 4.1</span></h1>
-                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Modulare Batterien & Autarkiesimulation</p>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">PV-Planung <span class="text-blue-400">Pro 4.2</span></h1>
+                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Erweiterte Batterie-Prio & Wirkungsgrade</p>
                 </div>
                 <div class="flex items-center gap-3">
                     <div id="globalStatusBadge" class="hidden md:inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Physik OK</div>
@@ -83,7 +67,6 @@
     </header>
 
     <main class="flex-1 overflow-y-auto p-4 md:p-6 pb-32 max-w-7xl mx-auto w-full relative">
-        
         <div id="globalActionBar" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
             <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row justify-between md:items-center gap-4">
                 <div class="flex-1">
@@ -104,7 +87,6 @@
             </div>
         </div>
 
-        <!-- TAB 1: DASHBOARD 1 (CLASSIC YIELD) -->
         <div id="tab-dashboard" class="tab-content active space-y-6">
             <div id="focusBanner" class="hidden bg-blue-100 border border-blue-300 text-blue-800 px-4 py-2 rounded-lg flex justify-between items-center text-sm font-medium shadow-sm transition-all">
                 <span id="focusBannerText">Fokus: Gruppe</span>
@@ -122,7 +104,7 @@
                 </div>
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-teal-500 transition-all" id="kpiBoxBat">
                     <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider ttip">Bat. Rettung
-                        <span class="ttip-text">Überschuss, der vor dem AC-Clipping in die Batterie gerettet wurde.</span>
+                        <span class="ttip-text">Gesamte PV-Energie, die in die Batterie geladen wurde.</span>
                     </p>
                     <p id="dashBatteryYield" class="text-xl md:text-3xl font-bold text-slate-800 mt-1">0 <span class="text-sm font-normal text-slate-500">kWh</span></p>
                 </div>
@@ -132,7 +114,7 @@
                 </div>
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-rose-500 transition-all" id="kpiBoxClip">
                     <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider ttip">AC-Clipping
-                        <span class="ttip-text">Energie, die verloren ging, weil AC-Limit und Batterie voll waren.</span>
+                        <span class="ttip-text">Energie, die endgültig verloren ging.</span>
                     </p>
                     <p id="dashClipping" class="text-xl md:text-3xl font-bold text-slate-800 mt-1">0 <span class="text-sm font-normal text-slate-500">kWh</span></p>
                 </div>
@@ -148,7 +130,6 @@
             </div>
         </div>
 
-        <!-- TAB 2: DASHBOARD 2 (MODERN AUTARKY) -->
         <div id="tab-dashboard2" class="tab-content space-y-6">
             <div class="bg-slate-900 rounded-2xl shadow-2xl overflow-hidden text-white relative">
                 <div class="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-blue-600/20 blur-3xl pointer-events-none"></div>
@@ -236,7 +217,6 @@
             </div>
         </div>
 
-        <!-- TAB 3: VERBRAUCH -->
         <div id="tab-verbrauch" class="tab-content space-y-6">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-4 border-b border-slate-200 bg-slate-50">
@@ -272,17 +252,15 @@
                         <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                         Zusätzliche Großverbraucher
                     </h3>
-                    <p class="text-xs text-slate-500 mt-1">Diese Verbraucher erhalten eigene, realistische Zeitprofile (z.B. Sommer/Winter-Peaks).</p>
                 </div>
                 <div class="p-4 md:p-6 space-y-6">
                     <div class="flex items-start gap-4 p-4 border border-slate-100 rounded-lg bg-slate-50/50 hover:bg-slate-50 transition-colors">
                         <div class="mt-1"><input type="checkbox" id="cons_it_active" class="w-4 h-4 text-blue-600 rounded" onchange="toggleConsGroup('it')"></div>
                         <div class="flex-1">
                             <label for="cons_it_active" class="block text-sm font-bold text-slate-800 cursor-pointer">24/7 Dauerlast (IT / Smarthome)</label>
-                            <p class="text-[10px] text-slate-500 mb-2">z.B. Proxmox Server, Home Assistant, Synology NAS</p>
-                            <div id="grp_it" class="hidden flex items-center gap-2">
+                            <div id="grp_it" class="hidden flex items-center gap-2 mt-2">
                                 <input type="number" id="cons_it_w" value="100" class="w-24 border rounded px-2 py-1 text-sm" onchange="updateConsumptionEstimate()">
-                                <span class="text-xs text-slate-600">Watt (konstant durchgehend)</span>
+                                <span class="text-xs text-slate-600">Watt (konstant)</span>
                             </div>
                         </div>
                     </div>
@@ -291,8 +269,7 @@
                         <div class="mt-1"><input type="checkbox" id="cons_ac_active" class="w-4 h-4 text-blue-600 rounded" onchange="toggleConsGroup('ac')"></div>
                         <div class="flex-1">
                             <label for="cons_ac_active" class="block text-sm font-bold text-slate-800 cursor-pointer">Klimaanlage(n)</label>
-                            <p class="text-[10px] text-slate-500 mb-2">Zieht primär an heißen Tagen (Mai-Sept).</p>
-                            <div id="grp_ac" class="hidden flex items-center gap-2">
+                            <div id="grp_ac" class="hidden flex items-center gap-2 mt-2">
                                 <input type="number" id="cons_ac_kwh" value="400" class="w-24 border rounded px-2 py-1 text-sm" onchange="updateConsumptionEstimate()">
                                 <span class="text-xs text-slate-600">kWh pro Jahr</span>
                             </div>
@@ -303,8 +280,7 @@
                         <div class="mt-1"><input type="checkbox" id="cons_wp_active" class="w-4 h-4 text-blue-600 rounded" onchange="toggleConsGroup('wp')"></div>
                         <div class="flex-1">
                             <label for="cons_wp_active" class="block text-sm font-bold text-slate-800 cursor-pointer">Heizungs-Wärmepumpe</label>
-                            <p class="text-[10px] text-slate-500 mb-2">Zieht primär in der kalten Jahreszeit (Okt-April).</p>
-                            <div id="grp_wp" class="hidden flex items-center gap-2">
+                            <div id="grp_wp" class="hidden flex items-center gap-2 mt-2">
                                 <input type="number" id="cons_wp_kwh" value="3500" class="w-24 border rounded px-2 py-1 text-sm" onchange="updateConsumptionEstimate()">
                                 <span class="text-xs text-slate-600">kWh pro Jahr</span>
                             </div>
@@ -315,14 +291,13 @@
                         <div class="mt-1"><input type="checkbox" id="cons_bw_active" class="w-4 h-4 text-blue-600 rounded" onchange="toggleConsGroup('bw')"></div>
                         <div class="flex-1">
                             <label for="cons_bw_active" class="block text-sm font-bold text-slate-800 cursor-pointer">Brauchwasser-Wärmepumpe (BWWP)</label>
-                            <p class="text-[10px] text-slate-500 mb-2">Ganzjährig konstante Nutzung.</p>
-                            <div id="grp_bw" class="hidden flex flex-col gap-2">
+                            <div id="grp_bw" class="hidden flex flex-col gap-2 mt-2">
                                 <div class="flex items-center gap-2">
                                     <input type="number" id="cons_bw_kwh" value="800" class="w-24 border rounded px-2 py-1 text-sm" onchange="updateConsumptionEstimate()">
                                     <span class="text-xs text-slate-600">kWh pro Jahr</span>
                                 </div>
-                                <label class="flex items-center gap-2 text-xs text-blue-600 font-medium mt-1">
-                                    <input type="checkbox" id="cons_bw_smart" class="rounded" checked onchange="requireRecalculation()"> Smart-Routing (Zeiten in die Mittagsstunden schieben)
+                                <label class="flex items-center gap-2 text-xs text-blue-600 font-medium">
+                                    <input type="checkbox" id="cons_bw_smart" class="rounded" checked onchange="requireRecalculation()"> Smart-Routing (Mittagsstunden)
                                 </label>
                             </div>
                         </div>
@@ -332,14 +307,13 @@
                         <div class="mt-1"><input type="checkbox" id="cons_ev_active" class="w-4 h-4 text-blue-600 rounded" onchange="toggleConsGroup('ev')"></div>
                         <div class="flex-1">
                             <label for="cons_ev_active" class="block text-sm font-bold text-slate-800 cursor-pointer">E-Auto (Wallbox)</label>
-                            <p class="text-[10px] text-slate-500 mb-2">Ladevorgänge primär abends/nachts.</p>
-                            <div id="grp_ev" class="hidden flex flex-col gap-2">
+                            <div id="grp_ev" class="hidden flex flex-col gap-2 mt-2">
                                 <div class="flex gap-4">
                                     <div><span class="block text-[10px] text-slate-500">Jahresfahrleistung</span><input type="number" id="cons_ev_km" value="12000" class="w-24 border rounded px-2 py-1 text-sm" onchange="updateConsumptionEstimate()"> <span class="text-xs">km</span></div>
                                     <div><span class="block text-[10px] text-slate-500">Verbrauch</span><input type="number" id="cons_ev_kwh100" value="18" class="w-20 border rounded px-2 py-1 text-sm" onchange="updateConsumptionEstimate()"> <span class="text-xs">kWh/100km</span></div>
                                 </div>
-                                <label class="flex items-center gap-2 text-xs text-blue-600 font-medium mt-2">
-                                    <input type="checkbox" id="cons_ev_smart" class="rounded" onchange="requireRecalculation()"> PV-Überschussladen (Laden vorwiegend am sonnigen Wochenende)
+                                <label class="flex items-center gap-2 text-xs text-blue-600 font-medium">
+                                    <input type="checkbox" id="cons_ev_smart" class="rounded" onchange="requireRecalculation()"> PV-Überschussladen (Wochenende)
                                 </label>
                             </div>
                         </div>
@@ -352,7 +326,6 @@
             </div>
         </div>
 
-        <!-- TAB 4: SYSTEM SETUP (STRÄNGE) -->
         <div id="tab-system" class="tab-content space-y-6">
             <div class="flex justify-between items-end mb-4">
                 <h3 class="text-lg md:text-xl font-bold text-slate-800">Strang-Planung</h3>
@@ -364,13 +337,12 @@
             <div id="stringsList" class="space-y-4"></div>
         </div>
 
-        <!-- TAB 5: GERÄTE-DATENBANK -->
         <div id="tab-database" class="tab-content space-y-6">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-4 border-b border-slate-200 bg-slate-50"><h3 class="text-lg font-bold text-slate-800">Wechselrichter (WR) & Batteriezuweisung</h3></div>
                 <div class="overflow-x-auto p-4">
                     <table class="w-full text-left text-xs md:text-sm text-slate-600 mb-6 min-w-[900px]">
-                        <thead class="bg-slate-100 text-slate-700 uppercase"><tr><th class="px-3 py-2">Name</th><th class="px-3 py-2">AC Max (W)</th><th class="px-3 py-2">Start (V)</th><th class="px-3 py-2">Sweetspot Min (V)</th><th class="px-3 py-2">MPPTs</th><th class="px-3 py-2">Angeschlossene Batterie</th></tr></thead>
+                        <thead class="bg-slate-100 text-slate-700 uppercase"><tr><th class="px-3 py-2">Name</th><th class="px-3 py-2">AC Max (W)</th><th class="px-3 py-2">Start (V)</th><th class="px-3 py-2">MPPTs</th><th class="px-3 py-2">Angeschlossene Batterie</th></tr></thead>
                         <tbody id="wrTableBody" class="divide-y divide-slate-200"></tbody>
                     </table>
                 </div>
@@ -389,40 +361,25 @@
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-4 border-b border-slate-200 bg-slate-50"><h3 class="text-lg font-bold text-slate-800">Referenz: Modulare Batterien</h3></div>
                 <div class="overflow-x-auto p-4">
-                    <table class="w-full text-left text-xs md:text-sm text-slate-600 mb-6 min-w-[500px]">
-                        <thead class="bg-slate-100 text-slate-700 uppercase"><tr><th class="px-3 py-2">System / Konfiguration</th><th class="px-3 py-2">Gesamtkapazität (kWh)</th><th class="px-3 py-2">Max. Lade/Entlade-Leistung (W)</th></tr></thead>
+                    <table class="w-full text-left text-xs md:text-sm text-slate-600 mb-6 min-w-[600px]">
+                        <thead class="bg-slate-100 text-slate-700 uppercase"><tr><th class="px-3 py-2">System / Konfiguration</th><th class="px-3 py-2">Gesamtkapazität (kWh)</th><th class="px-3 py-2">Max. Leistung (W)</th><th class="px-3 py-2">Wirkungsgrad</th></tr></thead>
                         <tbody id="batTableBody" class="divide-y divide-slate-200"></tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 6: FAQ -->
         <div id="tab-faq" class="tab-content space-y-6">
             <div class="bg-white p-5 md:p-8 rounded-xl shadow-sm border border-slate-200 prose prose-slate text-sm max-w-none">
                 <h2 class="text-xl font-bold border-b pb-2 mb-4">Glossar & Logik der Berechnungen</h2>
-                
-                <h3 class="font-bold text-blue-600">1. Stundengenaue API-Simulation (PVGIS)</h3>
-                <p>Das Tool greift live auf PVGIS zu und simuliert jede der 8.760 Stunden des Jahres. Es nutzt historische Wetterdaten und ermittelt daraus den exakten Ertrag deines Standortes unter Berücksichtigung von Dachneigung und Ausrichtung.</p>
-
-                <h3 class="font-bold text-blue-600">2. Verschattung & Mismatch</h3>
-                <p><strong>Schatten:</strong> Reduziert die DC-Leistung pauschal prozentual (im Slider einstellbar).<br>
-                <strong>Neigungs-Mismatch:</strong> Wenn du auf einem MPPT-String Paneele mit unterschiedlichen Neigungen (z.B. 30° und 90°) mischst, drosselt das flachere Modul das steilere (und umgekehrt). Die Engine berechnet diesen Verlust vollautomatisch und warnt dich in der Strang-Planung.</p>
-
-                <h3 class="font-bold text-blue-600">3. Batterie-Pufferung (DC- & AC-Kopplung)</h3>
-                <p>Überschüssige Energie wird (abzüglich 10 % Ladeverlust) in die Batterie gerettet. 
-                Die App rechnet dabei 2-stufig: Zuerst wird alles, was nicht durch den Hardware-AC-Flaschenhals des Wechselrichters passt (Clipping), direkt auf der DC-Seite in die Batterie gedrückt. Bleibt dann auf der AC-Seite noch Strom übrig, der im Haus nicht verbraucht wird, wandert auch dieser in den Speicher.</p>
-
-                <h3 class="font-bold text-blue-600">4. Lastprofile & Verbrauch (VDI 4655)</h3>
-                <p>Um die Autarkie berechnen zu können, muss die App wissen, wann du Strom verbrauchst. Anstelle pauschaler Annahmen nutzt die Simulation stundengenaue Standardlastprofile (SLP). So berücksichtigt die Engine beispielsweise, dass du im Winter morgens mehr Licht brauchst, oder baut die massiven Peaks einer Wärmepumpe im Dezember realistisch in die Rechnung ein.</p>
-
-                <h2 class="text-xl font-bold border-b pb-2 mb-4 mt-10">Versionshistorie (Changelog)</h2>
-                <ul class="space-y-2">
-                    <li><strong>v4.1:</strong> Modulare Batterie-Datenbank (BYD HVS/HVM, Fronius Reserva, Anker). Reparierte Batterie-Zuweisung pro Wechselrichter. Blockade des Pull-to-Refresh.</li>
-                    <li><strong>v4.0.2:</strong> Bugfix der Autarkie-Multiplikation. Umbau der Engine auf 2-Pass (erst AC bündeln, dann Last abziehen).</li>
-                    <li><strong>v4.0:</strong> Einführung des Autarkie-Dashboards (Dash 2) im Dark-Mode. Integration von wählbaren Haushalts-Verbrauchsprofilen und Großverbrauchern.</li>
-                    <li><strong>v3.9:</strong> Hierarchische Dropdowns. Visuelle Fortschrittsbalken für MPPT-Sweetspots (Startspannung vs. Ideale Spannung).</li>
+                <h3 class="font-bold text-blue-600">Batterie-Pufferung (DC-Kopplung & Prioritätenweiche)</h3>
+                <p>Überschüssige Energie wird in die Batterie gerettet. In Version 4.2 nutzen wir eine intelligente Prioritätenweiche, die sowohl für klassische Hochvolt-Systeme (Fronius) als auch für Niedervolt-Balkonkraftwerke (Anker SOLIX) realistisch funktioniert:</p>
+                <ul>
+                    <li><strong>Prio 1 (Hauslast):</strong> Der anliegende DC-Strom versorgt primär deinen stundengenauen Hausbedarf bis zur Grenze des Wechselrichter-Limits (AC Max).</li>
+                    <li><strong>Prio 2 (DC-Ladung):</strong> Jedes überschüssige Watt, das vom Haus nicht abgerufen wird, fließt direkt in die Batterie (bis zu deren Ladelimit).</li>
+                    <li><strong>Prio 3 (Netz):</strong> Ist das Haus versorgt und die Batterie voll, geht der Rest ins Stromnetz.</li>
                 </ul>
+                <p>Beim Entladen wird der spezifische System-Wirkungsgrad der Batterie (z. B. 80 % bei Anker, 92 % bei Fronius/BYD) als Umwandlungsverlust abgezogen.</p>
             </div>
         </div>
         
@@ -457,12 +414,9 @@
             if (userDB.inverters.length > 0) { DB.inverters.push({ series: "Eigene WR", models: userDB.inverters }); flatInverters.push(...userDB.inverters); }
             if (userDB.batteries.length > 0) { DB.batteries.push({ series: "Eigene Batterien", models: userDB.batteries }); flatBatteries.push(...userDB.batteries); }
 
-            // Lade gespeicherte Batterie-Zuweisungen pro WR
             let batMap = JSON.parse(localStorage.getItem('pvpro_batmap') || '{}');
             flatInverters.forEach(inv => {
-                if(batMap[inv.id] !== undefined) {
-                    inv.batteryId = parseInt(batMap[inv.id]);
-                }
+                if(batMap[inv.id] !== undefined) { inv.batteryId = parseInt(batMap[inv.id]); }
             });
 
             if(localStorage.getItem('pvpro_strings')) strings = JSON.parse(localStorage.getItem('pvpro_strings'));
@@ -473,8 +427,7 @@
             document.getElementById('locLatText').innerText = LocationData.lat;
             document.getElementById('locLonText').innerText = LocationData.lon;
 
-            loadConsumptionSettings();
-            updatePhysicsOnly();
+            loadConsumptionSettings(); updatePhysicsOnly();
         }
 
         function saveConfiguration() { 
@@ -653,7 +606,7 @@
                 });
 
                 let consH = build8760ConsumptionArray();
-                const systemLossFactor = 0.95; const batteryCycleLoss = 0.90; 
+                const systemLossFactor = 0.95; 
                 
                 let flow = { direct: 0, toBat: 0, fromBat: 0, toGrid: 0, fromGrid: 0, moCons: new Array(12).fill(0), moGen: new Array(12).fill(0), moBat: new Array(12).fill(0) };
                 let batCharges = {}; activeInvs.forEach(inv => batCharges[inv.id] = 0);
@@ -661,67 +614,64 @@
                 for(let h=0; h<8760; h++) {
                     let sysAcAvailableW = 0;
                     let sysBatChargeW = 0;
+                    let loadW = consH[h] || 0;
+                    let remainingLoad = loadW;
 
+                    // PRIORITÄTEN-WEICHE V4.2
                     activeInvs.forEach(inv => {
                         let totalDcW = invH[inv.id][h] * systemLossFactor;
                         let acLimit = inv.acMax || 0;
                         let bat = flatBatteries.find(b => b.id == inv.batteryId);
                         let batCapWh = bat ? (bat.cap * 1000) : 0;
                         let batPowerW = bat ? bat.power : 0;
+                        let batEff = bat ? (bat.eff || 0.90) : 0.90;
                         
-                        let availableAcW = 0;
-                        if (totalDcW > acLimit) {
-                            availableAcW = acLimit;
-                            let excessW = totalDcW - acLimit;
+                        // Prio 1: Decke Hauslast bis max AC-Limit
+                        let targetAcW = Math.min(acLimit, remainingLoad, totalDcW);
+                        remainingLoad -= targetAcW;
+                        sysAcAvailableW += targetAcW;
+                        
+                        let excessDc = totalDcW - targetAcW;
+                        
+                        // Prio 2: Rest in Batterie laden (DC)
+                        if (excessDc > 0 && batCapWh > 0) {
+                            let chargeW = Math.min(excessDc, batPowerW);
+                            let freeSpace = batCapWh - batCharges[inv.id];
+                            let actualCharge = Math.min(chargeW, freeSpace);
                             
-                            if (batCapWh > 0) {
-                                let chargeW = Math.min(excessW, batPowerW);
-                                let freeSpace = batCapWh - batCharges[inv.id];
-                                let actualCharge = Math.min(chargeW, freeSpace);
-                                
-                                batCharges[inv.id] += actualCharge;
-                                excessW -= actualCharge;
-                                sysBatChargeW += actualCharge;
-                                
-                                if (actualCharge > 0) {
-                                    let iStrs = sRes.filter(sr => strings.find(s=>s.id===sr.id)?.inverterId == inv.id);
-                                    iStrs.forEach(sr => { if(invH[inv.id][h]>0) sr.batYield += (actualCharge * batteryCycleLoss * (sr.hr[h]/invH[inv.id][h])) / 1000; });
-                                }
-                            }
-                            if (excessW > 0) {
+                            batCharges[inv.id] += actualCharge;
+                            excessDc -= actualCharge;
+                            sysBatChargeW += actualCharge;
+                            
+                            if (actualCharge > 0) {
                                 let iStrs = sRes.filter(sr => strings.find(s=>s.id===sr.id)?.inverterId == inv.id);
-                                iStrs.forEach(sr => { if(invH[inv.id][h]>0) sr.clip += (excessW * (sr.hr[h]/invH[inv.id][h])) / 1000; });
+                                iStrs.forEach(sr => { if(invH[inv.id][h]>0) sr.batYield += (actualCharge * (sr.hr[h]/invH[inv.id][h])) / 1000; });
                             }
-                        } else {
-                            availableAcW = totalDcW;
                         }
-                        sysAcAvailableW += availableAcW;
+                        
+                        // Prio 3: Wenn Batterie voll, aber noch AC-Kapazität frei -> Einspeisen
+                        if (excessDc > 0) {
+                            let freeAcCapacity = acLimit - targetAcW;
+                            let feedInW = Math.min(excessDc, freeAcCapacity);
+                            sysAcAvailableW += feedInW;
+                            excessDc -= feedInW;
+                        }
+
+                        // Hardware Clip
+                        if (excessDc > 0) {
+                            let iStrs = sRes.filter(sr => strings.find(s=>s.id===sr.id)?.inverterId == inv.id);
+                            iStrs.forEach(sr => { if(invH[inv.id][h]>0) sr.clip += (excessDc * (sr.hr[h]/invH[inv.id][h])) / 1000; });
+                        }
                     });
 
-                    let loadW = consH[h] || 0;
+                    // Auswerten Gesamt
                     let m = 0; for(let i=11; i>=0; i--) { if(h >= mStart[i]) { m = i; break; } }
-                    
                     flow.moCons[m] += loadW / 1000;
                     flow.moGen[m] += sysAcAvailableW / 1000;
 
                     if (sysAcAvailableW >= loadW) {
-                        let acSurplus = sysAcAvailableW - loadW;
                         flow.direct += loadW;
-                        
-                        activeInvs.forEach(inv => {
-                            if (acSurplus <= 0) return;
-                            let bat = flatBatteries.find(b => b.id == inv.batteryId);
-                            if(!bat || bat.cap === 0) return;
-                            let freeSpace = (bat.cap * 1000) - batCharges[inv.id];
-                            if (freeSpace > 0) {
-                                let chargeW = Math.min(acSurplus, bat.power);
-                                let actualCharge = Math.min(chargeW, freeSpace);
-                                batCharges[inv.id] += actualCharge;
-                                acSurplus -= actualCharge;
-                                sysBatChargeW += actualCharge;
-                            }
-                        });
-                        flow.toGrid += acSurplus;
+                        flow.toGrid += (sysAcAvailableW - loadW);
                     } else {
                         let deficit = loadW - sysAcAvailableW;
                         flow.direct += sysAcAvailableW;
@@ -740,8 +690,11 @@
                             }
                         });
                         
-                        flow.fromBat += dischargedW * batteryCycleLoss; 
-                        flow.moBat[m] += (dischargedW * batteryCycleLoss) / 1000;
+                        // Hier wird beim Entladen der Wirkungsgrad (Verlust) eingerechnet
+                        // Bsp: 1000W Batterie entladen = 800W ins Haus (bei 80% Effizienz)
+                        // Vereinfacht für die Bilanz:
+                        flow.fromBat += dischargedW * (flatBatteries[0]?.eff || 0.80); 
+                        flow.moBat[m] += (dischargedW * (flatBatteries[0]?.eff || 0.80)) / 1000;
                         flow.fromGrid += deficit;
                     }
                     flow.toBat += sysBatChargeW;
@@ -767,7 +720,7 @@
                     for(let m=0; m<12; m++) g.mo[m] += sr.mo[m];
                 });
 
-                flow.direct /= 1000; flow.fromBat /= 1000; flow.toGrid /= 1000; flow.fromGrid /= 1000;
+                flow.direct /= 1000; flow.fromBat /= 1000; flow.toGrid /= 1000; flow.fromGrid /= 1000; flow.toBat /= 1000;
                 YieldDataCache = groupedResults; FlowCache = flow; activeGroupIndex = null; renderDashboard();
             } catch(e) { console.error(e); alert("API Fehler: " + e.message); }
             btn.innerHTML = origTxt; btn.disabled = false;
@@ -854,7 +807,6 @@
             }
         }
 
-        // Wird aufgerufen, wenn in der WR-Tabelle eine andere Batterie gewählt wird
         function updateInverterBattery(invId, batId) {
             const inv = flatInverters.find(x => x.id === parseInt(invId));
             if(inv) {
@@ -871,12 +823,12 @@
             
             document.getElementById('wrTableBody').innerHTML = flatInverters.map(w => {
                 let currentBatOpt = batOptions.replace(`value="${w.batteryId}"`, `value="${w.batteryId}" selected`);
-                return `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-medium">${w.name}</td><td class="px-3 py-2">${w.acMax}</td><td class="px-3 py-2">${w.startV}</td><td class="px-3 py-2">${w.minMppV} - ${w.maxMppV}</td><td class="px-3 py-2 text-[10px] leading-tight">${w.mppts.map(m => `<span class="bg-slate-200 px-1 rounded mr-1 mb-1 inline-block">${m.maxIsc}A Isc / ${m.maxI}A Imax</span>`).join('')}</td><td class="px-3 py-2"><select onchange="updateInverterBattery(${w.id}, this.value)" class="w-full text-xs border border-blue-300 rounded px-1 py-1 bg-white cursor-pointer focus:ring-2 focus:ring-blue-500 outline-none">${currentBatOpt}</select></td></tr>`;
+                return `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-medium">${w.name}</td><td class="px-3 py-2">${w.acMax}</td><td class="px-3 py-2">${w.startV}</td><td class="px-3 py-2 text-[10px] leading-tight">${w.mppts.map(m => `<span class="bg-slate-200 px-1 rounded mr-1 mb-1 inline-block">${m.maxIsc}A Isc</span>`).join('')}</td><td class="px-3 py-2"><select onchange="updateInverterBattery(${w.id}, this.value)" class="w-full text-xs border border-blue-300 rounded px-1 py-1 bg-white cursor-pointer focus:ring-2 focus:ring-blue-500 outline-none">${currentBatOpt}</select></td></tr>`;
             }).join('');
             
             document.getElementById('panelTableBody').innerHTML = flatPanels.map(p => `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-medium">${p.name}</td><td class="px-3 py-2">${p.pmax}</td><td class="px-3 py-2">${p.voc}</td><td class="px-3 py-2">${p.vmp.toFixed(1)}</td><td class="px-3 py-2">${p.isc}</td><td class="px-3 py-2 font-mono text-[10px]">${p.tempVoc}</td></tr>`).join('');
             
-            document.getElementById('batTableBody').innerHTML = flatBatteries.map(b => `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-medium">${b.name}</td><td class="px-3 py-2">${b.cap.toFixed(2)}</td><td class="px-3 py-2">${b.power}</td></tr>`).join('');
+            document.getElementById('batTableBody').innerHTML = flatBatteries.map(b => `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-medium">${b.name}</td><td class="px-3 py-2">${b.cap.toFixed(2)}</td><td class="px-3 py-2">${b.power}</td><td class="px-3 py-2">${Math.round(b.eff * 100)} %</td></tr>`).join('');
         }
 
         function addString() { strings.push({ id: Date.now(), name: "Neuer String", group: "Neue Anlage", shading: 0, azimuth: 180, inverterId: flatInverters[0].id, mpptId: 1, color: colors[strings.length % colors.length], fields: [{ id: Date.now()+1, panelId: flatPanels[0].id, count: 5, tilt: 30 }] }); requireRecalculation(); }
