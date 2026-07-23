@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PV-Planung Pro 4.0.2 (Bugfix Autarkie)</title>
+    <title>PV-Planung Pro 4.1 (Modulare Akkus & Zuweisung)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="database.js"></script>
     <style>
+        /* Anti Pull-to-Refresh auf Systemebene */
+        body { overscroll-behavior-y: none; }
+        
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
@@ -57,8 +60,8 @@
         <div class="max-w-7xl mx-auto px-4 py-4">
             <div class="flex justify-between items-center mb-3">
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">PV-Planung <span class="text-blue-400">Pro 4.0.2</span></h1>
-                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Ertrags- & Autarkiesimulation (VDI 4655 SLP)</p>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">PV-Planung <span class="text-blue-400">Pro 4.1</span></h1>
+                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Modulare Batterien & Autarkiesimulation</p>
                 </div>
                 <div class="flex items-center gap-3">
                     <div id="globalStatusBadge" class="hidden md:inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Physik OK</div>
@@ -74,6 +77,7 @@
                 <button onclick="switchTab('verbrauch')" id="btn-verbrauch" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>Verbrauch</button>
                 <button onclick="switchTab('system')" id="btn-system" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">Stränge</button>
                 <button onclick="switchTab('database')" id="btn-database" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">Datenbank</button>
+                <button onclick="switchTab('faq')" id="btn-faq" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">FAQ</button>
             </div>
         </div>
     </header>
@@ -363,10 +367,10 @@
         <!-- TAB 5: GERÄTE-DATENBANK -->
         <div id="tab-database" class="tab-content space-y-6">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-4 border-b border-slate-200 bg-slate-50"><h3 class="text-lg font-bold text-slate-800">Wechselrichter (WR)</h3></div>
+                <div class="p-4 border-b border-slate-200 bg-slate-50"><h3 class="text-lg font-bold text-slate-800">Wechselrichter (WR) & Batteriezuweisung</h3></div>
                 <div class="overflow-x-auto p-4">
-                    <table class="w-full text-left text-xs md:text-sm text-slate-600 mb-6 min-w-[800px]">
-                        <thead class="bg-slate-100 text-slate-700 uppercase"><tr><th class="px-3 py-2">Name</th><th class="px-3 py-2">AC Max (W)</th><th class="px-3 py-2">Start (V)</th><th class="px-3 py-2">Sweetspot Min (V)</th><th class="px-3 py-2">MPPTs (Anzahl & Limits)</th><th class="px-3 py-2">Batterie</th></tr></thead>
+                    <table class="w-full text-left text-xs md:text-sm text-slate-600 mb-6 min-w-[900px]">
+                        <thead class="bg-slate-100 text-slate-700 uppercase"><tr><th class="px-3 py-2">Name</th><th class="px-3 py-2">AC Max (W)</th><th class="px-3 py-2">Start (V)</th><th class="px-3 py-2">Sweetspot Min (V)</th><th class="px-3 py-2">MPPTs</th><th class="px-3 py-2">Angeschlossene Batterie</th></tr></thead>
                         <tbody id="wrTableBody" class="divide-y divide-slate-200"></tbody>
                     </table>
                 </div>
@@ -383,13 +387,42 @@
             </div>
             
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-4 border-b border-slate-200 bg-slate-50"><h3 class="text-lg font-bold text-slate-800">Batteriespeicher</h3></div>
+                <div class="p-4 border-b border-slate-200 bg-slate-50"><h3 class="text-lg font-bold text-slate-800">Referenz: Modulare Batterien</h3></div>
                 <div class="overflow-x-auto p-4">
                     <table class="w-full text-left text-xs md:text-sm text-slate-600 mb-6 min-w-[500px]">
-                        <thead class="bg-slate-100 text-slate-700 uppercase"><tr><th class="px-3 py-2">Name / Modell</th><th class="px-3 py-2">Kapazität (kWh)</th><th class="px-3 py-2">Max. Leistung (W)</th></tr></thead>
+                        <thead class="bg-slate-100 text-slate-700 uppercase"><tr><th class="px-3 py-2">System / Konfiguration</th><th class="px-3 py-2">Gesamtkapazität (kWh)</th><th class="px-3 py-2">Max. Lade/Entlade-Leistung (W)</th></tr></thead>
                         <tbody id="batTableBody" class="divide-y divide-slate-200"></tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: FAQ -->
+        <div id="tab-faq" class="tab-content space-y-6">
+            <div class="bg-white p-5 md:p-8 rounded-xl shadow-sm border border-slate-200 prose prose-slate text-sm max-w-none">
+                <h2 class="text-xl font-bold border-b pb-2 mb-4">Glossar & Logik der Berechnungen</h2>
+                
+                <h3 class="font-bold text-blue-600">1. Stundengenaue API-Simulation (PVGIS)</h3>
+                <p>Das Tool greift live auf PVGIS zu und simuliert jede der 8.760 Stunden des Jahres. Es nutzt historische Wetterdaten und ermittelt daraus den exakten Ertrag deines Standortes unter Berücksichtigung von Dachneigung und Ausrichtung.</p>
+
+                <h3 class="font-bold text-blue-600">2. Verschattung & Mismatch</h3>
+                <p><strong>Schatten:</strong> Reduziert die DC-Leistung pauschal prozentual (im Slider einstellbar).<br>
+                <strong>Neigungs-Mismatch:</strong> Wenn du auf einem MPPT-String Paneele mit unterschiedlichen Neigungen (z.B. 30° und 90°) mischst, drosselt das flachere Modul das steilere (und umgekehrt). Die Engine berechnet diesen Verlust vollautomatisch und warnt dich in der Strang-Planung.</p>
+
+                <h3 class="font-bold text-blue-600">3. Batterie-Pufferung (DC- & AC-Kopplung)</h3>
+                <p>Überschüssige Energie wird (abzüglich 10 % Ladeverlust) in die Batterie gerettet. 
+                Die App rechnet dabei 2-stufig: Zuerst wird alles, was nicht durch den Hardware-AC-Flaschenhals des Wechselrichters passt (Clipping), direkt auf der DC-Seite in die Batterie gedrückt. Bleibt dann auf der AC-Seite noch Strom übrig, der im Haus nicht verbraucht wird, wandert auch dieser in den Speicher.</p>
+
+                <h3 class="font-bold text-blue-600">4. Lastprofile & Verbrauch (VDI 4655)</h3>
+                <p>Um die Autarkie berechnen zu können, muss die App wissen, wann du Strom verbrauchst. Anstelle pauschaler Annahmen nutzt die Simulation stundengenaue Standardlastprofile (SLP). So berücksichtigt die Engine beispielsweise, dass du im Winter morgens mehr Licht brauchst, oder baut die massiven Peaks einer Wärmepumpe im Dezember realistisch in die Rechnung ein.</p>
+
+                <h2 class="text-xl font-bold border-b pb-2 mb-4 mt-10">Versionshistorie (Changelog)</h2>
+                <ul class="space-y-2">
+                    <li><strong>v4.1:</strong> Modulare Batterie-Datenbank (BYD HVS/HVM, Fronius Reserva, Anker). Reparierte Batterie-Zuweisung pro Wechselrichter. Blockade des Pull-to-Refresh.</li>
+                    <li><strong>v4.0.2:</strong> Bugfix der Autarkie-Multiplikation. Umbau der Engine auf 2-Pass (erst AC bündeln, dann Last abziehen).</li>
+                    <li><strong>v4.0:</strong> Einführung des Autarkie-Dashboards (Dash 2) im Dark-Mode. Integration von wählbaren Haushalts-Verbrauchsprofilen und Großverbrauchern.</li>
+                    <li><strong>v3.9:</strong> Hierarchische Dropdowns. Visuelle Fortschrittsbalken für MPPT-Sweetspots (Startspannung vs. Ideale Spannung).</li>
+                </ul>
             </div>
         </div>
         
@@ -397,7 +430,7 @@
 
     <script>
         let DB = { panels: [], batteries: [], inverters: [] };
-        let flatPanels = []; let flatInverters = [];
+        let flatPanels = []; let flatInverters = []; let flatBatteries = [];
         const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#84cc16'];
         
         let LocationData = { lat: 48.06, lon: 8.46, name: "Villingen-Schwenningen" };
@@ -417,11 +450,20 @@
             
             flatPanels = DB.panels.flatMap(s => s.models || []);
             flatInverters = DB.inverters.flatMap(s => s.models || []);
+            flatBatteries = DB.batteries.flatMap(s => s.models || []);
 
             const userDB = JSON.parse(localStorage.getItem('pvpro_user_db')) || { panels: [], batteries: [], inverters: [] };
             if (userDB.panels.length > 0) { DB.panels.push({ series: "Eigene Module", models: userDB.panels }); flatPanels.push(...userDB.panels); }
             if (userDB.inverters.length > 0) { DB.inverters.push({ series: "Eigene WR", models: userDB.inverters }); flatInverters.push(...userDB.inverters); }
-            if (userDB.batteries.length > 0) { DB.batteries.push(...userDB.batteries); }
+            if (userDB.batteries.length > 0) { DB.batteries.push({ series: "Eigene Batterien", models: userDB.batteries }); flatBatteries.push(...userDB.batteries); }
+
+            // Lade gespeicherte Batterie-Zuweisungen pro WR
+            let batMap = JSON.parse(localStorage.getItem('pvpro_batmap') || '{}');
+            flatInverters.forEach(inv => {
+                if(batMap[inv.id] !== undefined) {
+                    inv.batteryId = parseInt(batMap[inv.id]);
+                }
+            });
 
             if(localStorage.getItem('pvpro_strings')) strings = JSON.parse(localStorage.getItem('pvpro_strings'));
             if(localStorage.getItem('pvpro_loc')) LocationData = JSON.parse(localStorage.getItem('pvpro_loc'));
@@ -441,7 +483,7 @@
             saveConsumptionSettings(); alert("Konfiguration gespeichert!"); 
         }
 
-        let touchStartX = 0; let touchStartY = 0; const tabOrder = ['dashboard', 'dashboard2', 'verbrauch', 'system', 'database'];
+        let touchStartX = 0; let touchStartY = 0; const tabOrder = ['dashboard', 'dashboard2', 'verbrauch', 'system', 'database', 'faq'];
         document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; }, { passive: true });
         document.addEventListener('touchend', e => {
             const t = e.target.tagName; if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'CANVAS', 'TABLE', 'TH', 'TD'].includes(t) || e.target.closest('table') || e.target.type === 'range') return;
@@ -595,7 +637,6 @@
 
                 const res = await Promise.all(proms);
                 let invH = {}; 
-                // BUGFIX: Only loop over inverters that are actually used!
                 let activeInvIds = [...new Set(strings.map(s => parseInt(s.inverterId)))];
                 let activeInvs = flatInverters.filter(i => activeInvIds.includes(i.id));
                 activeInvs.forEach(i => invH[i.id] = new Float32Array(8760));
@@ -615,20 +656,16 @@
                 const systemLossFactor = 0.95; const batteryCycleLoss = 0.90; 
                 
                 let flow = { direct: 0, toBat: 0, fromBat: 0, toGrid: 0, fromGrid: 0, moCons: new Array(12).fill(0), moGen: new Array(12).fill(0), moBat: new Array(12).fill(0) };
-                
-                // Track DC battery charge state per inverter
-                let batCharges = {};
-                activeInvs.forEach(inv => batCharges[inv.id] = 0);
+                let batCharges = {}; activeInvs.forEach(inv => batCharges[inv.id] = 0);
 
                 for(let h=0; h<8760; h++) {
                     let sysAcAvailableW = 0;
                     let sysBatChargeW = 0;
 
-                    // 1. Process DC Generation & Limits per Inverter
                     activeInvs.forEach(inv => {
                         let totalDcW = invH[inv.id][h] * systemLossFactor;
                         let acLimit = inv.acMax || 0;
-                        let bat = DB.batteries.find(b => b.id == inv.batteryId);
+                        let bat = flatBatteries.find(b => b.id == inv.batteryId);
                         let batCapWh = bat ? (bat.cap * 1000) : 0;
                         let batPowerW = bat ? bat.power : 0;
                         
@@ -637,7 +674,6 @@
                             availableAcW = acLimit;
                             let excessW = totalDcW - acLimit;
                             
-                            // Save to DC Battery
                             if (batCapWh > 0) {
                                 let chargeW = Math.min(excessW, batPowerW);
                                 let freeSpace = batCapWh - batCharges[inv.id];
@@ -647,13 +683,11 @@
                                 excessW -= actualCharge;
                                 sysBatChargeW += actualCharge;
                                 
-                                // Attribute gerettete PV-Energie zum String
                                 if (actualCharge > 0) {
                                     let iStrs = sRes.filter(sr => strings.find(s=>s.id===sr.id)?.inverterId == inv.id);
                                     iStrs.forEach(sr => { if(invH[inv.id][h]>0) sr.batYield += (actualCharge * batteryCycleLoss * (sr.hr[h]/invH[inv.id][h])) / 1000; });
                                 }
                             }
-                            // Hardware Clip Rest
                             if (excessW > 0) {
                                 let iStrs = sRes.filter(sr => strings.find(s=>s.id===sr.id)?.inverterId == inv.id);
                                 iStrs.forEach(sr => { if(invH[inv.id][h]>0) sr.clip += (excessW * (sr.hr[h]/invH[inv.id][h])) / 1000; });
@@ -664,7 +698,6 @@
                         sysAcAvailableW += availableAcW;
                     });
 
-                    // 2. Process Global AC vs House Load
                     let loadW = consH[h] || 0;
                     let m = 0; for(let i=11; i>=0; i--) { if(h >= mStart[i]) { m = i; break; } }
                     
@@ -672,14 +705,12 @@
                     flow.moGen[m] += sysAcAvailableW / 1000;
 
                     if (sysAcAvailableW >= loadW) {
-                        // PV Überschuss
                         let acSurplus = sysAcAvailableW - loadW;
                         flow.direct += loadW;
                         
-                        // AC-gekoppeltes Laden (Puffern im Rest-Speicher)
                         activeInvs.forEach(inv => {
                             if (acSurplus <= 0) return;
-                            let bat = DB.batteries.find(b => b.id == inv.batteryId);
+                            let bat = flatBatteries.find(b => b.id == inv.batteryId);
                             if(!bat || bat.cap === 0) return;
                             let freeSpace = (bat.cap * 1000) - batCharges[inv.id];
                             if (freeSpace > 0) {
@@ -692,14 +723,13 @@
                         });
                         flow.toGrid += acSurplus;
                     } else {
-                        // PV reicht nicht -> Batterie oder Netz
                         let deficit = loadW - sysAcAvailableW;
                         flow.direct += sysAcAvailableW;
                         
                         let dischargedW = 0;
                         activeInvs.forEach(inv => {
                             if (deficit <= 0) return;
-                            let bat = DB.batteries.find(b => b.id == inv.batteryId);
+                            let bat = flatBatteries.find(b => b.id == inv.batteryId);
                             if(!bat || bat.cap === 0) return;
                             let availableCharge = batCharges[inv.id];
                             if (availableCharge > 0) {
@@ -824,13 +854,29 @@
             }
         }
 
+        // Wird aufgerufen, wenn in der WR-Tabelle eine andere Batterie gewählt wird
+        function updateInverterBattery(invId, batId) {
+            const inv = flatInverters.find(x => x.id === parseInt(invId));
+            if(inv) {
+                inv.batteryId = parseInt(batId);
+                let batMap = JSON.parse(localStorage.getItem('pvpro_batmap') || '{}');
+                batMap[invId] = parseInt(batId);
+                localStorage.setItem('pvpro_batmap', JSON.stringify(batMap));
+                requireRecalculation();
+            }
+        }
+
         function renderDatabaseUI() {
+            let batOptions = DB.batteries.map(s => `<optgroup label="${s.series}">${s.models.map(m => `<option value="${m.id}">${m.name}</option>`).join('')}</optgroup>`).join('');
+            
             document.getElementById('wrTableBody').innerHTML = flatInverters.map(w => {
-                const bOpt = DB.batteries.map(b => `<option value="${b.id}" ${w.batteryId == b.id ? 'selected':''}>${b.name}</option>`).join('');
-                return `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-medium">${w.name}</td><td class="px-3 py-2">${w.acMax}</td><td class="px-3 py-2">${w.startV}</td><td class="px-3 py-2">${w.minMppV} - ${w.maxMppV}</td><td class="px-3 py-2 text-[10px] leading-tight">${w.mppts.map(m => `<span class="bg-slate-200 px-1 rounded mr-1 mb-1 inline-block">${m.maxIsc}A Isc / ${m.maxI}A Imax</span>`).join('')}</td><td class="px-3 py-2"><select disabled class="w-full text-xs border rounded px-1 py-1 bg-slate-100">${bOpt}</select></td></tr>`;
+                let currentBatOpt = batOptions.replace(`value="${w.batteryId}"`, `value="${w.batteryId}" selected`);
+                return `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-medium">${w.name}</td><td class="px-3 py-2">${w.acMax}</td><td class="px-3 py-2">${w.startV}</td><td class="px-3 py-2">${w.minMppV} - ${w.maxMppV}</td><td class="px-3 py-2 text-[10px] leading-tight">${w.mppts.map(m => `<span class="bg-slate-200 px-1 rounded mr-1 mb-1 inline-block">${m.maxIsc}A Isc / ${m.maxI}A Imax</span>`).join('')}</td><td class="px-3 py-2"><select onchange="updateInverterBattery(${w.id}, this.value)" class="w-full text-xs border border-blue-300 rounded px-1 py-1 bg-white cursor-pointer focus:ring-2 focus:ring-blue-500 outline-none">${currentBatOpt}</select></td></tr>`;
             }).join('');
+            
             document.getElementById('panelTableBody').innerHTML = flatPanels.map(p => `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-medium">${p.name}</td><td class="px-3 py-2">${p.pmax}</td><td class="px-3 py-2">${p.voc}</td><td class="px-3 py-2">${p.vmp.toFixed(1)}</td><td class="px-3 py-2">${p.isc}</td><td class="px-3 py-2 font-mono text-[10px]">${p.tempVoc}</td></tr>`).join('');
-            document.getElementById('batTableBody').innerHTML = DB.batteries.map(b => `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-medium">${b.name}</td><td class="px-3 py-2">${b.cap}</td><td class="px-3 py-2">${b.power}</td></tr>`).join('');
+            
+            document.getElementById('batTableBody').innerHTML = flatBatteries.map(b => `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-medium">${b.name}</td><td class="px-3 py-2">${b.cap.toFixed(2)}</td><td class="px-3 py-2">${b.power}</td></tr>`).join('');
         }
 
         function addString() { strings.push({ id: Date.now(), name: "Neuer String", group: "Neue Anlage", shading: 0, azimuth: 180, inverterId: flatInverters[0].id, mpptId: 1, color: colors[strings.length % colors.length], fields: [{ id: Date.now()+1, panelId: flatPanels[0].id, count: 5, tilt: 30 }] }); requireRecalculation(); }
