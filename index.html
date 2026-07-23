@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PV-Planung Pro 3.4 (API Edition)</title>
+    <title>PV-Planung Pro 3.5 (Web-App Edition)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -13,8 +13,23 @@
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Smooth Tab Transitions */
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+        
+        .slide-left { animation: slideLeft 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+        .slide-right { animation: slideRight 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+        
+        @keyframes slideLeft {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideRight {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
         .accordion-content { display: none; }
         .accordion-content.open { display: block; }
 
@@ -41,6 +56,8 @@
         
         .spinner { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        .card-focused { ring-2 ring-blue-500 border-blue-500 bg-blue-50/30 transform scale-[1.02] transition-all }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased h-[100dvh] flex flex-col overflow-hidden">
@@ -49,19 +66,25 @@
         <div class="max-w-7xl mx-auto px-4 py-4">
             <div class="flex justify-between items-center mb-3">
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">PV-Planung <span class="text-blue-400">Pro 3.4</span></h1>
-                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Stundengenaue API-Simulation (PVGIS 5.2)</p>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">PV-Planung <span class="text-blue-400">Pro 3.5</span></h1>
+                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Interaktive Web-App & Persistente Datenbank</p>
                 </div>
-                <div id="globalStatusBadge" class="hidden md:inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                    Physik OK
+                <div class="flex items-center gap-3">
+                    <div id="globalStatusBadge" class="hidden md:inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        Physik OK
+                    </div>
+                    <button onclick="saveToDatabase()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow flex items-center gap-1 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                        Speichern
+                    </button>
                 </div>
             </div>
             
             <div class="flex overflow-x-auto hide-scroll space-x-2 bg-slate-800 p-1 rounded-lg">
-                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md bg-blue-600 text-white transition-colors shadow-sm">Dashboard & Ort</button>
-                <button onclick="switchTab('system')" id="btn-system" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">Strang-Planung</button>
-                <button onclick="switchTab('database')" id="btn-database" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">Geräte-Datenbank</button>
-                <button onclick="switchTab('sources')" id="btn-sources" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">Quellen & Logik</button>
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md bg-blue-600 text-white transition-colors shadow-sm">Dashboard</button>
+                <button onclick="switchTab('system')" id="btn-system" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">Stränge</button>
+                <button onclick="switchTab('database')" id="btn-database" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">Datenbank</button>
+                <button onclick="switchTab('sources')" id="btn-sources" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">Logik</button>
             </div>
         </div>
     </header>
@@ -92,22 +115,28 @@
                 </div>
             </div>
 
+            <!-- Focus Indicator -->
+            <div id="focusBanner" class="hidden bg-blue-100 border border-blue-300 text-blue-800 px-4 py-2 rounded-lg flex justify-between items-center text-sm font-medium shadow-sm transition-all">
+                <span id="focusBannerText">Fokus: Hauptdach Süd</span>
+                <button onclick="clearFocus()" class="bg-white/50 hover:bg-white text-blue-700 px-2 py-1 rounded text-xs">Fokus aufheben</button>
+            </div>
+
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-blue-500">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-blue-500 transition-all" id="kpiBoxYield">
                     <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider">Ertrag (PVGIS)</p>
                     <p id="dashTotalYield" class="text-xl md:text-3xl font-bold text-slate-800 mt-1">0 <span class="text-sm font-normal text-slate-500">kWh</span></p>
                 </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500 transition-all" id="kpiBoxPower">
                     <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider">Leistung</p>
                     <p id="dashTotalKwp" class="text-xl md:text-3xl font-bold text-slate-800 mt-1">0.00 <span class="text-sm font-normal text-slate-500">kWp</span></p>
                 </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-purple-500">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-purple-500 transition-all" id="kpiBoxSpec">
                     <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider">Spez. Ertrag</p>
                     <p id="dashSpecYield" class="text-xl md:text-3xl font-bold text-slate-800 mt-1">0 <span class="text-sm font-normal text-slate-500">kWh/kWp</span></p>
                 </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-rose-500">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-rose-500 transition-all" id="kpiBoxClip">
                     <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider ttip">AC-Clipping (WR)
-                        <span class="ttip-text">Exakte stündliche Simulation: PV-Leistung wird abgeschnitten, wenn die DC-Summe in einer spezifischen Stunde die WR-Nennleistung übersteigt.</span>
+                        <span class="ttip-text">Stundengenaue Berechnung. Im Fokus-Modus wird der anteilige Verlust dieses Strings am Gesamt-Clipping des Wechselrichters angezeigt.</span>
                     </p>
                     <p id="dashClipping" class="text-xl md:text-3xl font-bold text-slate-800 mt-1">0 <span class="text-sm font-normal text-slate-500">kWh</span></p>
                 </div>
@@ -118,7 +147,7 @@
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-base md:text-lg font-bold text-slate-800">Monatlicher PV-Ertrag nach Strings (PVGIS)</h3>
-                    <p class="text-[10px] text-slate-400">Hover/Tap über Balken für Fokus-Ansicht</p>
+                    <p class="text-[10px] text-slate-400">Tippe auf String-Karten für Fokus</p>
                 </div>
                 <div class="relative h-64 md:h-96 w-full">
                     <canvas id="yieldChart"></canvas>
@@ -141,7 +170,7 @@
         <!-- TAB 3: GERÄTE-DATENBANK -->
         <div id="tab-database" class="tab-content space-y-6">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-4 border-b border-slate-200 bg-slate-50">
+                <div class="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
                     <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                         <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                         Wechselrichter (WR)
@@ -162,7 +191,7 @@
                             <div><label class="block text-[10px] text-slate-500">AC Max (W)</label><input type="number" id="newWrAc" placeholder="5000" class="w-full text-sm border rounded px-2 py-1 outline-none"></div>
                             <div><label class="block text-[10px] text-slate-500">Start (V)</label><input type="number" id="newWrStart" placeholder="80" class="w-full text-sm border rounded px-2 py-1 outline-none"></div>
                             <div><label class="block text-[10px] text-slate-500">Max Isc (A)</label><input type="number" id="newWrIsc" placeholder="20" class="w-full text-sm border rounded px-2 py-1 outline-none"></div>
-                            <div class="col-span-2 md:col-span-1"><button onclick="addInverter()" class="w-full bg-slate-800 text-white text-xs py-1.5 rounded hover:bg-slate-700">Add</button></div>
+                            <div class="col-span-2 md:col-span-1"><button onclick="addInverter()" class="w-full bg-slate-800 text-white text-xs py-1.5 rounded hover:bg-slate-700">Speichern</button></div>
                         </div>
                     </div>
                 </div>
@@ -189,7 +218,7 @@
                             <div class="col-span-2 md:col-span-1"><label class="block text-[10px] text-slate-500">Name</label><input type="text" id="newBatName" placeholder="Z.B. BYD HVM" class="w-full text-sm border rounded px-2 py-1 outline-none"></div>
                             <div><label class="block text-[10px] text-slate-500">Kapazität (kWh)</label><input type="number" id="newBatCap" step="0.1" placeholder="11.0" class="w-full text-sm border rounded px-2 py-1 outline-none"></div>
                             <div><label class="block text-[10px] text-slate-500">Max. Leistung (W)</label><input type="number" id="newBatPow" placeholder="5000" class="w-full text-sm border rounded px-2 py-1 outline-none"></div>
-                            <div class="col-span-2 md:col-span-1"><button onclick="addBattery()" class="w-full bg-slate-800 text-white text-xs py-1.5 rounded hover:bg-slate-700">Add</button></div>
+                            <div class="col-span-2 md:col-span-1"><button onclick="addBattery()" class="w-full bg-slate-800 text-white text-xs py-1.5 rounded hover:bg-slate-700">Speichern</button></div>
                         </div>
                     </div>
                 </div>
@@ -218,7 +247,7 @@
                             <div><label class="block text-[10px] text-slate-500">Voc (V)</label><input type="number" id="newModVoc" step="0.1" placeholder="37.5" class="w-full text-xs border rounded px-2 py-1 outline-none"></div>
                             <div><label class="block text-[10px] text-slate-500">Isc (A)</label><input type="number" id="newModIsc" step="0.1" placeholder="13.5" class="w-full text-xs border rounded px-2 py-1 outline-none"></div>
                             <div><label class="block text-[10px] text-slate-500">TK (%/°C)</label><input type="number" id="newModTk" step="0.01" placeholder="-0.25" class="w-full text-xs border rounded px-2 py-1 outline-none"></div>
-                            <div class="col-span-2 md:col-span-1"><button onclick="addPanel()" class="w-full bg-slate-800 text-white text-xs py-1.5 rounded hover:bg-slate-700">Add</button></div>
+                            <div class="col-span-2 md:col-span-1"><button onclick="addPanel()" class="w-full bg-slate-800 text-white text-xs py-1.5 rounded hover:bg-slate-700">Speichern</button></div>
                         </div>
                     </div>
                 </div>
@@ -228,27 +257,29 @@
         <!-- TAB 4: QUELLEN & LOGIK -->
         <div id="tab-sources" class="tab-content space-y-6">
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 prose prose-slate text-sm max-w-none">
-                <h3 class="font-bold">1. Touch Wischgeste</h3>
-                <p>Du kannst horizontal wischen, um durch die Tabs zu navigieren. Formularfelder und Diagramme bleiben beim Wischen geschützt.</p>
-                <h3 class="font-bold">2. Stundengenaue Ertragssimulation (PVGIS 5.2)</h3>
-                <p>Das Tool greift live auf die europäische Forschungsdatenbank PVGIS zu. Über corsproxy.io werden CORS-Sicherheitsblockaden auf GitHub Pages aufgelöst.</p>
-                <h3 class="font-bold">3. Wahres AC-Clipping</h3>
-                <p>Die App summiert die Ertragsdaten PV-String für PV-String <strong>für jede einzelne Stunde des Jahres</strong> und kappt genau die Stunden, wo die DC-Leistung die AC-Grenze des Wechselrichters übersteigt.</p>
+                <h3 class="font-bold">1. Interaktive Web-App Navigation</h3>
+                <p>Nutze <strong>Wischgesten</strong> (horizontales Swipen), um sanft durch die Tabs zu blättern. Eingabefelder und Diagramme sind vor versehentlichem Wischen geschützt.</p>
+                <h3 class="font-bold">2. Persistente Datenbank (Local Storage)</h3>
+                <p>Mit dem "Speichern"-Button oben rechts wird deine gesamte Konfiguration (Ort, Strings, Panels, Wechselrichter) dauerhaft im Speicher deines Handys/Browsers hinterlegt. Beim nächsten Aufruf der GitHub-Seite lädt das Tool exakt deinen letzten Stand.</p>
+                <h3 class="font-bold">3. String-Fokus & Proportionales Clipping</h3>
+                <p>Tippst du auf eine String-Karte, fokussiert sich das Dashboard auf diesen String. Das AC-Clipping wird dabei <strong>proportional</strong> berechnet: Wenn der String z.B. in der gekappten Stunde 60 % der Gesamtleistung geliefert hat, werden ihm mathematisch exakt 60 % des Clipping-Verlustes zugewiesen.</p>
             </div>
         </div>
 
     </main>
 
-    <!-- JS Logic -->
     <script>
+        // --- 1. DATENBANK & STATE ---
         let LocationData = { lat: 48.06, lon: 8.46, name: "Villingen-Schwenningen" };
         let YieldDataCache = null; 
+        let activeStringIndex = null; // Für den Fokus-Modus
 
         let DB = {
             panels: [
                 { id: 1, name: "Jolywood JW-HD96N", pmax: 440, voc: 34.51, isc: 15.72, vmp: 29.62, tempVoc: -0.250 },
                 { id: 2, name: "Jolywood JW-HD120N", pmax: 500, voc: 43.58, isc: 14.12, vmp: 37.47, tempVoc: -0.250 },
-                { id: 3, name: "AIKO Neostar 3S+", pmax: 470, voc: 40.70, isc: 14.72, vmp: 34.30, tempVoc: -0.220 }
+                { id: 3, name: "AIKO Neostar 3S+", pmax: 470, voc: 40.70, isc: 14.72, vmp: 34.30, tempVoc: -0.220 },
+                { id: 4, name: "Trina Vertex S+ (NEG9R.28)", pmax: 440, voc: 52.20, isc: 10.67, vmp: 44.00, tempVoc: -0.240 }
             ],
             batteries: [
                 { id: 1, name: "Ohne Batterie", cap: 0, power: 0 },
@@ -277,9 +308,27 @@
         ];
 
         let chartInstance = null;
-        let hoveredDatasetIndex = null;
 
-        // --- SWIPE GESTURE IMPLEMENTATION ---
+        // --- 2. LOCAL STORAGE (PERSISTENZ) ---
+        function loadFromDatabase() {
+            if(localStorage.getItem('pvpro_db')) DB = JSON.parse(localStorage.getItem('pvpro_db'));
+            if(localStorage.getItem('pvpro_strings')) strings = JSON.parse(localStorage.getItem('pvpro_strings'));
+            if(localStorage.getItem('pvpro_loc')) LocationData = JSON.parse(localStorage.getItem('pvpro_loc'));
+            
+            document.getElementById('locSearchInput').value = LocationData.name;
+            document.getElementById('locNameText').innerText = LocationData.name;
+            document.getElementById('locLatText').innerText = LocationData.lat;
+            document.getElementById('locLonText').innerText = LocationData.lon;
+        }
+
+        function saveToDatabase() {
+            localStorage.setItem('pvpro_db', JSON.stringify(DB));
+            localStorage.setItem('pvpro_strings', JSON.stringify(strings));
+            localStorage.setItem('pvpro_loc', JSON.stringify(LocationData));
+            alert("Erfolgreich gespeichert! Deine Anlage und alle Datenbank-Einträge sind nun lokal gesichert.");
+        }
+
+        // --- 3. SWIPE GESTURE IMPLEMENTATION ---
         let touchStartX = 0;
         let touchStartY = 0;
         const tabOrder = ['dashboard', 'system', 'database', 'sources'];
@@ -290,9 +339,9 @@
         }, { passive: true });
 
         document.addEventListener('touchend', e => {
-            // Ignore swipe inside inputs, buttons, tables, dropdowns, or canvas
             const targetTag = e.target.tagName;
-            if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'CANVAS', 'TABLE', 'TH', 'TD'].includes(targetTag)) return;
+            // Verhindere Swipe, wenn User in Formularen, Tabellen oder Charts interagiert
+            if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'CANVAS', 'TABLE', 'TH', 'TD'].includes(targetTag) || e.target.closest('table')) return;
 
             let touchEndX = e.changedTouches[0].screenX;
             let touchEndY = e.changedTouches[0].screenY;
@@ -300,21 +349,37 @@
             let diffX = touchEndX - touchStartX;
             let diffY = touchEndY - touchStartY;
 
-            // Trigger swipe if horizontal movement > 60px and dominant over vertical movement
-            if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+            // Trigger wenn horizontales Wischen deutlich stärker als vertikales Scrollen ist
+            if (Math.abs(diffX) > 70 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
                 let currentActive = document.querySelector('.tab-content.active').id.replace('tab-', '');
                 let currentIndex = tabOrder.indexOf(currentActive);
 
                 if (diffX < 0 && currentIndex < tabOrder.length - 1) {
-                    // Swipe Left -> Next Tab
-                    switchTab(tabOrder[currentIndex + 1]);
+                    switchTab(tabOrder[currentIndex + 1], 'slide-left');
                 } else if (diffX > 0 && currentIndex > 0) {
-                    // Swipe Right -> Prev Tab
-                    switchTab(tabOrder[currentIndex - 1]);
+                    switchTab(tabOrder[currentIndex - 1], 'slide-right');
                 }
             }
         }, { passive: true });
 
+        function switchTab(tabId, animationClass = 'slide-left') {
+            const current = document.querySelector('.tab-content.active');
+            const next = document.getElementById('tab-' + tabId);
+            
+            if(current && current !== next) {
+                current.classList.remove('active', 'slide-left', 'slide-right');
+                next.classList.remove('slide-left', 'slide-right');
+                next.classList.add('active', animationClass);
+            } else if (!current) {
+                next.classList.add('active');
+            }
+
+            tabOrder.forEach(id => {
+                document.getElementById('btn-' + id).className = id === tabId ? "shrink-0 px-4 py-2 text-sm font-medium rounded-md bg-blue-600 text-white shadow-sm" : "shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700";
+            });
+        }
+
+        // --- 4. API & BERECHNUNG ---
         async function searchLocation() {
             const query = document.getElementById('locSearchInput').value;
             if(!query) return;
@@ -398,16 +463,14 @@
             document.getElementById('calcWarning').classList.add('hidden');
 
             try {
-                let totalWp = 0;
                 let fetchPromises = [];
 
                 strings.forEach(str => {
-                    let strWp = 0; let minTilt = 999; let maxTilt = 0;
+                    let minTilt = 999; let maxTilt = 0;
                     str.fields.forEach(f => {
                         const p = DB.panels.find(x => x.id === parseInt(f.panelId));
-                        if(p) { strWp += p.pmax * f.count; if(f.tilt < minTilt) minTilt = f.tilt; if(f.tilt > maxTilt) maxTilt = f.tilt; }
+                        if(p) { if(f.tilt < minTilt) minTilt = f.tilt; if(f.tilt > maxTilt) maxTilt = f.tilt; }
                     });
-                    totalWp += (strWp / 1000);
                     let mismatchPct = (str.fields.length > 1 && maxTilt - minTilt > 5) ? Math.min((maxTilt - minTilt) * 0.3, 15) : 0;
                     let mismatchFactor = 1 - (mismatchPct / 100);
 
@@ -438,7 +501,7 @@
                 DB.inverters.forEach(inv => invHourlyTotals[inv.id] = new Float32Array(8760));
                 
                 let strResults = strings.map(s => ({ 
-                    id: s.id, name: s.name, color: s.color, kwp: 0, yield: 0, monthly: new Array(12).fill(0), hourly: new Float32Array(8760) 
+                    id: s.id, name: s.name, color: s.color, kwp: 0, yield: 0, clippingLoss: 0, monthly: new Array(12).fill(0), hourly: new Float32Array(8760) 
                 }));
 
                 const monthDays = [31,28,31,30,31,30,31,31,30,31,30,31];
@@ -456,34 +519,45 @@
                     }
                 });
 
-                let totalYield = 0;
+                // PROPORTIONALES STRING CLIPPING BERECHNEN
+                DB.inverters.forEach(inv => {
+                    let invHourly = invHourlyTotals[inv.id];
+                    let invStrings = strResults.filter(sr => {
+                        let strObj = strings.find(s => s.id === sr.id);
+                        return strObj && strObj.inverterId == inv.id;
+                    });
+
+                    for(let h=0; h<8760; h++) {
+                        if (invHourly[h] > inv.acMax) {
+                            let excess = invHourly[h] - inv.acMax;
+                            // Verteile das Clipping auf die Strings, basierend auf deren Anteil in dieser Stunde
+                            invStrings.forEach(sRes => {
+                                if(invHourly[h] > 0) {
+                                    let share = sRes.hourly[h] / invHourly[h];
+                                    sRes.clippingLoss += (excess * share) / 1000; // in kWh
+                                }
+                            });
+                        }
+                    }
+                });
+
+                // Monatswerte und Erträge aggregieren
                 strResults.forEach(sRes => {
-                    sRes.yield = sRes.hourly.reduce((a,b)=>a+b, 0) / 1000; 
-                    totalYield += sRes.yield;
+                    sRes.yield = (sRes.hourly.reduce((a,b)=>a+b, 0) / 1000) - sRes.clippingLoss; 
                     for(let m=0; m<12; m++) {
                         let mSum = 0;
                         for(let h=monthStart[m]; h < (m===11 ? 8760 : monthStart[m+1]); h++) mSum += sRes.hourly[h];
-                        sRes.monthly[m] = mSum / 1000;
+                        // Vereinfacht: Clipping ziehen wir vom Jahreswert ab, im Monatschart ignorieren wir es vorerst der Übersicht halber
+                        sRes.monthly[m] = mSum / 1000; 
                     }
                     const strObj = strings.find(s => s.id === sRes.id);
                     sRes.kwp = 0;
                     strObj.fields.forEach(f => { const p = DB.panels.find(x => x.id === parseInt(f.panelId)); if(p) sRes.kwp += (p.pmax * f.count)/1000; });
                 });
 
-                let totalClippingLoss = 0;
-                DB.inverters.forEach(inv => {
-                    let invHourly = invHourlyTotals[inv.id];
-                    for(let h=0; h<8760; h++) {
-                        if (invHourly[h] > inv.acMax) {
-                            totalClippingLoss += (invHourly[h] - inv.acMax) / 1000;
-                        }
-                    }
-                });
-
-                totalYield -= totalClippingLoss;
                 YieldDataCache = strResults; 
-
-                updateDashboard(totalWp, totalYield, totalClippingLoss, strResults);
+                activeStringIndex = null; // Reset focus on new calc
+                renderDashboard();
 
             } catch(e) {
                 console.error(e);
@@ -499,6 +573,124 @@
             updatePhysicsOnly();
         }
 
+        // --- 5. DASHBOARD RENDER & FOKUS ---
+        function setFocus(index) {
+            if (activeStringIndex === index) {
+                activeStringIndex = null; // Toggle off if already focused
+            } else {
+                activeStringIndex = index;
+            }
+            renderDashboard();
+        }
+
+        function clearFocus() {
+            activeStringIndex = null;
+            renderDashboard();
+        }
+
+        function renderDashboard() {
+            if(!YieldDataCache) return;
+
+            let stringResults = YieldDataCache;
+            let displayKwp = 0, displayYield = 0, displayClip = 0;
+
+            if (activeStringIndex !== null) {
+                // Focus Modus
+                const s = stringResults[activeStringIndex];
+                displayKwp = s.kwp;
+                displayYield = s.yield;
+                displayClip = s.clippingLoss;
+                document.getElementById('focusBanner').classList.remove('hidden');
+                document.getElementById('focusBannerText').innerText = `Fokus: ${s.name}`;
+                // Optional: Farben anpassen um Fokus zu verdeutlichen
+                document.getElementById('kpiBoxYield').style.borderColor = s.color;
+                document.getElementById('kpiBoxYield').style.backgroundColor = s.color + '10';
+            } else {
+                // Gesamt Modus
+                stringResults.forEach(s => { displayKwp += s.kwp; displayYield += s.yield; displayClip += s.clippingLoss; });
+                document.getElementById('focusBanner').classList.add('hidden');
+                document.getElementById('kpiBoxYield').style.borderColor = '';
+                document.getElementById('kpiBoxYield').style.backgroundColor = '';
+            }
+
+            document.getElementById('dashTotalKwp').innerHTML = `${displayKwp.toFixed(2)} <span class="text-sm font-normal text-slate-500">kWp</span>`;
+            document.getElementById('dashTotalYield').innerHTML = `${Math.round(displayYield).toLocaleString()} <span class="text-sm font-normal text-slate-500">kWh</span>`;
+            document.getElementById('dashSpecYield').innerHTML = `${displayKwp > 0 ? Math.round(displayYield/displayKwp) : 0} <span class="text-sm font-normal text-slate-500">kWh/kWp</span>`;
+            document.getElementById('dashClipping').innerHTML = `${Math.round(displayClip)} <span class="text-sm font-normal text-slate-500">kWh</span>`;
+
+            // String Breakdown List
+            let totalSystemYield = stringResults.reduce((sum, s) => sum + s.yield, 0);
+            let totalSystemClip = stringResults.reduce((sum, s) => sum + s.clippingLoss, 0);
+
+            document.getElementById('stringBreakdown').innerHTML = stringResults.map((s, idx) => {
+                const pct = totalSystemYield > 0 ? ((s.yield / (totalSystemYield + totalSystemClip)) * 100).toFixed(1) : 0;
+                const strObj = strings.find(x => x.id === s.id);
+                const totalPanels = strObj ? strObj.fields.reduce((sum, f) => sum + Number(f.count), 0) : 0;
+                const inv = strObj ? DB.inverters.find(i => i.id === parseInt(strObj.inverterId)) : null;
+                const specYield = s.kwp > 0 ? Math.round(s.yield / s.kwp) : 0;
+                
+                const isFocused = activeStringIndex === idx;
+                const cardClass = isFocused 
+                    ? `bg-blue-50/50 border-${s.color} ring-1 shadow-md transform scale-[1.02] transition-all` 
+                    : `bg-white border-slate-200 hover:border-slate-300 shadow-sm transition-all`;
+
+                return `
+                <div class="p-3.5 md:p-4 rounded-xl border flex items-center justify-between cursor-pointer ${cardClass}"
+                     onclick="setFocus(${idx})" style="${isFocused ? 'border-color: ' + s.color : ''}">
+                    <div class="flex items-center gap-3">
+                        <div class="w-3.5 h-3.5 rounded-full shrink-0" style="background-color: ${s.color}"></div>
+                        <div>
+                            <p class="text-xs md:text-sm font-bold text-slate-800">${s.name}</p>
+                            <p class="text-[10px] md:text-xs text-slate-500 font-medium mt-0.5">
+                                ${totalPanels} Module (${s.kwp.toFixed(2)} kWp) • ${inv ? inv.name : 'Kein WR'}
+                            </p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">
+                                ${Math.round(s.yield).toLocaleString()} kWh/a • ${specYield} kWh/kWp
+                            </p>
+                        </div>
+                    </div>
+                    <div class="text-right pl-2 shrink-0">
+                        <p class="text-sm md:text-base font-bold text-slate-800">${pct}%</p>
+                    </div>
+                </div>`;
+            }).join('');
+
+            // Chart Render
+            const ctx = document.getElementById('yieldChart').getContext('2d');
+            const labels = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+            
+            const datasets = stringResults.map((s, idx) => {
+                const isFaded = activeStringIndex !== null && activeStringIndex !== idx;
+                return {
+                    label: s.name, 
+                    data: s.monthly.map(v => Math.round(v)), 
+                    backgroundColor: isFaded ? s.color + '20' : s.color,
+                    borderRadius: 2 
+                };
+            });
+
+            if(chartInstance) { 
+                chartInstance.data.datasets = datasets; 
+                chartInstance.update(); 
+            } else {
+                Chart.register(hoverLabelsPlugin);
+                chartInstance = new Chart(ctx, {
+                    type: 'bar', data: { labels: labels, datasets: datasets },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, grid: { color: '#f1f5f9' }, min: 0 } },
+                        plugins: { 
+                            legend: { position: 'bottom' },
+                            tooltip: { enabled: true, mode: 'index', intersect: false }
+                        },
+                        onClick: (e, elements) => {
+                            if(elements.length > 0) setFocus(elements[0].datasetIndex);
+                        }
+                    }
+                });
+            }
+        }
+
         const hoverLabelsPlugin = {
             id: 'hoverLabels',
             afterDatasetsDraw(chart) {
@@ -506,12 +698,13 @@
                 ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.font = 'bold 12px sans-serif';
                 chart.data.labels.forEach((label, index) => {
                     let sum = 0; let topY = y.bottom;
-                    if (hoveredDatasetIndex !== null) {
-                        const meta = chart.getDatasetMeta(hoveredDatasetIndex);
-                        if(meta.hidden) return;
-                        sum = chart.data.datasets[hoveredDatasetIndex].data[index];
-                        topY = meta.data[index].y;
-                        ctx.fillStyle = chart.data.datasets[hoveredDatasetIndex].backgroundColor;
+                    if (activeStringIndex !== null) {
+                        const meta = chart.getDatasetMeta(activeStringIndex);
+                        if(!meta.hidden) {
+                            sum = chart.data.datasets[activeStringIndex].data[index];
+                            topY = meta.data[index].y;
+                            ctx.fillStyle = chart.data.datasets[activeStringIndex].backgroundColor;
+                        }
                     } else {
                         chart.data.datasets.forEach((dataset, i) => {
                             const meta = chart.getDatasetMeta(i);
@@ -525,85 +718,7 @@
             }
         };
 
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.getElementById('tab-' + tabId).classList.add('active');
-            ['dashboard', 'system', 'database', 'sources'].forEach(id => {
-                document.getElementById('btn-' + id).className = id === tabId ? "shrink-0 px-4 py-2 text-sm font-medium rounded-md bg-blue-600 text-white shadow-sm" : "shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700";
-            });
-        }
-
-        function toggleAccordion(id) {
-            const content = document.getElementById('acc-' + id);
-            const icon = document.getElementById('icon-' + id);
-            content.classList.toggle('open');
-            icon.style.transform = content.classList.contains('open') ? "rotate(180deg)" : "rotate(0deg)";
-        }
-
-        // --- ERWEITERTE DASHBOARD-STRING-ANZEIGE ---
-        function updateDashboard(kwp, yieldTotal, clipLoss, stringResults) {
-            document.getElementById('dashTotalKwp').innerHTML = `${kwp.toFixed(2)} <span class="text-sm font-normal text-slate-500">kWp</span>`;
-            document.getElementById('dashTotalYield').innerHTML = `${Math.round(yieldTotal).toLocaleString()} <span class="text-sm font-normal text-slate-500">kWh</span>`;
-            document.getElementById('dashSpecYield').innerHTML = `${kwp > 0 ? Math.round(yieldTotal/kwp) : 0} <span class="text-sm font-normal text-slate-500">kWh/kWp</span>`;
-            document.getElementById('dashClipping').innerHTML = `${Math.round(clipLoss)} <span class="text-sm font-normal text-slate-500">kWh</span>`;
-
-            document.getElementById('stringBreakdown').innerHTML = stringResults.map(s => {
-                const pct = yieldTotal > 0 ? ((s.yield / (yieldTotal + clipLoss)) * 100).toFixed(1) : 0;
-                const strObj = strings.find(x => x.id === s.id);
-                const totalPanels = strObj ? strObj.fields.reduce((sum, f) => sum + Number(f.count), 0) : 0;
-                const inv = strObj ? DB.inverters.find(i => i.id === parseInt(strObj.inverterId)) : null;
-                const specYield = s.kwp > 0 ? Math.round(s.yield / s.kwp) : 0;
-
-                return `
-                <div class="bg-white p-3.5 md:p-4 rounded-xl border border-slate-200 flex items-center justify-between shadow-sm cursor-pointer hover:border-slate-300 transition-colors"
-                     onmouseenter="focusChart(${stringResults.indexOf(s)})" onmouseleave="unfocusChart()" onclick="focusChart(${stringResults.indexOf(s)})">
-                    <div class="flex items-center gap-3">
-                        <div class="w-3.5 h-3.5 rounded-full shrink-0" style="background-color: ${s.color}"></div>
-                        <div>
-                            <p class="text-xs md:text-sm font-bold text-slate-800">${s.name}</p>
-                            <p class="text-[10px] md:text-xs text-slate-500 font-medium mt-0.5">
-                                ${totalPanels} Module (${s.kwp} kWp) • ${inv ? inv.name : 'Kein WR'}
-                            </p>
-                            <p class="text-[10px] text-slate-400 mt-0.5">
-                                ${Math.round(s.yield).toLocaleString()} kWh/a • ${specYield} kWh/kWp
-                            </p>
-                        </div>
-                    </div>
-                    <div class="text-right pl-2 shrink-0">
-                        <p class="text-sm md:text-base font-bold text-slate-800">${pct}%</p>
-                    </div>
-                </div>`;
-            }).join('');
-
-            const ctx = document.getElementById('yieldChart').getContext('2d');
-            const labels = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
-            const datasets = stringResults.map((s, idx) => ({ 
-                label: s.name, data: s.monthly.map(v => Math.round(v)), 
-                backgroundColor: (context) => (hoveredDatasetIndex === null || context.datasetIndex === hoveredDatasetIndex) ? s.color : s.color + '30',
-                borderRadius: 2 
-            }));
-
-            if(chartInstance) { chartInstance.data.datasets = datasets; chartInstance.update(); } 
-            else {
-                Chart.register(hoverLabelsPlugin);
-                chartInstance = new Chart(ctx, {
-                    type: 'bar', data: { labels: labels, datasets: datasets },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        onHover: (e, elements, chart) => { hoveredDatasetIndex = elements.length && e.type !== 'mouseout' ? elements[0].datasetIndex : null; chart.update('none'); },
-                        scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, grid: { color: '#f1f5f9' }, min: 0 } },
-                        plugins: { 
-                            legend: { position: 'bottom', onHover: (e, item, l) => { hoveredDatasetIndex = item.datasetIndex; l.chart.update('none'); }, onLeave: (e, item, l) => { hoveredDatasetIndex = null; l.chart.update('none'); } },
-                            tooltip: { enabled: false }
-                        }
-                    }
-                });
-            }
-        }
-
-        function focusChart(index) { hoveredDatasetIndex = index; if(chartInstance) chartInstance.update('none'); }
-        function unfocusChart() { hoveredDatasetIndex = null; if(chartInstance) chartInstance.update('none'); }
-
+        // --- 6. DATENBANK CRUD ---
         function updateInverterBattery(invId, batId) { const inv = DB.inverters.find(i => i.id === invId); if(inv) inv.batteryId = Number(batId); requireRecalculation(); }
 
         function renderDatabaseUI() {
@@ -662,6 +777,7 @@
             requireRecalculation();
         }
 
+        // --- 7. STRING SETUP ---
         function addString() {
             strings.push({ id: Date.now(), name: "Neuer String", azimuth: 180, inverterId: DB.inverters[0].id, mpptId: 1, color: colors[strings.length % colors.length], fields: [{ id: Date.now()+1, panelId: DB.panels[0].id, count: 5, tilt: 30 }] });
             requireRecalculation();
@@ -737,7 +853,10 @@
             openAccordions.forEach(id => { const acc = document.getElementById(id); if(acc) { acc.classList.add('open'); document.getElementById(id.replace('acc-', 'icon-')).style.transform = "rotate(180deg)"; } });
         }
 
-        window.onload = () => { updatePhysicsOnly(); };
+        window.onload = () => { 
+            loadFromDatabase(); // Lade gespeicherte Daten VOR dem Physik-Check
+            updatePhysicsOnly(); 
+        };
     </script>
 </body>
 </html>
