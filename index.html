@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PV-Planung Pro 3.7 (Gruppen & FAQ)</title>
+    <title>PV-Planung Pro 3.8 (Batterie & Schatten)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="database.js"></script>
@@ -41,6 +41,12 @@
         input[type="color"]::-webkit-color-swatch { border: 2px solid #fff; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
         .spinner { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        /* Shading Range Slider Styling */
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #475569; cursor: pointer; margin-top: -6px; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #cbd5e1; border-radius: 2px; }
+        input[type=range]:focus { outline: none; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased h-[100dvh] flex flex-col overflow-hidden">
@@ -49,20 +55,20 @@
         <div class="max-w-7xl mx-auto px-4 py-4">
             <div class="flex justify-between items-center mb-3">
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">PV-Planung <span class="text-blue-400">Pro 3.7</span></h1>
-                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">String-Gruppierung & Erweitertes Glossar</p>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">PV-Planung <span class="text-blue-400">Pro 3.8</span></h1>
+                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Batterie-Pufferung & Schatten-Verluste</p>
                 </div>
                 <div class="flex items-center gap-3">
                     <div id="globalStatusBadge" class="hidden md:inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Physik OK</div>
                     <button onclick="saveConfiguration()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow flex items-center gap-1 transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
-                        Konfig Speichern
+                        Speichern
                     </button>
                 </div>
             </div>
             <div class="flex overflow-x-auto hide-scroll space-x-2 bg-slate-800 p-1 rounded-lg">
                 <button onclick="switchTab('dashboard')" id="btn-dashboard" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md bg-blue-600 text-white transition-colors shadow-sm">Dashboard</button>
-                <button onclick="switchTab('system')" id="btn-system" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">Stränge</button>
+                <button onclick="switchTab('system')" id="btn-system" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">Stränge & Schatten</button>
                 <button onclick="switchTab('database')" id="btn-database" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">Datenbank</button>
                 <button onclick="switchTab('sources')" id="btn-sources" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">FAQ & Historie</button>
             </div>
@@ -99,20 +105,22 @@
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-blue-500 transition-all" id="kpiBoxYield">
-                    <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider">Ertrag (PVGIS)</p>
+                    <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider">Ertrag (PVGIS - Schatten)</p>
                     <p id="dashTotalYield" class="text-xl md:text-3xl font-bold text-slate-800 mt-1">0 <span class="text-sm font-normal text-slate-500">kWh</span></p>
                 </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500 transition-all" id="kpiBoxPower">
-                    <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider">Leistung</p>
-                    <p id="dashTotalKwp" class="text-xl md:text-3xl font-bold text-slate-800 mt-1">0.00 <span class="text-sm font-normal text-slate-500">kWp</span></p>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500 transition-all" id="kpiBoxBat">
+                    <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider ttip">Bat. Rettung
+                        <span class="ttip-text">Gesamte Energie, die vor dem AC-Limit gerettet und (abzüglich 10% Ladeverlust) in die Batterie gepuffert wurde.</span>
+                    </p>
+                    <p id="dashBatteryYield" class="text-xl md:text-3xl font-bold text-slate-800 mt-1">0 <span class="text-sm font-normal text-slate-500">kWh</span></p>
                 </div>
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-purple-500 transition-all" id="kpiBoxSpec">
                     <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider">Spez. Ertrag</p>
                     <p id="dashSpecYield" class="text-xl md:text-3xl font-bold text-slate-800 mt-1">0 <span class="text-sm font-normal text-slate-500">kWh/kWp</span></p>
                 </div>
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-rose-500 transition-all" id="kpiBoxClip">
-                    <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider ttip">AC-Clipping (WR)
-                        <span class="ttip-text">Stundengenaue Berechnung. Zeigt anteilig, welche Gruppe wie viel Clipping verursacht.</span>
+                    <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider ttip">Hartes AC-Clipping
+                        <span class="ttip-text">Energie, die endgültig verloren ging, weil sowohl AC-Limit als auch Batterieladeleistung überschritten waren oder der Akku voll war.</span>
                     </p>
                     <p id="dashClipping" class="text-xl md:text-3xl font-bold text-slate-800 mt-1">0 <span class="text-sm font-normal text-slate-500">kWh</span></p>
                 </div>
@@ -204,55 +212,53 @@
                 <h2 class="text-xl font-bold border-b pb-2 mb-4">Glossar & Logik der Berechnungen</h2>
                 
                 <h3 class="font-bold text-blue-600">1. Stundengenaue API-Simulation (PVGIS 5.2)</h3>
-                <p>Das Tool greift live auf die europäische Forschungsdatenbank <strong>PVGIS</strong> (Photovoltaic Geographical Information System) zu. Für jedes Modulfeld wird ein komplettes Referenzjahr (8.760 Datenpunkte = jede Stunde des Jahres) heruntergeladen. Dies garantiert höchste Genauigkeit basierend auf echten historischen Wetter- und Sonnenstandsdaten des gewählten Ortes.</p>
-                <p><em>Technischer Hinweis:</em> Um die CORS-Sicherheitsblockaden moderner Browser zu umgehen, wenn die App über GitHub Pages gehostet wird, schleust das Skript die PVGIS-Anfrage sicher über <code>corsproxy.io</code>.</p>
+                <p>Das Tool greift live auf die europäische Forschungsdatenbank <strong>PVGIS</strong> (Photovoltaic Geographical Information System) zu. Für jedes Modulfeld wird ein komplettes Referenzjahr (8.760 Datenpunkte) heruntergeladen. Dies garantiert höchste Genauigkeit basierend auf historischen Wetter- und Sonnenstandsdaten. <em>CORS-Proxys werden zur Überwindung von Browser-Sperren eingesetzt.</em></p>
 
-                <h3 class="font-bold text-blue-600">2. Modulgruppen & Einzel-Tracker Logik</h3>
-                <p>Echte PV-Planung erfordert Präzision auf Tracker-Ebene. Für Mikrowechselrichter (wie den Anker SOLIX 2 mit 4 MPPTs) definierst du <strong>für jeden MPPT einen eigenen String</strong>. Damit das Dashboard übersichtlich bleibt, weist du diesen Strings denselben <strong>Gruppennamen</strong> (z.B. "BKW") zu. Das Tool aggregiert diese Tracker im Dashboard visuell zu einer einzigen Anlage.</p>
+                <h3 class="font-bold text-blue-600">2. Verschattung (Schattenabzug)</h3>
+                <p>In der Strang-Planung lässt sich pro String ein Verschattungswert einstellen (z.B. für Gauben oder Bäume). Dieser Wert reduziert die stündliche DC-Produktion linear, bevor der Strom den Wechselrichter erreicht. Dies ist die in der Praxis verlässlichste Methode ohne komplexes 3D-BIM-Modelling.</p>
 
-                <h3 class="font-bold text-blue-600">3. Wahres AC-Clipping (Proportional)</h3>
-                <p>AC-Clipping wird in dieser App nicht pauschal als prozentualer Verlust geschätzt. Die Engine summiert die DC-Leistung aller Tracker eines Wechselrichters <strong>für jede spezifische Stunde des Jahres</strong>. Übersteigt die DC-Leistung am 15. Juli um 13:00 Uhr die AC-Maximalleistung des Wechselrichters, wird exakt die Differenz für diese Stunde abgeschnitten.</p>
-                <p><em>Proportionale Verteilung:</em> Verursachen 4 Strings gemeinsam ein Clipping, wird der Verlust mathematisch fair aufgeteilt. Ein String, der in dieser Stunde 60 % der Gesamt-DC-Leistung geliefert hat, bekommt genau 60 % des Clipping-Verlustes zugewiesen.</p>
-                
-                <h3 class="font-bold text-blue-600">4. Physik-Engine & Limits</h3>
+                <h3 class="font-bold text-blue-600">3. Batterie-Pufferung (DC-Kopplung) & Systemverluste</h3>
+                <p>Ein BKW mit Speicher regelt nicht mehr pauschal bei 800 W ab. Die Engine berücksichtigt die zugewiesene Batterie:
                 <ul>
-                    <li><strong>Uoc (-20°C):</strong> Die Leerlaufspannung wird bei extremer Kälte (-20°C) berechnet. Sie darf die absolute Maximalspannung des MPPTs niemals überschreiten, sonst droht ein Hardware-Defekt.</li>
-                    <li><strong>Umpp (+70°C):</strong> Die Modulspannung sinkt bei Hitze. Die Engine prüft, ob die Spannung bei starker Erwärmung (70°C) noch ausreicht, um die Start-Spannung des Wechselrichters zu erreichen.</li>
-                </ul>
+                    <li>Liefert das Dach 1200 W (DC), gehen 800 W direkt ans AC-Netz.</li>
+                    <li>Die verbleibenden 400 W "Clipping" werden (abzüglich <strong>10% Ladeverlust</strong>) in die Batterie geladen, solange diese nicht voll ist und die maximale Ladeleistung des Akkus nicht überschritten wird.</li>
+                    <li>Nachts entlädt sich die Batterie wieder, um die Bilanz zu verbessern. Ein globaler WR-Wirkungsgrad von 95% wird vorab eingerechnet.</li>
+                </ul></p>
+
+                <h3 class="font-bold text-blue-600">4. Wahres AC-Clipping</h3>
+                <p>AC-Clipping wird in dieser App nicht pauschal als prozentualer Verlust geschätzt. Die Engine summiert die DC-Leistung <strong>für jede spezifische Stunde des Jahres</strong>. Erst wenn sowohl das AC-Limit des WR als auch die Ladekapazität der Batterie komplett ausgeschöpft sind, wird die restliche Energie als hartes Clipping "abgeschnitten".</p>
+                <p><em>Proportionale Verteilung:</em> Verursachen 4 Strings gemeinsam ein Clipping, wird der Verlust fair aufgeteilt. Ein String, der in dieser Stunde 60 % der Gesamtleistung geliefert hat, bekommt genau 60 % des Verlustes zugewiesen.</p>
 
                 <h2 class="text-xl font-bold border-b pb-2 mb-4 mt-10">Versionshistorie (Changelog)</h2>
                 <ul class="space-y-2">
-                    <li><strong>v3.7 (Aktuell):</strong> Einführung von "Anzeigegruppen" für Strings, Entfernung der "Alle Tracker"-Pauschale für präzises MPPT-Routing. Vollständige Formulare (Vmp, Tracker-Anzahl, Max V) für eigene Datenbank-Einträge. FAQ & Historie erweitert.</li>
-                    <li><strong>v3.6:</strong> Einführung der hybriden Datenbank-Architektur (<code>database.js</code> + LocalStorage) für sicheres Speichern im GitHub-Pages Hosting.</li>
-                    <li><strong>v3.5:</strong> Smooth-Swipe Gestensteuerung eingebaut. Stundengenaues, proportionales AC-Clipping mit Dashboard-Fokus-Modus eingeführt.</li>
-                    <li><strong>v3.0 - 3.4:</strong> Migration auf direkte PVGIS API. Überwindung von Android-CORS Restriktionen durch Web-Hosting.</li>
+                    <li><strong>v3.8 (Aktuell):</strong> Vollständige Integration der Batterie-Simulation. DC-gekoppelte Systeme puffern AC-Clipping jetzt stundengenau in den Akku (abzüglich 10% Ladeverlust). Verschattungs-Slider pro String hinzugefügt.</li>
+                    <li><strong>v3.7:</strong> Einführung von "Anzeigegruppen" für Strings. Pauschaler "Alle Tracker"-Modus entfernt zugunsten präzisen MPPT-Routings. Formulare komplettiert.</li>
+                    <li><strong>v3.6:</strong> Hybride Datenbank (<code>database.js</code> + LocalStorage) für sicheres Speichern im Web.</li>
+                    <li><strong>v3.5:</strong> Smooth-Swipe Gestensteuerung. Proportionales AC-Clipping mit Dashboard-Fokus.</li>
                 </ul>
             </div>
         </div>
     </main>
 
     <script>
-        // --- 1. DATENBANK (HYBRID) ---
+        // --- 1. DATENBANK ---
         let DB = { panels: [], batteries: [], inverters: [] };
         const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#84cc16'];
         
         let LocationData = { lat: 48.06, lon: 8.46, name: "Villingen-Schwenningen" };
-        let YieldDataCache = null; 
-        let activeGroupIndex = null;
+        let YieldDataCache = null; let activeGroupIndex = null;
         
-        // Neu: "group" Eigenschaft hinzugefügt
+        // Neu: "shading" Attribut
         let strings = [
-            { id: 1, name: "Süd 1", group: "Hauptdach Süd", azimuth: 180, inverterId: 1, mpptId: 1, color: colors[0], fields: [{ id: 101, panelId: 4, count: 12, tilt: 35 }] },
-            { id: 2, name: "Süd 2", group: "Hauptdach Süd", azimuth: 180, inverterId: 1, mpptId: 2, color: colors[0], fields: [{ id: 102, panelId: 4, count: 8, tilt: 35 }] }
+            { id: 1, name: "Süd 1", group: "Hauptdach", shading: 0, azimuth: 180, inverterId: 1, mpptId: 1, color: colors[0], fields: [{ id: 101, panelId: 4, count: 12, tilt: 35 }] },
+            { id: 2, name: "Süd 2", group: "Hauptdach", shading: 5, azimuth: 180, inverterId: 1, mpptId: 2, color: colors[0], fields: [{ id: 102, panelId: 4, count: 8, tilt: 35 }] }
         ];
 
         let chartInstance = null;
 
         function initDatabase() {
-            if (typeof MasterDB !== 'undefined') {
-                DB.panels = [...MasterDB.panels]; DB.batteries = [...MasterDB.batteries]; DB.inverters = [...MasterDB.inverters];
-            } else { console.error("MasterDB nicht gefunden!"); }
-
+            if (typeof MasterDB !== 'undefined') { DB.panels = [...MasterDB.panels]; DB.batteries = [...MasterDB.batteries]; DB.inverters = [...MasterDB.inverters]; } 
+            else { console.error("MasterDB fehlt!"); }
             const userDB = JSON.parse(localStorage.getItem('pvpro_user_db')) || { panels: [], batteries: [], inverters: [] };
             DB.panels.push(...userDB.panels); DB.batteries.push(...userDB.batteries); DB.inverters.push(...userDB.inverters);
 
@@ -263,57 +269,36 @@
             document.getElementById('locNameText').innerText = LocationData.name;
             document.getElementById('locLatText').innerText = LocationData.lat;
             document.getElementById('locLonText').innerText = LocationData.lon;
-            
             updatePhysicsOnly();
         }
 
-        function saveConfiguration() {
-            localStorage.setItem('pvpro_strings', JSON.stringify(strings));
-            localStorage.setItem('pvpro_loc', JSON.stringify(LocationData));
-            alert("Strang-Konfiguration & Standort erfolgreich gespeichert!");
-        }
+        function saveConfiguration() { localStorage.setItem('pvpro_strings', JSON.stringify(strings)); localStorage.setItem('pvpro_loc', JSON.stringify(LocationData)); alert("Strang-Konfiguration & Standort erfolgreich gespeichert!"); }
+        function saveUserDevice(type, item) { let userDB = JSON.parse(localStorage.getItem('pvpro_user_db')) || { panels: [], batteries: [], inverters: [] }; userDB[type].push(item); localStorage.setItem('pvpro_user_db', JSON.stringify(userDB)); DB[type].push(item); requireRecalculation(); }
 
-        function saveUserDevice(type, item) {
-            let userDB = JSON.parse(localStorage.getItem('pvpro_user_db')) || { panels: [], batteries: [], inverters: [] };
-            userDB[type].push(item); localStorage.setItem('pvpro_user_db', JSON.stringify(userDB));
-            DB[type].push(item); requireRecalculation();
-        }
-
-        // --- 2. GESTEN & NAVIGATION ---
+        // --- 2. GESTEN ---
         let touchStartX = 0; let touchStartY = 0; const tabOrder = ['dashboard', 'system', 'database', 'sources'];
         document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; }, { passive: true });
         document.addEventListener('touchend', e => {
-            const t = e.target.tagName;
-            if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'CANVAS', 'TABLE', 'TH', 'TD'].includes(t) || e.target.closest('table')) return;
+            const t = e.target.tagName; if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'CANVAS', 'TABLE', 'TH', 'TD'].includes(t) || e.target.closest('table')) return;
             let diffX = e.changedTouches[0].screenX - touchStartX; let diffY = e.changedTouches[0].screenY - touchStartY;
             if (Math.abs(diffX) > 70 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
-                let currentActive = document.querySelector('.tab-content.active').id.replace('tab-', '');
-                let cIdx = tabOrder.indexOf(currentActive);
-                if (diffX < 0 && cIdx < tabOrder.length - 1) switchTab(tabOrder[cIdx + 1], 'slide-left');
-                else if (diffX > 0 && cIdx > 0) switchTab(tabOrder[cIdx - 1], 'slide-right');
+                let currentActive = document.querySelector('.tab-content.active').id.replace('tab-', ''); let cIdx = tabOrder.indexOf(currentActive);
+                if (diffX < 0 && cIdx < tabOrder.length - 1) switchTab(tabOrder[cIdx + 1], 'slide-left'); else if (diffX > 0 && cIdx > 0) switchTab(tabOrder[cIdx - 1], 'slide-right');
             }
         }, { passive: true });
 
         function switchTab(tabId, anim = 'slide-left') {
-            const current = document.querySelector('.tab-content.active');
-            const next = document.getElementById('tab-' + tabId);
+            const current = document.querySelector('.tab-content.active'); const next = document.getElementById('tab-' + tabId);
             if(current && current !== next) { current.classList.remove('active', 'slide-left', 'slide-right'); next.classList.remove('slide-left', 'slide-right'); next.classList.add('active', anim); }
             else if (!current) next.classList.add('active');
             tabOrder.forEach(id => { document.getElementById('btn-' + id).className = id === tabId ? "shrink-0 px-4 py-2 text-sm font-medium rounded-md bg-blue-600 text-white shadow-sm" : "shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700"; });
         }
-
-        function toggleAccordion(event, idStr) {
-            if(event) event.stopPropagation();
-            const content = document.getElementById('acc-' + idStr); const icon = document.getElementById('icon-' + idStr);
-            if(content && icon) { content.classList.toggle('open'); icon.style.transform = content.classList.contains('open') ? "rotate(180deg)" : "rotate(0deg)"; }
-        }
+        function toggleAccordion(event, idStr) { if(event) event.stopPropagation(); const content = document.getElementById('acc-' + idStr); const icon = document.getElementById('icon-' + idStr); if(content && icon) { content.classList.toggle('open'); icon.style.transform = content.classList.contains('open') ? "rotate(180deg)" : "rotate(0deg)"; } }
 
         // --- 3. BERECHNUNG & API ---
         async function searchLocation() { 
             const query = document.getElementById('locSearchInput').value; if(!query) return;
-            try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
-                const data = await res.json();
+            try { const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`); const data = await res.json();
                 if(data && data.length > 0) { LocationData = { lat: parseFloat(data[0].lat).toFixed(2), lon: parseFloat(data[0].lon).toFixed(2), name: data[0].display_name.split(',')[0] }; document.getElementById('locNameText').innerText = LocationData.name; document.getElementById('locLatText').innerText = LocationData.lat; document.getElementById('locLonText').innerText = LocationData.lon; requireRecalculation(); } 
             } catch (e) { alert("Fehler bei Ortssuche."); }
         }
@@ -332,18 +317,14 @@
                 });
 
                 const inv = DB.inverters.find(i => i.id === parseInt(str.inverterId));
-                const vCold = vocStc * (1 + (-45) * (tk / 100)); // Delta T = -20 - 25 = -45
-                const vHot = vmpStc * (1 + (45) * (tk / 100));   // Delta T = 70 - 25 = +45
-                
+                const vCold = vocStc * (1 + (-45) * (tk / 100)); const vHot = vmpStc * (1 + (45) * (tk / 100));   
                 str._phys = { vocCold: vCold, vmpHot: vHot, isc: isc, isVocSafe: true, isIscSafe: true, isVmpSafe: true, invStartV: inv?.startV };
 
                 if(inv) {
                     let limits = inv.mppts.find(m => m.id === parseInt(str.mpptId)) || inv.mppts[0];
                     if(limits) {
                         invTotals[inv.id].mpptIscSums[limits.id] += isc;
-                        str._phys.isVocSafe = vCold <= limits.maxV;
-                        str._phys.isIscSafe = isc <= limits.maxIsc;
-                        str._phys.isVmpSafe = vHot >= inv.startV;
+                        str._phys.isVocSafe = vCold <= limits.maxV; str._phys.isIscSafe = isc <= limits.maxIsc; str._phys.isVmpSafe = vHot >= inv.startV;
                     }
                 }
                 if(!str._phys.isVocSafe || !str._phys.isIscSafe || !str._phys.isVmpSafe) sysError = true;
@@ -367,54 +348,97 @@
                     let minT = 999; let maxT = 0;
                     str.fields.forEach(f => { const p = DB.panels.find(x=>x.id===parseInt(f.panelId)); if(p){ if(f.tilt<minT) minT=f.tilt; if(f.tilt>maxT) maxT=f.tilt; }});
                     let misFac = 1 - (((str.fields.length>1 && maxT-minT>5) ? Math.min((maxT-minT)*0.3, 15) : 0) / 100);
+                    // NEU: Shading Factor aus UI
+                    let shadingFactor = 1 - ((str.shading || 0) / 100);
 
                     str.fields.forEach(f => {
                         const p = DB.panels.find(x=>x.id===parseInt(f.panelId));
                         if(p && f.count>0) {
                             let asp = str.azimuth - 180; if (asp>180) asp-=360; if (asp<-180) asp+=360;
                             const u = `https://corsproxy.io/?${encodeURIComponent(`https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?lat=${LocationData.lat}&lon=${LocationData.lon}&usehorizon=1&pvcalculation=1&startyear=2019&endyear=2019&outputformat=json&angle=${f.tilt}&aspect=${asp}&peakpower=${((p.pmax*f.count)/1000).toFixed(3)}&loss=14`)}`;
-                            proms.push(fetch(u).then(async r=>{if(!r.ok) throw new Error(await r.text()); return r.json();}).then(d=>({sId:str.id, d:d.outputs.hourly, mF:misFac})));
+                            proms.push(fetch(u).then(async r=>{if(!r.ok) throw new Error(await r.text()); return r.json();}).then(d=>({sId:str.id, d:d.outputs.hourly, mF:misFac, sF:shadingFactor})));
                         }
                     });
                 });
 
                 const res = await Promise.all(proms);
                 let invH = {}; DB.inverters.forEach(i => invH[i.id] = new Float32Array(8760));
-                let sRes = strings.map(s => ({ id: s.id, name: s.name, color: s.color, kwp: 0, yield: 0, clip: 0, mo: new Array(12).fill(0), hr: new Float32Array(8760) }));
+                let sRes = strings.map(s => ({ id: s.id, name: s.name, color: s.color, kwp: 0, yield: 0, clip: 0, batYield: 0, mo: new Array(12).fill(0), hr: new Float32Array(8760) }));
                 const mStart = [0, 744, 1416, 2160, 2880, 3624, 4344, 5088, 5832, 6552, 7296, 8016];
 
                 res.forEach(r => {
                     let sr = sRes.find(s=>s.id===r.sId); let so = strings.find(s=>s.id===r.sId);
-                    for(let h=0; h<8760; h++){ let w = r.d[h].P * r.mF; sr.hr[h]+=w; if(so) invH[so.inverterId][h]+=w; }
+                    for(let h=0; h<8760; h++){ 
+                        let w = r.d[h].P * r.mF * r.sF; // PVGIS Watt * Mismatch * Schatten
+                        sr.hr[h]+=w; if(so) invH[so.inverterId][h]+=w; 
+                    }
                 });
+
+                // NEU: Batterie Logik & System-Verluste
+                const systemLossFactor = 0.95; // WR Effizienz
+                const batteryCycleLoss = 0.90; // Lade-/Entladeverlust
 
                 DB.inverters.forEach(inv => {
                     let iStrs = sRes.filter(sr => strings.find(s=>s.id===sr.id)?.inverterId == inv.id);
+                    let bat = DB.batteries.find(b => b.id === inv.batteryId);
+                    
+                    let batCapacityWh = bat ? bat.cap * 1000 : 0;
+                    let maxChargeW = bat ? bat.power : 0;
+                    let currentBatChargeWh = 0;
+
                     for(let h=0; h<8760; h++) {
-                        if (invH[inv.id][h] > inv.acMax) {
-                            let exc = invH[inv.id][h] - inv.acMax;
-                            iStrs.forEach(sr => { if(invH[inv.id][h]>0) sr.clip += (exc * (sr.hr[h]/invH[inv.id][h])) / 1000; });
+                        let totalDcW = invH[inv.id][h] * systemLossFactor;
+                        let acOutputW = 0;
+                        let hourlyBatYield = 0; // Wie viel wurde IN DIESER STUNDE erfolgreich in den Akku gerettet?
+                        
+                        if (totalDcW > inv.acMax) {
+                            // AC Limit erreicht. Wir haben Überschuss!
+                            let excessW = totalDcW - inv.acMax;
+                            
+                            if (batCapacityWh > 0) {
+                                let chargeW = Math.min(excessW, maxChargeW);
+                                let freeSpaceWh = batCapacityWh - currentBatChargeWh;
+                                let actualChargeWh = Math.min(chargeW, freeSpaceWh);
+                                
+                                currentBatChargeWh += actualChargeWh;
+                                excessW -= actualChargeWh;
+                                hourlyBatYield = actualChargeWh * batteryCycleLoss; // Das ist gerettet (minus 10% Ladeverlust)
+                            }
+                            
+                            // Was nach der Batterie übrig ist, ist echtes Clipping
+                            if(excessW > 0) {
+                                iStrs.forEach(sr => { if(invH[inv.id][h]>0) sr.clip += (excessW * (sr.hr[h]/invH[inv.id][h])) / 1000; });
+                            }
+
+                        } else {
+                            // Kein Überschuss. Batterie wird nachts entladen (stark vereinfacht für die Tagesbilanz)
+                            if (totalDcW === 0 && currentBatChargeWh > 0) {
+                                // Nachts: Batterie komplett leeren (wird als Ertrag verbucht)
+                                // In der Realität hängt das vom Hausverbrauch ab.
+                                currentBatChargeWh = 0; 
+                            }
+                        }
+
+                        // Anteiligen Batterie-Ertrag auf die Strings verteilen
+                        if (hourlyBatYield > 0) {
+                            iStrs.forEach(sr => { if(invH[inv.id][h]>0) sr.batYield += (hourlyBatYield * (sr.hr[h]/invH[inv.id][h])) / 1000; });
                         }
                     }
                 });
 
                 sRes.forEach(sr => {
-                    sr.yield = (sr.hr.reduce((a,b)=>a+b,0)/1000) - sr.clip;
-                    for(let m=0; m<12; m++){ let mSum=0; for(let h=mStart[m]; h<(m===11?8760:mStart[m+1]); h++) mSum+=sr.hr[h]; sr.mo[m]=mSum/1000; }
+                    sr.yield = (sr.hr.reduce((a,b)=>a+b,0)/1000) * systemLossFactor - sr.clip; // DC * WR-Wirkungsgrad minus hartes Clipping
+                    for(let m=0; m<12; m++){ let mSum=0; for(let h=mStart[m]; h<(m===11?8760:mStart[m+1]); h++) mSum+=sr.hr[h]; sr.mo[m]=(mSum/1000)*systemLossFactor; }
                     strings.find(s=>s.id===sr.id)?.fields.forEach(f=>{ const p=DB.panels.find(x=>x.id===parseInt(f.panelId)); if(p) sr.kwp += (p.pmax*f.count)/1000; });
                 });
 
-                // Gruppieren für das Dashboard
                 let groupedResults = [];
                 sRes.forEach(sr => {
                     const strObj = strings.find(x => x.id === sr.id);
                     const gName = strObj.group || sr.name;
                     let g = groupedResults.find(x => x.name === gName);
-                    if(!g) {
-                        g = { name: gName, color: sr.color, kwp: 0, yield: 0, clip: 0, mo: new Array(12).fill(0), panels: 0, inverters: [] };
-                        groupedResults.push(g);
-                    }
-                    g.kwp += sr.kwp; g.yield += sr.yield; g.clip += sr.clip;
+                    if(!g) { g = { name: gName, color: sr.color, kwp: 0, yield: 0, clip: 0, batYield: 0, mo: new Array(12).fill(0), panels: 0, inverters: [] }; groupedResults.push(g); }
+                    g.kwp += sr.kwp; g.yield += sr.yield; g.clip += sr.clip; g.batYield += sr.batYield;
                     const pCnt = strObj.fields.reduce((sum, f) => sum + Number(f.count), 0);
                     g.panels += pCnt;
                     const inv = DB.inverters.find(i=>i.id===parseInt(strObj.inverterId));
@@ -429,34 +453,33 @@
 
         function requireRecalculation() { document.getElementById('calcWarning').classList.remove('hidden'); updatePhysicsOnly(); }
 
-        // --- 4. DASHBOARD RENDER & FOKUS ---
+        // --- 4. DASHBOARD RENDER ---
         function setFocus(idx) { activeGroupIndex = activeGroupIndex === idx ? null : idx; renderDashboard(); }
         function clearFocus() { activeGroupIndex = null; renderDashboard(); }
 
         function renderDashboard() {
             if(!YieldDataCache) return;
-            let grpRes = YieldDataCache; let dK = 0, dY = 0, dC = 0;
+            let grpRes = YieldDataCache; let dK = 0, dY = 0, dC = 0, dB = 0;
 
             if (activeGroupIndex !== null) {
-                const g = grpRes[activeGroupIndex]; dK = g.kwp; dY = g.yield; dC = g.clip;
+                const g = grpRes[activeGroupIndex]; dK = g.kwp; dY = g.yield; dC = g.clip; dB = g.batYield;
                 document.getElementById('focusBanner').classList.remove('hidden'); document.getElementById('focusBannerText').innerText = `Fokus: ${g.name}`;
                 document.getElementById('kpiBoxYield').style.borderColor = g.color; document.getElementById('kpiBoxYield').style.backgroundColor = g.color + '15';
             } else {
-                grpRes.forEach(g => { dK+=g.kwp; dY+=g.yield; dC+=g.clip; });
+                grpRes.forEach(g => { dK+=g.kwp; dY+=g.yield; dC+=g.clip; dB+=g.batYield; });
                 document.getElementById('focusBanner').classList.add('hidden');
                 document.getElementById('kpiBoxYield').style.borderColor = ''; document.getElementById('kpiBoxYield').style.backgroundColor = '';
             }
 
             document.getElementById('dashTotalKwp').innerHTML = `${dK.toFixed(2)} <span class="text-sm font-normal text-slate-500">kWp</span>`;
             document.getElementById('dashTotalYield').innerHTML = `${Math.round(dY).toLocaleString()} <span class="text-sm font-normal text-slate-500">kWh</span>`;
+            document.getElementById('dashBatteryYield').innerHTML = `${Math.round(dB).toLocaleString()} <span class="text-sm font-normal text-slate-500">kWh</span>`;
             document.getElementById('dashSpecYield').innerHTML = `${dK>0 ? Math.round(dY/dK) : 0} <span class="text-sm font-normal text-slate-500">kWh/kWp</span>`;
             document.getElementById('dashClipping').innerHTML = `${Math.round(dC)} <span class="text-sm font-normal text-slate-500">kWh</span>`;
 
             let sysY = grpRes.reduce((sum, g) => sum + g.yield, 0);
-            let sysC = grpRes.reduce((sum, g) => sum + g.clip, 0);
-
             document.getElementById('stringBreakdown').innerHTML = grpRes.map((g, idx) => {
-                const pct = sysY>0 ? ((g.yield / (sysY+sysC))*100).toFixed(1) : 0;
+                const pct = sysY>0 ? ((g.yield / sysY)*100).toFixed(1) : 0;
                 const foc = activeGroupIndex === idx;
                 const cardCls = foc ? `bg-blue-50/50 ring-1 shadow-md scale-[1.02]` : `bg-white border-slate-200 hover:border-slate-300 shadow-sm`;
 
@@ -507,7 +530,7 @@
             }
         }
 
-        // --- 5. UI CRUD STUFF ---
+        // --- 5. UI CRUD ---
         function updateInverterBattery(iId, bId) { const i = DB.inverters.find(x => x.id === iId); if(i) i.batteryId = Number(bId); requireRecalculation(); }
 
         function renderDatabaseUI() {
@@ -526,12 +549,12 @@
         }
         function addBattery() { saveUserDevice('batteries', { id: Date.now(), name: document.getElementById('newBatName').value || "Custom Batterie", cap: Number(document.getElementById('newBatCap').value) || 5.0, power: Number(document.getElementById('newBatPow').value) || 3000 }); document.getElementById('newBatName').value = ''; }
 
-        function addString() { strings.push({ id: Date.now(), name: "Neuer String", group: "Neue Anlage", azimuth: 180, inverterId: DB.inverters[0].id, mpptId: 1, color: colors[strings.length % colors.length], fields: [{ id: Date.now()+1, panelId: DB.panels[0].id, count: 5, tilt: 30 }] }); requireRecalculation(); }
+        function addString() { strings.push({ id: Date.now(), name: "Neuer String", group: "Neue Anlage", shading: 0, azimuth: 180, inverterId: DB.inverters[0].id, mpptId: 1, color: colors[strings.length % colors.length], fields: [{ id: Date.now()+1, panelId: DB.panels[0].id, count: 5, tilt: 30 }] }); requireRecalculation(); }
         function removeString(id) { strings = strings.filter(s => s.id !== id); requireRecalculation(); }
         function addField(id) { strings.find(s => s.id === id)?.fields.push({ id: Date.now(), panelId: DB.panels[0].id, count: 1, tilt: 30 }); requireRecalculation(); }
         function removeField(sId, fId) { const str = strings.find(s => s.id === sId); if(str) str.fields = str.fields.filter(f => f.id !== fId); requireRecalculation(); }
         
-        function updateStringData(id, key, val) { const str = strings.find(s => s.id === id); if(str) { str[key] = isNaN(val) && key !== 'mpptId' && key !== 'color' ? val : (key === 'mpptId' || key === 'color' ? val : Number(val)); if(key === 'inverterId') str.mpptId = 1; requireRecalculation(); } }
+        function updateStringData(id, key, val) { const str = strings.find(s => s.id === id); if(str) { str[key] = isNaN(val) && key !== 'mpptId' && key !== 'color' && key !== 'group' && key !== 'name' ? val : (key === 'mpptId' || key === 'color' || key === 'group' || key === 'name' ? val : Number(val)); if(key === 'inverterId') str.mpptId = 1; requireRecalculation(); } }
         function updateFieldData(sId, fId, key, val) { const str = strings.find(s => s.id === sId); if(str) { const f = str.fields.find(f => f.id === fId); if(f) f[key] = Number(val); requireRecalculation(); } }
 
         function renderStringsUI() {
@@ -562,7 +585,16 @@
                             <div><label class="block text-[10px] text-slate-500 mb-1">WR Zuweisung</label><select onchange="updateStringData(${str.id}, 'inverterId', this.value)" class="w-full border rounded px-2 py-1 text-sm">${wOpt}</select></div>
                             <div><label class="block text-[10px] text-slate-500 mb-1">MPPT</label><select onchange="updateStringData(${str.id}, 'mpptId', this.value)" class="w-full border rounded px-2 py-1 text-sm">${mOpt}</select></div>
                         </div>
-                        <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
+                        
+                        <div class="mt-2">
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="block text-[10px] text-slate-500 font-bold">Verschattung (Pauschaler Verlust)</label>
+                                <span class="text-xs font-bold text-slate-700">${str.shading || 0}%</span>
+                            </div>
+                            <input type="range" min="0" max="80" step="1" value="${str.shading || 0}" onchange="updateStringData(${str.id}, 'shading', this.value)" oninput="this.previousElementSibling.querySelector('span').innerText = this.value + '%'">
+                        </div>
+
+                        <div class="border border-slate-200 rounded-lg overflow-hidden bg-white mt-2">
                             <div class="bg-slate-100 px-3 py-2 border-b flex justify-between"><span class="text-[10px] font-bold text-slate-700">Modulfelder</span><button onclick="addField(${str.id})" class="text-blue-600 text-xs">+ Feld</button></div>
                             <div class="p-3 space-y-2">
                                 ${str.fields.map(f => `
@@ -575,7 +607,7 @@
                                 `).join('')}
                             </div>
                         </div>
-                        <div class="bg-slate-800 rounded-lg p-3 text-white grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                        <div class="bg-slate-800 rounded-lg p-3 text-white grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mt-3">
                             <div class="ttip"><p class="text-[10px] text-slate-400 border-b border-dashed border-slate-600 w-fit">Uoc (-20°C)</p><p class="${p.isVocSafe?'text-emerald-400':'text-rose-400 font-bold'}">${p.vocCold.toFixed(1)}V</p></div>
                             <div class="ttip"><p class="text-[10px] text-slate-400 border-b border-dashed border-slate-600 w-fit">Umpp (+70°C)</p><p class="${p.isVmpSafe?'text-blue-400':'text-amber-400 font-bold'}">${p.vmpHot.toFixed(1)}V</p></div>
                             <div class="ttip"><p class="text-[10px] text-slate-400 border-b border-dashed border-slate-600 w-fit">Isc Strom</p><p class="${p.isIscSafe?'text-emerald-400':'text-rose-400 font-bold'}">${p.isc.toFixed(2)}A</p></div>
