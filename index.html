@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PV-Planung Pro 3.6 (External DB)</title>
+    <title>PV-Planung Pro 3.7 (Gruppen & FAQ)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Hier wird deine neue Datenbank-Datei geladen! -->
     <script src="database.js"></script>
     <style>
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -50,8 +49,8 @@
         <div class="max-w-7xl mx-auto px-4 py-4">
             <div class="flex justify-between items-center mb-3">
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">PV-Planung <span class="text-blue-400">Pro 3.6</span></h1>
-                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Externe Datenbank & Hybrides Speichern</p>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">PV-Planung <span class="text-blue-400">Pro 3.7</span></h1>
+                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">String-Gruppierung & Erweitertes Glossar</p>
                 </div>
                 <div class="flex items-center gap-3">
                     <div id="globalStatusBadge" class="hidden md:inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Physik OK</div>
@@ -65,7 +64,7 @@
                 <button onclick="switchTab('dashboard')" id="btn-dashboard" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md bg-blue-600 text-white transition-colors shadow-sm">Dashboard</button>
                 <button onclick="switchTab('system')" id="btn-system" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">Stränge</button>
                 <button onclick="switchTab('database')" id="btn-database" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">Datenbank</button>
-                <button onclick="switchTab('sources')" id="btn-sources" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">Logik</button>
+                <button onclick="switchTab('sources')" id="btn-sources" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">FAQ & Historie</button>
             </div>
         </div>
     </header>
@@ -86,7 +85,7 @@
                     <div class="border-t md:border-t-0 md:border-l border-slate-200 pt-4 md:pt-0 md:pl-6">
                         <button id="btnCalculate" onclick="calculateYieldAPI()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all flex items-center justify-center gap-2">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                            <span>Ertrag über PVGIS berechnen</span>
+                            <span>Ertrag berechnen</span>
                         </button>
                         <p id="calcWarning" class="text-[10px] text-amber-600 font-bold mt-2 text-center hidden">Parameter geändert! Bitte neu berechnen.</p>
                     </div>
@@ -94,7 +93,7 @@
             </div>
 
             <div id="focusBanner" class="hidden bg-blue-100 border border-blue-300 text-blue-800 px-4 py-2 rounded-lg flex justify-between items-center text-sm font-medium shadow-sm transition-all">
-                <span id="focusBannerText">Fokus: Hauptdach Süd</span>
+                <span id="focusBannerText">Fokus: Gruppe</span>
                 <button onclick="clearFocus()" class="bg-white/50 hover:bg-white text-blue-700 px-2 py-1 rounded text-xs border border-blue-200">Fokus aufheben</button>
             </div>
 
@@ -113,7 +112,7 @@
                 </div>
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-rose-500 transition-all" id="kpiBoxClip">
                     <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider ttip">AC-Clipping (WR)
-                        <span class="ttip-text">Stundengenaue Berechnung. Zeigt anteilig, welcher String wie viel Clipping verursacht.</span>
+                        <span class="ttip-text">Stundengenaue Berechnung. Zeigt anteilig, welche Gruppe wie viel Clipping verursacht.</span>
                     </p>
                     <p id="dashClipping" class="text-xl md:text-3xl font-bold text-slate-800 mt-1">0 <span class="text-sm font-normal text-slate-500">kWh</span></p>
                 </div>
@@ -123,8 +122,8 @@
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-base md:text-lg font-bold text-slate-800">Monatlicher PV-Ertrag (PVGIS)</h3>
-                    <p class="text-[10px] text-slate-400">Tippe auf Strings für Detailansicht</p>
+                    <h3 class="text-base md:text-lg font-bold text-slate-800">Monatlicher PV-Ertrag nach Gruppen</h3>
+                    <p class="text-[10px] text-slate-400">Tippe auf Gruppen für Detailansicht</p>
                 </div>
                 <div class="relative h-64 md:h-96 w-full"><canvas id="yieldChart"></canvas></div>
             </div>
@@ -133,7 +132,7 @@
         <!-- TAB 2: SYSTEM SETUP -->
         <div id="tab-system" class="tab-content space-y-6">
             <div class="flex justify-between items-end mb-4">
-                <h3 class="text-lg md:text-xl font-bold text-slate-800">Definierte Strings</h3>
+                <h3 class="text-lg md:text-xl font-bold text-slate-800">Strang-Planung</h3>
                 <button onclick="addString()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm font-medium px-4 py-2 rounded-lg shadow-sm transition-colors flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     Neuer String
@@ -148,17 +147,19 @@
                 <div class="p-4 border-b border-slate-200 bg-slate-50"><h3 class="text-lg font-bold text-slate-800">Wechselrichter (WR)</h3></div>
                 <div class="overflow-x-auto p-4">
                     <table class="w-full text-left text-xs md:text-sm text-slate-600 mb-6 min-w-[700px]">
-                        <thead class="bg-slate-100 text-slate-700 uppercase"><tr><th class="px-3 py-2">Name</th><th class="px-3 py-2">AC Max (W)</th><th class="px-3 py-2">Start (V)</th><th class="px-3 py-2">MPPTs (V/A)</th><th class="px-3 py-2">Batterie-Zuordnung</th></tr></thead>
+                        <thead class="bg-slate-100 text-slate-700 uppercase"><tr><th class="px-3 py-2">Name</th><th class="px-3 py-2">AC Max (W)</th><th class="px-3 py-2">Start (V)</th><th class="px-3 py-2">MPPTs (Anzahl & Limits)</th><th class="px-3 py-2">Batterie-Zuordnung</th></tr></thead>
                         <tbody id="wrTableBody" class="divide-y divide-slate-200"></tbody>
                     </table>
                     <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
                         <h4 class="text-xs font-bold text-slate-500 uppercase mb-3">Eigenen WR anlegen</h4>
-                        <div class="grid grid-cols-2 md:grid-cols-6 gap-3 items-end">
-                            <div class="col-span-2"><label class="block text-[10px] text-slate-500">Bezeichnung</label><input type="text" id="newWrName" placeholder="Z.B. Fronius Primo..." class="w-full text-sm border rounded px-2 py-1 outline-none"></div>
-                            <div><label class="block text-[10px] text-slate-500">AC Max (W)</label><input type="number" id="newWrAc" placeholder="5000" class="w-full text-sm border rounded px-2 py-1 outline-none"></div>
-                            <div><label class="block text-[10px] text-slate-500">Start (V)</label><input type="number" id="newWrStart" placeholder="80" class="w-full text-sm border rounded px-2 py-1 outline-none"></div>
-                            <div><label class="block text-[10px] text-slate-500">Max Isc (A)</label><input type="number" id="newWrIsc" placeholder="20" class="w-full text-sm border rounded px-2 py-1 outline-none"></div>
-                            <div class="col-span-2 md:col-span-1"><button onclick="addInverter()" class="w-full bg-slate-800 text-white text-xs py-1.5 rounded hover:bg-slate-700">Add</button></div>
+                        <div class="grid grid-cols-2 md:grid-cols-7 gap-3 items-end">
+                            <div class="col-span-2"><label class="block text-[10px] text-slate-500">Bezeichnung</label><input type="text" id="newWrName" placeholder="Z.B. Solix 2..." class="w-full text-sm border rounded px-2 py-1 outline-none"></div>
+                            <div><label class="block text-[10px] text-slate-500">AC Max (W)</label><input type="number" id="newWrAc" placeholder="800" class="w-full text-sm border rounded px-2 py-1 outline-none"></div>
+                            <div><label class="block text-[10px] text-slate-500">Start (V)</label><input type="number" id="newWrStart" placeholder="16" class="w-full text-sm border rounded px-2 py-1 outline-none"></div>
+                            <div><label class="block text-[10px] text-slate-500">Tracker (Stk)</label><input type="number" id="newWrMpptCount" placeholder="4" class="w-full text-sm border rounded px-2 py-1 outline-none"></div>
+                            <div><label class="block text-[10px] text-slate-500">Max V / Tracker</label><input type="number" id="newWrMaxV" placeholder="60" class="w-full text-sm border rounded px-2 py-1 outline-none"></div>
+                            <div><label class="block text-[10px] text-slate-500">Max A / Tracker</label><input type="number" id="newWrIsc" placeholder="16" class="w-full text-sm border rounded px-2 py-1 outline-none"></div>
+                            <div class="col-span-2 md:col-span-7 flex justify-end mt-2"><button onclick="addInverter()" class="bg-slate-800 text-white text-xs px-6 py-1.5 rounded hover:bg-slate-700">WR Speichern</button></div>
                         </div>
                     </div>
                 </div>
@@ -167,19 +168,20 @@
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-4 border-b border-slate-200 bg-slate-50"><h3 class="text-lg font-bold text-slate-800">Solarmodule (Panels)</h3></div>
                 <div class="overflow-x-auto p-4">
-                    <table class="w-full text-left text-xs md:text-sm text-slate-600 mb-6 min-w-[600px]">
-                        <thead class="bg-slate-100 text-slate-700 uppercase"><tr><th class="px-3 py-2">Bezeichnung</th><th class="px-3 py-2">Pmax (W)</th><th class="px-3 py-2">Voc (V)</th><th class="px-3 py-2">Isc (A)</th><th class="px-3 py-2">Vmp (V)</th><th class="px-3 py-2">TK Voc</th></tr></thead>
+                    <table class="w-full text-left text-xs md:text-sm text-slate-600 mb-6 min-w-[700px]">
+                        <thead class="bg-slate-100 text-slate-700 uppercase"><tr><th class="px-3 py-2">Bezeichnung</th><th class="px-3 py-2">Pmax (W)</th><th class="px-3 py-2">Voc (V)</th><th class="px-3 py-2">Vmp (V)</th><th class="px-3 py-2">Isc (A)</th><th class="px-3 py-2">TK Voc</th></tr></thead>
                         <tbody id="panelTableBody" class="divide-y divide-slate-200"></tbody>
                     </table>
                     <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
                         <h4 class="text-xs font-bold text-slate-500 uppercase mb-3">Eigenes Modul anlegen</h4>
                         <div class="grid grid-cols-2 md:grid-cols-7 gap-2 items-end">
                             <div class="col-span-2"><label class="block text-[10px] text-slate-500">Name</label><input type="text" id="newModName" placeholder="Z.B. Trina..." class="w-full text-xs border rounded px-2 py-1 outline-none"></div>
-                            <div><label class="block text-[10px] text-slate-500">Wp</label><input type="number" id="newModWp" placeholder="400" class="w-full text-xs border rounded px-2 py-1 outline-none"></div>
-                            <div><label class="block text-[10px] text-slate-500">Voc (V)</label><input type="number" id="newModVoc" step="0.1" placeholder="37.5" class="w-full text-xs border rounded px-2 py-1 outline-none"></div>
-                            <div><label class="block text-[10px] text-slate-500">Isc (A)</label><input type="number" id="newModIsc" step="0.1" placeholder="13.5" class="w-full text-xs border rounded px-2 py-1 outline-none"></div>
-                            <div><label class="block text-[10px] text-slate-500">TK (%/°C)</label><input type="number" id="newModTk" step="0.01" placeholder="-0.25" class="w-full text-xs border rounded px-2 py-1 outline-none"></div>
-                            <div class="col-span-2 md:col-span-1"><button onclick="addPanel()" class="w-full bg-slate-800 text-white text-xs py-1.5 rounded hover:bg-slate-700">Add</button></div>
+                            <div><label class="block text-[10px] text-slate-500">Wp</label><input type="number" id="newModWp" placeholder="440" class="w-full text-xs border rounded px-2 py-1 outline-none"></div>
+                            <div><label class="block text-[10px] text-slate-500">Voc (V)</label><input type="number" id="newModVoc" step="0.1" placeholder="52.2" class="w-full text-xs border rounded px-2 py-1 outline-none"></div>
+                            <div><label class="block text-[10px] text-slate-500">Vmp (V)</label><input type="number" id="newModVmp" step="0.1" placeholder="44.0" class="w-full text-xs border rounded px-2 py-1 outline-none"></div>
+                            <div><label class="block text-[10px] text-slate-500">Isc (A)</label><input type="number" id="newModIsc" step="0.1" placeholder="10.67" class="w-full text-xs border rounded px-2 py-1 outline-none"></div>
+                            <div><label class="block text-[10px] text-slate-500">TK (%/°C)</label><input type="number" id="newModTk" step="0.01" placeholder="-0.24" class="w-full text-xs border rounded px-2 py-1 outline-none"></div>
+                            <div class="col-span-2 md:col-span-7 flex justify-end mt-2"><button onclick="addPanel()" class="bg-slate-800 text-white text-xs px-6 py-1.5 rounded hover:bg-slate-700">Modul Speichern</button></div>
                         </div>
                     </div>
                 </div>
@@ -189,26 +191,42 @@
                 <div class="p-4 border-b border-slate-200 bg-slate-50"><h3 class="text-lg font-bold text-slate-800">Batteriespeicher</h3></div>
                 <div class="overflow-x-auto p-4">
                     <table class="w-full text-left text-xs md:text-sm text-slate-600 mb-6 min-w-[500px]">
-                        <thead class="bg-slate-100 text-slate-700 uppercase"><tr><th class="px-3 py-2">Name / Modell</th><th class="px-3 py-2">Kapazität (kWh)</th><th class="px-3 py-2">Lade-/Entladeleistung (W)</th></tr></thead>
+                        <thead class="bg-slate-100 text-slate-700 uppercase"><tr><th class="px-3 py-2">Name / Modell</th><th class="px-3 py-2">Kapazität (kWh)</th><th class="px-3 py-2">Max. Leistung (W)</th></tr></thead>
                         <tbody id="batTableBody" class="divide-y divide-slate-200"></tbody>
                     </table>
-                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                        <h4 class="text-xs font-bold text-slate-500 uppercase mb-3">Neue Batterie anlegen</h4>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
-                            <div class="col-span-2 md:col-span-1"><label class="block text-[10px] text-slate-500">Name</label><input type="text" id="newBatName" placeholder="Z.B. BYD HVM" class="w-full text-sm border rounded px-2 py-1 outline-none"></div>
-                            <div><label class="block text-[10px] text-slate-500">Kapazität (kWh)</label><input type="number" id="newBatCap" step="0.1" placeholder="11.0" class="w-full text-sm border rounded px-2 py-1 outline-none"></div>
-                            <div><label class="block text-[10px] text-slate-500">Max. Leistung (W)</label><input type="number" id="newBatPow" placeholder="5000" class="w-full text-sm border rounded px-2 py-1 outline-none"></div>
-                            <div class="col-span-2 md:col-span-1"><button onclick="addBattery()" class="w-full bg-slate-800 text-white text-xs py-1.5 rounded hover:bg-slate-700">Add</button></div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
         
+        <!-- TAB 4: FAQ & HISTORIE -->
         <div id="tab-sources" class="tab-content space-y-6">
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 prose prose-slate text-sm max-w-none">
-                <h3 class="font-bold">Datenbank-Struktur</h3>
-                <p>Das Tool bezieht seine Stammdaten aus der Datei <code>database.js</code>. Wenn du eigene Module oder Wechselrichter hinzufügst, werden diese sicher im Speicher deines Browsers (Local Storage) abgelegt und bei jedem Start mit den Stammdaten verschmolzen.</p>
+            <div class="bg-white p-5 md:p-8 rounded-xl shadow-sm border border-slate-200 prose prose-slate text-sm max-w-none">
+                <h2 class="text-xl font-bold border-b pb-2 mb-4">Glossar & Logik der Berechnungen</h2>
+                
+                <h3 class="font-bold text-blue-600">1. Stundengenaue API-Simulation (PVGIS 5.2)</h3>
+                <p>Das Tool greift live auf die europäische Forschungsdatenbank <strong>PVGIS</strong> (Photovoltaic Geographical Information System) zu. Für jedes Modulfeld wird ein komplettes Referenzjahr (8.760 Datenpunkte = jede Stunde des Jahres) heruntergeladen. Dies garantiert höchste Genauigkeit basierend auf echten historischen Wetter- und Sonnenstandsdaten des gewählten Ortes.</p>
+                <p><em>Technischer Hinweis:</em> Um die CORS-Sicherheitsblockaden moderner Browser zu umgehen, wenn die App über GitHub Pages gehostet wird, schleust das Skript die PVGIS-Anfrage sicher über <code>corsproxy.io</code>.</p>
+
+                <h3 class="font-bold text-blue-600">2. Modulgruppen & Einzel-Tracker Logik</h3>
+                <p>Echte PV-Planung erfordert Präzision auf Tracker-Ebene. Für Mikrowechselrichter (wie den Anker SOLIX 2 mit 4 MPPTs) definierst du <strong>für jeden MPPT einen eigenen String</strong>. Damit das Dashboard übersichtlich bleibt, weist du diesen Strings denselben <strong>Gruppennamen</strong> (z.B. "BKW") zu. Das Tool aggregiert diese Tracker im Dashboard visuell zu einer einzigen Anlage.</p>
+
+                <h3 class="font-bold text-blue-600">3. Wahres AC-Clipping (Proportional)</h3>
+                <p>AC-Clipping wird in dieser App nicht pauschal als prozentualer Verlust geschätzt. Die Engine summiert die DC-Leistung aller Tracker eines Wechselrichters <strong>für jede spezifische Stunde des Jahres</strong>. Übersteigt die DC-Leistung am 15. Juli um 13:00 Uhr die AC-Maximalleistung des Wechselrichters, wird exakt die Differenz für diese Stunde abgeschnitten.</p>
+                <p><em>Proportionale Verteilung:</em> Verursachen 4 Strings gemeinsam ein Clipping, wird der Verlust mathematisch fair aufgeteilt. Ein String, der in dieser Stunde 60 % der Gesamt-DC-Leistung geliefert hat, bekommt genau 60 % des Clipping-Verlustes zugewiesen.</p>
+                
+                <h3 class="font-bold text-blue-600">4. Physik-Engine & Limits</h3>
+                <ul>
+                    <li><strong>Uoc (-20°C):</strong> Die Leerlaufspannung wird bei extremer Kälte (-20°C) berechnet. Sie darf die absolute Maximalspannung des MPPTs niemals überschreiten, sonst droht ein Hardware-Defekt.</li>
+                    <li><strong>Umpp (+70°C):</strong> Die Modulspannung sinkt bei Hitze. Die Engine prüft, ob die Spannung bei starker Erwärmung (70°C) noch ausreicht, um die Start-Spannung des Wechselrichters zu erreichen.</li>
+                </ul>
+
+                <h2 class="text-xl font-bold border-b pb-2 mb-4 mt-10">Versionshistorie (Changelog)</h2>
+                <ul class="space-y-2">
+                    <li><strong>v3.7 (Aktuell):</strong> Einführung von "Anzeigegruppen" für Strings, Entfernung der "Alle Tracker"-Pauschale für präzises MPPT-Routing. Vollständige Formulare (Vmp, Tracker-Anzahl, Max V) für eigene Datenbank-Einträge. FAQ & Historie erweitert.</li>
+                    <li><strong>v3.6:</strong> Einführung der hybriden Datenbank-Architektur (<code>database.js</code> + LocalStorage) für sicheres Speichern im GitHub-Pages Hosting.</li>
+                    <li><strong>v3.5:</strong> Smooth-Swipe Gestensteuerung eingebaut. Stundengenaues, proportionales AC-Clipping mit Dashboard-Fokus-Modus eingeführt.</li>
+                    <li><strong>v3.0 - 3.4:</strong> Migration auf direkte PVGIS API. Überwindung von Android-CORS Restriktionen durch Web-Hosting.</li>
+                </ul>
             </div>
         </div>
     </main>
@@ -216,35 +234,28 @@
     <script>
         // --- 1. DATENBANK (HYBRID) ---
         let DB = { panels: [], batteries: [], inverters: [] };
-        const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
+        const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#84cc16'];
         
         let LocationData = { lat: 48.06, lon: 8.46, name: "Villingen-Schwenningen" };
         let YieldDataCache = null; 
-        let activeStringIndex = null;
+        let activeGroupIndex = null;
         
+        // Neu: "group" Eigenschaft hinzugefügt
         let strings = [
-            { id: 1, name: "Hauptdach Süd", azimuth: 180, inverterId: 1, mpptId: 1, color: colors[0], fields: [{ id: 101, panelId: 3, count: 20, tilt: 35 }] }
+            { id: 1, name: "Süd 1", group: "Hauptdach Süd", azimuth: 180, inverterId: 1, mpptId: 1, color: colors[0], fields: [{ id: 101, panelId: 4, count: 12, tilt: 35 }] },
+            { id: 2, name: "Süd 2", group: "Hauptdach Süd", azimuth: 180, inverterId: 1, mpptId: 2, color: colors[0], fields: [{ id: 102, panelId: 4, count: 8, tilt: 35 }] }
         ];
 
         let chartInstance = null;
 
         function initDatabase() {
-            // 1. Stammdaten aus der database.js Datei laden
             if (typeof MasterDB !== 'undefined') {
-                DB.panels = [...MasterDB.panels];
-                DB.batteries = [...MasterDB.batteries];
-                DB.inverters = [...MasterDB.inverters];
-            } else {
-                console.error("MasterDB nicht gefunden! Fehlt die database.js?");
-            }
+                DB.panels = [...MasterDB.panels]; DB.batteries = [...MasterDB.batteries]; DB.inverters = [...MasterDB.inverters];
+            } else { console.error("MasterDB nicht gefunden!"); }
 
-            // 2. Eigene (lokale) Geräte aus dem Speicher laden und anfügen
             const userDB = JSON.parse(localStorage.getItem('pvpro_user_db')) || { panels: [], batteries: [], inverters: [] };
-            DB.panels.push(...userDB.panels);
-            DB.batteries.push(...userDB.batteries);
-            DB.inverters.push(...userDB.inverters);
+            DB.panels.push(...userDB.panels); DB.batteries.push(...userDB.batteries); DB.inverters.push(...userDB.inverters);
 
-            // 3. Letzte String-Konfig laden
             if(localStorage.getItem('pvpro_strings')) strings = JSON.parse(localStorage.getItem('pvpro_strings'));
             if(localStorage.getItem('pvpro_loc')) LocationData = JSON.parse(localStorage.getItem('pvpro_loc'));
             
@@ -264,10 +275,8 @@
 
         function saveUserDevice(type, item) {
             let userDB = JSON.parse(localStorage.getItem('pvpro_user_db')) || { panels: [], batteries: [], inverters: [] };
-            userDB[type].push(item);
-            localStorage.setItem('pvpro_user_db', JSON.stringify(userDB));
-            DB[type].push(item);
-            requireRecalculation();
+            userDB[type].push(item); localStorage.setItem('pvpro_user_db', JSON.stringify(userDB));
+            DB[type].push(item); requireRecalculation();
         }
 
         // --- 2. GESTEN & NAVIGATION ---
@@ -276,8 +285,7 @@
         document.addEventListener('touchend', e => {
             const t = e.target.tagName;
             if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'CANVAS', 'TABLE', 'TH', 'TD'].includes(t) || e.target.closest('table')) return;
-            let diffX = e.changedTouches[0].screenX - touchStartX;
-            let diffY = e.changedTouches[0].screenY - touchStartY;
+            let diffX = e.changedTouches[0].screenX - touchStartX; let diffY = e.changedTouches[0].screenY - touchStartY;
             if (Math.abs(diffX) > 70 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
                 let currentActive = document.querySelector('.tab-content.active').id.replace('tab-', '');
                 let cIdx = tabOrder.indexOf(currentActive);
@@ -294,21 +302,15 @@
             tabOrder.forEach(id => { document.getElementById('btn-' + id).className = id === tabId ? "shrink-0 px-4 py-2 text-sm font-medium rounded-md bg-blue-600 text-white shadow-sm" : "shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700"; });
         }
 
-        // FIX: Sicherer Accordion Toggle (nimmt das Event entgegen um Bubbling zu stoppen)
         function toggleAccordion(event, idStr) {
-            if(event) event.stopPropagation(); // Verhindert dass Swipes oder Parent-Klicks das stören
-            const content = document.getElementById('acc-' + idStr);
-            const icon = document.getElementById('icon-' + idStr);
-            if(content && icon) {
-                content.classList.toggle('open');
-                icon.style.transform = content.classList.contains('open') ? "rotate(180deg)" : "rotate(0deg)";
-            }
+            if(event) event.stopPropagation();
+            const content = document.getElementById('acc-' + idStr); const icon = document.getElementById('icon-' + idStr);
+            if(content && icon) { content.classList.toggle('open'); icon.style.transform = content.classList.contains('open') ? "rotate(180deg)" : "rotate(0deg)"; }
         }
 
         // --- 3. BERECHNUNG & API ---
-        async function searchLocation() { /* ... bleibt identisch ... */
-            const query = document.getElementById('locSearchInput').value;
-            if(!query) return;
+        async function searchLocation() { 
+            const query = document.getElementById('locSearchInput').value; if(!query) return;
             try {
                 const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
                 const data = await res.json();
@@ -330,19 +332,15 @@
                 });
 
                 const inv = DB.inverters.find(i => i.id === parseInt(str.inverterId));
-                let trackFac = (str.mpptId === 'all' && inv && inv.mppts.length > 0) ? (1 / inv.mppts.length) : 1;
-                
-                const vCold = (vocStc * trackFac) * (1 + (-45) * (tk / 100));
-                const vHot = (vmpStc * trackFac) * (1 + (45) * (tk / 100));
+                const vCold = vocStc * (1 + (-45) * (tk / 100)); // Delta T = -20 - 25 = -45
+                const vHot = vmpStc * (1 + (45) * (tk / 100));   // Delta T = 70 - 25 = +45
                 
                 str._phys = { vocCold: vCold, vmpHot: vHot, isc: isc, isVocSafe: true, isIscSafe: true, isVmpSafe: true, invStartV: inv?.startV };
 
                 if(inv) {
-                    let limits = str.mpptId === 'all' ? inv.mppts[0] : inv.mppts.find(m => m.id === parseInt(str.mpptId));
-                    if(str.mpptId === 'all') inv.mppts.forEach(m => invTotals[inv.id].mpptIscSums[m.id] += isc);
-                    else if(limits) invTotals[inv.id].mpptIscSums[str.mpptId] += isc;
-                    
+                    let limits = inv.mppts.find(m => m.id === parseInt(str.mpptId)) || inv.mppts[0];
                     if(limits) {
+                        invTotals[inv.id].mpptIscSums[limits.id] += isc;
                         str._phys.isVocSafe = vCold <= limits.maxV;
                         str._phys.isIscSafe = isc <= limits.maxIsc;
                         str._phys.isVmpSafe = vHot >= inv.startV;
@@ -406,7 +404,25 @@
                     strings.find(s=>s.id===sr.id)?.fields.forEach(f=>{ const p=DB.panels.find(x=>x.id===parseInt(f.panelId)); if(p) sr.kwp += (p.pmax*f.count)/1000; });
                 });
 
-                YieldDataCache = sRes; activeStringIndex = null; renderDashboard();
+                // Gruppieren für das Dashboard
+                let groupedResults = [];
+                sRes.forEach(sr => {
+                    const strObj = strings.find(x => x.id === sr.id);
+                    const gName = strObj.group || sr.name;
+                    let g = groupedResults.find(x => x.name === gName);
+                    if(!g) {
+                        g = { name: gName, color: sr.color, kwp: 0, yield: 0, clip: 0, mo: new Array(12).fill(0), panels: 0, inverters: [] };
+                        groupedResults.push(g);
+                    }
+                    g.kwp += sr.kwp; g.yield += sr.yield; g.clip += sr.clip;
+                    const pCnt = strObj.fields.reduce((sum, f) => sum + Number(f.count), 0);
+                    g.panels += pCnt;
+                    const inv = DB.inverters.find(i=>i.id===parseInt(strObj.inverterId));
+                    if(inv && !g.inverters.includes(inv.name)) g.inverters.push(inv.name);
+                    for(let m=0; m<12; m++) g.mo[m] += sr.mo[m];
+                });
+
+                YieldDataCache = groupedResults; activeGroupIndex = null; renderDashboard();
             } catch(e) { console.error(e); alert("API Fehler: " + e.message); }
             btn.innerHTML = origTxt; btn.disabled = false;
         }
@@ -414,19 +430,19 @@
         function requireRecalculation() { document.getElementById('calcWarning').classList.remove('hidden'); updatePhysicsOnly(); }
 
         // --- 4. DASHBOARD RENDER & FOKUS ---
-        function setFocus(idx) { activeStringIndex = activeStringIndex === idx ? null : idx; renderDashboard(); }
-        function clearFocus() { activeStringIndex = null; renderDashboard(); }
+        function setFocus(idx) { activeGroupIndex = activeGroupIndex === idx ? null : idx; renderDashboard(); }
+        function clearFocus() { activeGroupIndex = null; renderDashboard(); }
 
         function renderDashboard() {
             if(!YieldDataCache) return;
-            let sRes = YieldDataCache; let dK = 0, dY = 0, dC = 0;
+            let grpRes = YieldDataCache; let dK = 0, dY = 0, dC = 0;
 
-            if (activeStringIndex !== null) {
-                const s = sRes[activeStringIndex]; dK = s.kwp; dY = s.yield; dC = s.clip;
-                document.getElementById('focusBanner').classList.remove('hidden'); document.getElementById('focusBannerText').innerText = `Fokus: ${s.name}`;
-                document.getElementById('kpiBoxYield').style.borderColor = s.color; document.getElementById('kpiBoxYield').style.backgroundColor = s.color + '15';
+            if (activeGroupIndex !== null) {
+                const g = grpRes[activeGroupIndex]; dK = g.kwp; dY = g.yield; dC = g.clip;
+                document.getElementById('focusBanner').classList.remove('hidden'); document.getElementById('focusBannerText').innerText = `Fokus: ${g.name}`;
+                document.getElementById('kpiBoxYield').style.borderColor = g.color; document.getElementById('kpiBoxYield').style.backgroundColor = g.color + '15';
             } else {
-                sRes.forEach(s => { dK+=s.kwp; dY+=s.yield; dC+=s.clip; });
+                grpRes.forEach(g => { dK+=g.kwp; dY+=g.yield; dC+=g.clip; });
                 document.getElementById('focusBanner').classList.add('hidden');
                 document.getElementById('kpiBoxYield').style.borderColor = ''; document.getElementById('kpiBoxYield').style.backgroundColor = '';
             }
@@ -436,26 +452,23 @@
             document.getElementById('dashSpecYield').innerHTML = `${dK>0 ? Math.round(dY/dK) : 0} <span class="text-sm font-normal text-slate-500">kWh/kWp</span>`;
             document.getElementById('dashClipping').innerHTML = `${Math.round(dC)} <span class="text-sm font-normal text-slate-500">kWh</span>`;
 
-            let sysY = sRes.reduce((sum, s) => sum + s.yield, 0);
-            let sysC = sRes.reduce((sum, s) => sum + s.clip, 0);
+            let sysY = grpRes.reduce((sum, g) => sum + g.yield, 0);
+            let sysC = grpRes.reduce((sum, g) => sum + g.clip, 0);
 
-            document.getElementById('stringBreakdown').innerHTML = sRes.map((s, idx) => {
-                const pct = sysY>0 ? ((s.yield / (sysY+sysC))*100).toFixed(1) : 0;
-                const o = strings.find(x=>x.id===s.id);
-                const pCnt = o ? o.fields.reduce((sum, f) => sum + Number(f.count), 0) : 0;
-                const inv = o ? DB.inverters.find(i=>i.id===parseInt(o.inverterId)) : null;
-                const foc = activeStringIndex === idx;
+            document.getElementById('stringBreakdown').innerHTML = grpRes.map((g, idx) => {
+                const pct = sysY>0 ? ((g.yield / (sysY+sysC))*100).toFixed(1) : 0;
+                const foc = activeGroupIndex === idx;
                 const cardCls = foc ? `bg-blue-50/50 ring-1 shadow-md scale-[1.02]` : `bg-white border-slate-200 hover:border-slate-300 shadow-sm`;
 
                 return `
                 <div class="p-3.5 md:p-4 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${cardCls}"
-                     onclick="setFocus(${idx})" style="${foc ? 'border-color: ' + s.color : ''}">
+                     onclick="setFocus(${idx})" style="${foc ? 'border-color: ' + g.color : ''}">
                     <div class="flex items-center gap-3">
-                        <div class="w-3.5 h-3.5 rounded-full shrink-0" style="background-color: ${s.color}"></div>
+                        <div class="w-3.5 h-3.5 rounded-full shrink-0" style="background-color: ${g.color}"></div>
                         <div>
-                            <p class="text-xs md:text-sm font-bold text-slate-800">${s.name}</p>
-                            <p class="text-[10px] md:text-xs text-slate-500 font-medium mt-0.5">${pCnt} Module (${s.kwp.toFixed(2)} kWp) • ${inv ? inv.name : 'Kein WR'}</p>
-                            <p class="text-[10px] text-slate-400 mt-0.5">${Math.round(s.yield).toLocaleString()} kWh/a • ${s.kwp>0?Math.round(s.yield/s.kwp):0} kWh/kWp</p>
+                            <p class="text-xs md:text-sm font-bold text-slate-800">${g.name}</p>
+                            <p class="text-[10px] md:text-xs text-slate-500 font-medium mt-0.5">${g.panels} Module (${g.kwp.toFixed(2)} kWp) • ${g.inverters.join(', ') || 'Kein WR'}</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">${Math.round(g.yield).toLocaleString()} kWh/a • ${g.kwp>0?Math.round(g.yield/g.kwp):0} kWh/kWp</p>
                         </div>
                     </div>
                     <div class="text-right pl-2 shrink-0"><p class="text-sm md:text-base font-bold text-slate-800">${pct}%</p></div>
@@ -463,9 +476,9 @@
             }).join('');
 
             const ctx = document.getElementById('yieldChart').getContext('2d');
-            const datasets = sRes.map((s, idx) => ({ 
-                label: s.name, data: s.mo.map(v => Math.round(v)), 
-                backgroundColor: (activeStringIndex !== null && activeStringIndex !== idx) ? s.color+'20' : s.color, borderRadius: 2 
+            const datasets = grpRes.map((g, idx) => ({ 
+                label: g.name, data: g.mo.map(v => Math.round(v)), 
+                backgroundColor: (activeGroupIndex !== null && activeGroupIndex !== idx) ? g.color+'20' : g.color, borderRadius: 2 
             }));
 
             if(chartInstance) { chartInstance.data.datasets = datasets; chartInstance.update(); } 
@@ -476,9 +489,9 @@
                         const { ctx, scales: { x, y } } = c; ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.font = 'bold 12px sans-serif';
                         c.data.labels.forEach((l, i) => {
                             let sum = 0; let tY = y.bottom;
-                            if (activeStringIndex !== null) {
-                                const m = c.getDatasetMeta(activeStringIndex);
-                                if(!m.hidden) { sum = c.data.datasets[activeStringIndex].data[i]; tY = m.data[i].y; ctx.fillStyle = c.data.datasets[activeStringIndex].backgroundColor; }
+                            if (activeGroupIndex !== null) {
+                                const m = c.getDatasetMeta(activeGroupIndex);
+                                if(!m.hidden) { sum = c.data.datasets[activeGroupIndex].data[i]; tY = m.data[i].y; ctx.fillStyle = c.data.datasets[activeGroupIndex].backgroundColor; }
                             } else {
                                 c.data.datasets.forEach((d, j) => { const m = c.getDatasetMeta(j); if (!m.hidden) { sum += d.data[i]; tY = Math.min(tY, m.data[i].y); } });
                                 ctx.fillStyle = '#475569';
@@ -502,15 +515,18 @@
                 const bOpt = DB.batteries.map(b => `<option value="${b.id}" ${w.batteryId == b.id ? 'selected':''}>${b.name}</option>`).join('');
                 return `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-medium">${w.name}</td><td class="px-3 py-2">${w.acMax}</td><td class="px-3 py-2">${w.startV}</td><td class="px-3 py-2 text-[10px] leading-tight">${w.mppts.map(m => `<span class="bg-slate-200 px-1 rounded mr-1 mb-1 inline-block">${m.maxV}V/${m.maxIsc}A</span>`).join('')}</td><td class="px-3 py-2"><select onchange="updateInverterBattery(${w.id}, this.value)" class="w-full text-xs border rounded px-1 py-1 outline-none bg-white">${bOpt}</select></td></tr>`;
             }).join('');
-            document.getElementById('batTableBody').innerHTML = DB.batteries.map(b => `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-medium">${b.name}</td><td class="px-3 py-2">${b.cap}</td><td class="px-3 py-2">${b.power}</td></tr>`).join('');
-            document.getElementById('panelTableBody').innerHTML = DB.panels.map(p => `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-medium">${p.name}</td><td class="px-3 py-2">${p.pmax}</td><td class="px-3 py-2">${p.voc}</td><td class="px-3 py-2">${p.isc}</td><td class="px-3 py-2">${p.vmp.toFixed(1)}</td><td class="px-3 py-2 font-mono text-[10px]">${p.tempVoc}</td></tr>`).join('');
+            document.getElementById('panelTableBody').innerHTML = DB.panels.map(p => `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-medium">${p.name}</td><td class="px-3 py-2">${p.pmax}</td><td class="px-3 py-2">${p.voc}</td><td class="px-3 py-2">${p.vmp.toFixed(1)}</td><td class="px-3 py-2">${p.isc}</td><td class="px-3 py-2 font-mono text-[10px]">${p.tempVoc}</td></tr>`).join('');
         }
 
-        function addPanel() { saveUserDevice('panels', { id: Date.now(), name: document.getElementById('newModName').value || "Custom Modul", pmax: Number(document.getElementById('newModWp').value) || 400, voc: Number(document.getElementById('newModVoc').value) || 37, isc: Number(document.getElementById('newModIsc').value) || 13, vmp: (Number(document.getElementById('newModVoc').value) || 37)*0.85, tempVoc: Number(document.getElementById('newModTk').value) || -0.25 }); document.getElementById('newModName').value = ''; }
-        function addInverter() { const ma = Number(document.getElementById('newWrIsc').value) || 20; saveUserDevice('inverters', { id: Date.now(), name: document.getElementById('newWrName').value || "Custom WR", acMax: Number(document.getElementById('newWrAc').value) || 5000, startV: Number(document.getElementById('newWrStart').value) || 80, batteryId: 1, mppts: [{ id: 1, name: "MPPT 1", maxIsc: ma, maxV: 1000 }, { id: 2, name: "MPPT 2", maxIsc: ma, maxV: 1000 }] }); document.getElementById('newWrName').value = ''; }
+        function addPanel() { saveUserDevice('panels', { id: Date.now(), name: document.getElementById('newModName').value || "Custom Modul", pmax: Number(document.getElementById('newModWp').value) || 440, voc: Number(document.getElementById('newModVoc').value) || 52.2, vmp: Number(document.getElementById('newModVmp').value) || 44.0, isc: Number(document.getElementById('newModIsc').value) || 10.6, tempVoc: Number(document.getElementById('newModTk').value) || -0.24 }); document.getElementById('newModName').value = ''; }
+        function addInverter() { 
+            const count = Number(document.getElementById('newWrMpptCount').value) || 2; const maxV = Number(document.getElementById('newWrMaxV').value) || 1000; const maxI = Number(document.getElementById('newWrIsc').value) || 20;
+            let mppts = []; for(let i=1; i<=count; i++) mppts.push({ id: i, name: `MPPT ${i}`, maxIsc: maxI, maxV: maxV });
+            saveUserDevice('inverters', { id: Date.now(), name: document.getElementById('newWrName').value || "Custom WR", acMax: Number(document.getElementById('newWrAc').value) || 5000, startV: Number(document.getElementById('newWrStart').value) || 80, batteryId: 1, mppts: mppts }); document.getElementById('newWrName').value = ''; 
+        }
         function addBattery() { saveUserDevice('batteries', { id: Date.now(), name: document.getElementById('newBatName').value || "Custom Batterie", cap: Number(document.getElementById('newBatCap').value) || 5.0, power: Number(document.getElementById('newBatPow').value) || 3000 }); document.getElementById('newBatName').value = ''; }
 
-        function addString() { strings.push({ id: Date.now(), name: "Neuer String", azimuth: 180, inverterId: DB.inverters[0].id, mpptId: 1, color: colors[strings.length % colors.length], fields: [{ id: Date.now()+1, panelId: DB.panels[0].id, count: 5, tilt: 30 }] }); requireRecalculation(); }
+        function addString() { strings.push({ id: Date.now(), name: "Neuer String", group: "Neue Anlage", azimuth: 180, inverterId: DB.inverters[0].id, mpptId: 1, color: colors[strings.length % colors.length], fields: [{ id: Date.now()+1, panelId: DB.panels[0].id, count: 5, tilt: 30 }] }); requireRecalculation(); }
         function removeString(id) { strings = strings.filter(s => s.id !== id); requireRecalculation(); }
         function addField(id) { strings.find(s => s.id === id)?.fields.push({ id: Date.now(), panelId: DB.panels[0].id, count: 1, tilt: 30 }); requireRecalculation(); }
         function removeField(sId, fId) { const str = strings.find(s => s.id === sId); if(str) str.fields = str.fields.filter(f => f.id !== fId); requireRecalculation(); }
@@ -527,7 +543,6 @@
                 const inv = DB.inverters.find(i => i.id === parseInt(str.inverterId)) || DB.inverters[0];
                 const wOpt = DB.inverters.map(i => `<option value="${i.id}" ${str.inverterId == i.id ? 'selected':''}>${i.name}</option>`).join('');
                 let mOpt = inv.mppts.map(m => `<option value="${m.id}" ${str.mpptId == m.id ? 'selected':''}>${m.name}</option>`).join('');
-                if(inv.mppts.length > 1) mOpt += `<option value="all" ${str.mpptId === 'all' ? 'selected':''}>Alle Tracker</option>`;
                 const safe = p.isVocSafe && p.isIscSafe && p.isVmpSafe;
                 
                 return `
@@ -535,16 +550,17 @@
                     <div class="p-3 md:p-4 border-b border-slate-100 flex justify-between items-center cursor-pointer hover:bg-slate-50" onclick="toggleAccordion(event, '${str.id}')">
                         <div class="flex items-center gap-3">
                             <input type="color" value="${str.color}" onchange="updateStringData(${str.id}, 'color', this.value)" onclick="event.stopPropagation()" class="shrink-0">
-                            <div><h4 class="font-bold text-sm md:text-base text-slate-800">${str.name}</h4><p class="text-[10px] md:text-xs text-slate-500">${inv.name}</p></div>
+                            <div><h4 class="font-bold text-sm md:text-base text-slate-800">${str.name} <span class="text-xs font-normal text-slate-400 ml-1">(${str.group})</span></h4><p class="text-[10px] md:text-xs text-slate-500">${inv.name}</p></div>
                         </div>
                         <svg id="icon-${str.id}" class="w-4 h-4 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                     <div id="acc-${str.id}" class="accordion-content bg-slate-50/50 p-4 space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
                             <div><label class="block text-[10px] text-slate-500 mb-1">String Name</label><input type="text" value="${str.name}" onchange="updateStringData(${str.id}, 'name', this.value)" class="w-full border rounded px-2 py-1 text-sm"></div>
+                            <div><label class="block text-[10px] text-slate-500 mb-1">Anzeigegruppe</label><input type="text" value="${str.group || ''}" onchange="updateStringData(${str.id}, 'group', this.value)" placeholder="Z.B. BKW" class="w-full border rounded px-2 py-1 text-sm"></div>
                             <div><label class="block text-[10px] text-slate-500 mb-1">Azimut (°)</label><input type="number" value="${str.azimuth}" onchange="updateStringData(${str.id}, 'azimuth', this.value)" class="w-full border rounded px-2 py-1 text-sm"></div>
                             <div><label class="block text-[10px] text-slate-500 mb-1">WR Zuweisung</label><select onchange="updateStringData(${str.id}, 'inverterId', this.value)" class="w-full border rounded px-2 py-1 text-sm">${wOpt}</select></div>
-                            <div><label class="block text-[10px] text-slate-500 mb-1">MPPT Logik</label><select onchange="updateStringData(${str.id}, 'mpptId', this.value)" class="w-full border rounded px-2 py-1 text-sm">${mOpt}</select></div>
+                            <div><label class="block text-[10px] text-slate-500 mb-1">MPPT</label><select onchange="updateStringData(${str.id}, 'mpptId', this.value)" class="w-full border rounded px-2 py-1 text-sm">${mOpt}</select></div>
                         </div>
                         <div class="border border-slate-200 rounded-lg overflow-hidden bg-white">
                             <div class="bg-slate-100 px-3 py-2 border-b flex justify-between"><span class="text-[10px] font-bold text-slate-700">Modulfelder</span><button onclick="addField(${str.id})" class="text-blue-600 text-xs">+ Feld</button></div>
