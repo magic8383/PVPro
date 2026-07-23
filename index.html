@@ -1,10 +1,10 @@
-```html
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PV-Planung Pro 3.2 (API Edition)</title>
+    <title>PV-Planung Pro 3.3 (API Edition)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -50,8 +50,8 @@
         <div class="max-w-7xl mx-auto px-4 py-4">
             <div class="flex justify-between items-center mb-3">
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">PV-Planung <span class="text-blue-400">Pro 3.2</span></h1>
-                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Stundengenaue API-Simulation (PVGIS 5.2)</p>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">PV-Planung <span class="text-blue-400">Pro 3.3</span></h1>
+                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Stundengenaue API-Simulation (PVGIS 5.2 via Proxy)</p>
                 </div>
                 <div id="globalStatusBadge" class="hidden md:inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                     Physik OK
@@ -231,9 +231,9 @@
         <div id="tab-sources" class="tab-content space-y-6">
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 prose prose-slate text-sm max-w-none">
                 <h3 class="font-bold">1. Stundengenaue Ertragssimulation (PVGIS 5.2)</h3>
-                <p>Das Tool greift live auf die europäische Forschungsdatenbank PVGIS zu. Es verwendet den direkten, offiziellen API Endpoint ohne Proxy, um maximale Kompatibilität zu gewährleisten.</p>
-                <h3 class="font-bold">2. Warum blockiert mein Handy manchmal?</h3>
-                <p>Wenn du diese HTML-Datei auf einem Android-Gerät über einen Dateimanager (z.B. Solid Explorer) öffnest, lautet die Adresse <code>content://...</code>. Der Chrome-Browser sieht dies als "unbekannte lokale Herkunft" an und <strong>verbietet</strong> aus Sicherheitsgründen oft den Abruf von Daten aus dem Internet. Falls "Failed to fetch" erscheint, hilft es, die HTML-Datei auf einen kostenlosen Webspace (wie tiiny.host) hochzuladen, damit sie eine normale <code>https://</code> Adresse bekommt.</p>
+                <p>Das Tool greift live auf die europäische Forschungsdatenbank PVGIS zu. Weil die PVGIS-Server Anfragen von GitHub Pages blockieren (CORS-Policy), nutzen wir hier den sicheren "corsproxy.io", um die Daten sauber an unsere Web-App zu übergeben.</p>
+                <h3 class="font-bold">2. Wahres AC-Clipping</h3>
+                <p>Statt das Clipping pauschal abzuwerten, summiert die App die Ertragsdaten PV-String für PV-String <strong>für jede einzelne Stunde des Jahres</strong>. Liegt die summierte Modulleistung an Wechselrichter A z.B. am 15. Juli um 13:00 Uhr bei 13.500 W, der Wechselrichter lässt aber nur 12.000 W zu, werden exakt 1.500 Wh für diese Stunde abgeschnitten.</p>
             </div>
         </div>
 
@@ -383,8 +383,11 @@
                             if (pvgisAspect > 180) pvgisAspect -= 360;
                             if (pvgisAspect < -180) pvgisAspect += 360;
                             
-                            // DIREKTER PVGIS AUFRUF (OHNE PROXY!) Umgeht hoffentlich die Null-Origin Blockade
-                            const url = `https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?lat=${LocationData.lat}&lon=${LocationData.lon}&usehorizon=1&pvcalculation=1&startyear=2019&endyear=2019&outputformat=json&angle=${f.tilt}&aspect=${pvgisAspect}&peakpower=${fieldKwp.toFixed(3)}&loss=14`;
+                            // PROXY WIEDER EINGEBAUT! 
+                            // PVGIS blockiert direkte Anfragen von github.io (CORS Error). 
+                            // Der Proxy löst dieses Problem.
+                            const pvgisUrl = `https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?lat=${LocationData.lat}&lon=${LocationData.lon}&usehorizon=1&pvcalculation=1&startyear=2019&endyear=2019&outputformat=json&angle=${f.tilt}&aspect=${pvgisAspect}&peakpower=${fieldKwp.toFixed(3)}&loss=14`;
+                            const url = `https://corsproxy.io/?${encodeURIComponent(pvgisUrl)}`;
                             
                             fetchPromises.push( 
                                 fetch(url).then(async r => {
@@ -451,7 +454,7 @@
 
             } catch(e) {
                 console.error(e);
-                alert(`Fehler: ${e.message}\n\nHinweis: Wenn "Failed to fetch" angezeigt wird, blockiert die Chrome-Sicherheitsrichtlinie deines Handys den Internetzugriff für lokale Dateien ("content://"). Bitte lade die HTML-Datei kurz auf einen Webspace (z.B. tiiny.host) hoch oder öffne sie am PC.`); 
+                alert(`Fehler bei der Kommunikation mit PVGIS: ${e.message}\n\nHinweis: Manchmal hat der Proxy (corsproxy.io) kurze Aussetzer. Bitte probiere es in ein paar Sekunden noch einmal.`); 
             }
 
             btn.innerHTML = originalText;
@@ -552,7 +555,6 @@
         function focusChart(index) { hoveredDatasetIndex = index; if(chartInstance) chartInstance.update('none'); }
         function unfocusChart() { hoveredDatasetIndex = null; if(chartInstance) chartInstance.update('none'); }
 
-        // --- 6. DATENBANK (CRUD) FUNKTIONEN ---
         function updateInverterBattery(invId, batId) { const inv = DB.inverters.find(i => i.id === invId); if(inv) inv.batteryId = Number(batId); requireRecalculation(); }
 
         function renderDatabaseUI() {
@@ -578,7 +580,6 @@
             `).join('');
         }
 
-        // HIER WURDE DER FEHLER BEHOBEN: "calculateSystem()" durch "requireRecalculation()" ersetzt.
         function addPanel() {
             const name = document.getElementById('newModName').value || "Custom Modul";
             const wp = Number(document.getElementById('newModWp').value) || 400;
@@ -612,7 +613,6 @@
             requireRecalculation();
         }
 
-        // --- 7. STRING FUNKTIONEN ---
         function addString() {
             strings.push({ id: Date.now(), name: "Neuer String", azimuth: 180, inverterId: DB.inverters[0].id, mpptId: 1, color: colors[strings.length % colors.length], fields: [{ id: Date.now()+1, panelId: DB.panels[0].id, count: 5, tilt: 30 }] });
             requireRecalculation();
@@ -692,6 +692,3 @@
     </script>
 </body>
 </html>
-
-
-```
