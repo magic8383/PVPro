@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PV-Planung Pro 4.2 (Prioritäten-Weiche & Effizienz)</title>
+    <title>PV-Planung Pro 4.4 (Full Glossary & Logic Fix)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="database.js"></script>
@@ -44,8 +44,8 @@
         <div class="max-w-7xl mx-auto px-4 py-4">
             <div class="flex justify-between items-center mb-3">
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">PV-Planung <span class="text-blue-400">Pro 4.2</span></h1>
-                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Erweiterte Batterie-Prio & Wirkungsgrade</p>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">PV-Planung <span class="text-blue-400">Pro 4.4</span></h1>
+                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Full Glossary & Entlade-Logik Fix</p>
                 </div>
                 <div class="flex items-center gap-3">
                     <div id="globalStatusBadge" class="hidden md:inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Physik OK</div>
@@ -61,7 +61,7 @@
                 <button onclick="switchTab('verbrauch')" id="btn-verbrauch" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>Verbrauch</button>
                 <button onclick="switchTab('system')" id="btn-system" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">Stränge</button>
                 <button onclick="switchTab('database')" id="btn-database" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">Datenbank</button>
-                <button onclick="switchTab('faq')" id="btn-faq" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">FAQ</button>
+                <button onclick="switchTab('faq')" id="btn-faq" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>FAQ & Glossar</button>
             </div>
         </div>
     </header>
@@ -371,15 +371,51 @@
 
         <div id="tab-faq" class="tab-content space-y-6">
             <div class="bg-white p-5 md:p-8 rounded-xl shadow-sm border border-slate-200 prose prose-slate text-sm max-w-none">
-                <h2 class="text-xl font-bold border-b pb-2 mb-4">Glossar & Logik der Berechnungen</h2>
-                <h3 class="font-bold text-blue-600">Batterie-Pufferung (DC-Kopplung & Prioritätenweiche)</h3>
-                <p>Überschüssige Energie wird in die Batterie gerettet. In Version 4.2 nutzen wir eine intelligente Prioritätenweiche, die sowohl für klassische Hochvolt-Systeme (Fronius) als auch für Niedervolt-Balkonkraftwerke (Anker SOLIX) realistisch funktioniert:</p>
+                <h2 class="text-xl font-bold border-b pb-2 mb-6">Glossar & Logik der Berechnungen</h2>
+                
+                <h3 class="font-bold text-blue-600 text-lg">1. Die Physik-Engine & PVGIS</h3>
+                <p>Das Tool greift live auf die europäische <strong>PVGIS-Datenbank</strong> zu. Es simuliert für deinen exakten Standort jede der 8.760 Stunden eines historischen Jahres. Dachneigung, Ausrichtung und lokale Wetterdaten fließen direkt in die Berechnung der Sonneneinstrahlung ein.</p>
+                <p>Die <strong>Reihenfolge der Stränge</strong> bei der Dateneingabe ist für die Gesamtberechnung mathematisch völlig irrelevant. Die Engine summiert stundengenau die DC-Leistung beider Dächer ($P_{Ost} + P_{West} = P_{Gesamt}$). Da die Addition kommutativ ist, ist der Strom-Pool immer exakt gleich.</p>
+
+                <h3 class="font-bold text-blue-600 text-lg mt-4">2. Verluste, Mismatch & Schatten</h3>
                 <ul>
-                    <li><strong>Prio 1 (Hauslast):</strong> Der anliegende DC-Strom versorgt primär deinen stundengenauen Hausbedarf bis zur Grenze des Wechselrichter-Limits (AC Max).</li>
-                    <li><strong>Prio 2 (DC-Ladung):</strong> Jedes überschüssige Watt, das vom Haus nicht abgerufen wird, fließt direkt in die Batterie (bis zu deren Ladelimit).</li>
-                    <li><strong>Prio 3 (Netz):</strong> Ist das Haus versorgt und die Batterie voll, geht der Rest ins Stromnetz.</li>
+                    <li><strong>Schatten:</strong> Reduziert die erzeugte DC-Leistung pauschal um den eingestellten prozentualen Wert.</li>
+                    <li><strong>Mismatch (Neigungs-Konflikt):</strong> Wenn du Module mit unterschiedlichen Neigungen (z.B. 30° und 90°) an denselben Tracker (MPPT) hängst, drosselt das flachere Modul das steilere. Die Engine erkennt das automatisch und zieht bis zu 15 % Mismatch-Verlust ab.</li>
+                    <li><strong>Systemverluste:</strong> Bei der Wandlung von DC in AC gehen grundsätzlich ca. 5 % durch Wärme am Wechselrichter verloren.</li>
                 </ul>
-                <p>Beim Entladen wird der spezifische System-Wirkungsgrad der Batterie (z. B. 80 % bei Anker, 92 % bei Fronius/BYD) als Umwandlungsverlust abgezogen.</p>
+
+                <h3 class="font-bold text-blue-600 text-lg mt-4">3. Lastprofile & Verbrauch (VDI 4655)</h3>
+                <p>Um die Autarkie berechnen zu können, nutzt die Simulation stundengenaue Standardlastprofile (SLP). So berücksichtigt die Engine realistisch, dass du im Winter morgens mehr Licht brauchst, oder simuliert die massiven Peaks einer Wärmepumpe exakt dann, wenn sie wirklich anfallen (Oktober bis April).</p>
+
+                <h3 class="font-bold text-blue-600 text-lg mt-4">4. Batterie-Logik & Prioritäten-Weiche (v4.2+)</h3>
+                <p>Die Batterie-Simulation arbeitet als intelligentes System, das sowohl klassische Hochvolt-Systeme (Fronius) als auch Niedervolt-Balkonkraftwerke (Anker SOLIX) realistisch abbildet:</p>
+                <ol>
+                    <li><strong>Priorität 1 (Hauslast):</strong> Der DC-Strom vom Dach deckt zuerst deinen stundengenauen Hausverbrauch. Hierbei greift als Flaschenhals das <em>AC Max</em> Limit des Wechselrichters.</li>
+                    <li><strong>Priorität 2 (Batterie laden):</strong> Jedes Watt, das vom Haus nicht abgerufen wird oder nicht durch den AC-Flaschenhals passt, wird direkt in die Batterie geschoben (bis zu deren Lade-Limit). Dies verhindert AC-Clipping.</li>
+                    <li><strong>Priorität 3 (Netzeinspeisung):</strong> Ist das Haus versorgt und die Batterie voll, geht der restliche AC-Strom ins Stromnetz.</li>
+                </ol>
+                <p>Beim <strong>Entladen</strong> der Batterie wird der spezifische System-Wirkungsgrad (z.B. 80 % bei Anker, 92 % bei Fronius) als Umwandlungsverlust direkt von der entnommenen Energie abgezogen.</p>
+
+                <h3 class="font-bold text-blue-600 text-lg mt-4">5. Kennzahlen im Dashboard erklärt</h3>
+                <ul>
+                    <li><strong>Netto-Ertrag (AC):</strong> Der echte nutzbare Wechselstrom, der nach allen Abzügen, Verlusten und dem Hardware-Clipping aus dem Wechselrichter ins Hausnetz fließt.</li>
+                    <li><strong>Bat. Rettung:</strong> Die gesamte Menge an PV-Energie, die erfolgreich in die Batterie geladen wurde, um sie vor dem Verlust durch das Einspeiselimit zu retten.</li>
+                    <li><strong>AC-Clipping:</strong> Strom, der auf dem Dach produziert wurde, aber endgültig verloren ging, weil sowohl das AC-Limit des Wechselrichters erreicht als auch die Batterie voll war.</li>
+                    <li><strong>Autarkiegrad:</strong> Wie viel Prozent deines jährlichen Hausstromverbrauchs konntest du durch die PV-Anlage und die Batterie selbst abdecken? (Ziel: Möglichst nahe an 100 %).</li>
+                    <li><strong>Eigenverbrauch:</strong> Wie viel Prozent der produzierten PV-Energie hast du im eigenen Haus genutzt, anstatt sie billig ins Netz einzuspeisen?</li>
+                </ul>
+
+                <hr class="my-8 border-slate-200">
+
+                <h2 class="text-xl font-bold border-b pb-2 mb-4">Versionshistorie (Changelog)</h2>
+                <ul class="space-y-2 text-slate-600">
+                    <li><strong class="text-slate-800">v4.4:</strong> Umfassendes FAQ & Glossar. Fix der Entlade-Effizienzberechnung. Erläuterung zur Kommutativität der Strang-Berechnung.</li>
+                    <li><strong class="text-slate-800">v4.3:</strong> Sicherheits-Vorbelegung aller Wechselrichter auf "Keine Batterie", um ungewollte Speichersimulationen zu verhindern.</li>
+                    <li><strong class="text-slate-800">v4.2:</strong> Neue Prioritätenweiche für Niedervolt-Batterien (Prio 1 Haus, Prio 2 Batterie). Integration spezifischer Wirkungsgrade. Fehlende Jolywood-Modelle ergänzt.</li>
+                    <li><strong class="text-slate-800">v4.1:</strong> Modulare Batterie-Datenbank (BYD HVS/HVM, Fronius Reserva, Anker). Reparierte Batterie-Zuweisung. Blockade des Pull-to-Refresh.</li>
+                    <li><strong class="text-slate-800">v4.0:</strong> Einführung des Autarkie-Dashboards im Dark-Mode. Wählbare Haushalts-Verbrauchsprofile und Großverbraucher (SLP).</li>
+                    <li><strong class="text-slate-800">v3.9:</strong> Hierarchische Dropdowns. Fortschrittsbalken für MPPT-Sweetspots.</li>
+                </ul>
             </div>
         </div>
         
@@ -617,23 +653,19 @@
                     let loadW = consH[h] || 0;
                     let remainingLoad = loadW;
 
-                    // PRIORITÄTEN-WEICHE V4.2
                     activeInvs.forEach(inv => {
                         let totalDcW = invH[inv.id][h] * systemLossFactor;
                         let acLimit = inv.acMax || 0;
                         let bat = flatBatteries.find(b => b.id == inv.batteryId);
                         let batCapWh = bat ? (bat.cap * 1000) : 0;
                         let batPowerW = bat ? bat.power : 0;
-                        let batEff = bat ? (bat.eff || 0.90) : 0.90;
                         
-                        // Prio 1: Decke Hauslast bis max AC-Limit
                         let targetAcW = Math.min(acLimit, remainingLoad, totalDcW);
                         remainingLoad -= targetAcW;
                         sysAcAvailableW += targetAcW;
                         
                         let excessDc = totalDcW - targetAcW;
                         
-                        // Prio 2: Rest in Batterie laden (DC)
                         if (excessDc > 0 && batCapWh > 0) {
                             let chargeW = Math.min(excessDc, batPowerW);
                             let freeSpace = batCapWh - batCharges[inv.id];
@@ -649,7 +681,6 @@
                             }
                         }
                         
-                        // Prio 3: Wenn Batterie voll, aber noch AC-Kapazität frei -> Einspeisen
                         if (excessDc > 0) {
                             let freeAcCapacity = acLimit - targetAcW;
                             let feedInW = Math.min(excessDc, freeAcCapacity);
@@ -657,14 +688,12 @@
                             excessDc -= feedInW;
                         }
 
-                        // Hardware Clip
                         if (excessDc > 0) {
                             let iStrs = sRes.filter(sr => strings.find(s=>s.id===sr.id)?.inverterId == inv.id);
                             iStrs.forEach(sr => { if(invH[inv.id][h]>0) sr.clip += (excessDc * (sr.hr[h]/invH[inv.id][h])) / 1000; });
                         }
                     });
 
-                    // Auswerten Gesamt
                     let m = 0; for(let i=11; i>=0; i--) { if(h >= mStart[i]) { m = i; break; } }
                     flow.moCons[m] += loadW / 1000;
                     flow.moGen[m] += sysAcAvailableW / 1000;
@@ -676,7 +705,7 @@
                         let deficit = loadW - sysAcAvailableW;
                         flow.direct += sysAcAvailableW;
                         
-                        let dischargedW = 0;
+                        let dischargedEffW = 0;
                         activeInvs.forEach(inv => {
                             if (deficit <= 0) return;
                             let bat = flatBatteries.find(b => b.id == inv.batteryId);
@@ -686,15 +715,13 @@
                                 let drawW = Math.min(deficit, bat.power, availableCharge);
                                 batCharges[inv.id] -= drawW;
                                 deficit -= drawW;
-                                dischargedW += drawW;
+                                let eff = bat.eff || 0.90;
+                                dischargedEffW += (drawW * eff);
                             }
                         });
                         
-                        // Hier wird beim Entladen der Wirkungsgrad (Verlust) eingerechnet
-                        // Bsp: 1000W Batterie entladen = 800W ins Haus (bei 80% Effizienz)
-                        // Vereinfacht für die Bilanz:
-                        flow.fromBat += dischargedW * (flatBatteries[0]?.eff || 0.80); 
-                        flow.moBat[m] += (dischargedW * (flatBatteries[0]?.eff || 0.80)) / 1000;
+                        flow.fromBat += dischargedEffW; 
+                        flow.moBat[m] += dischargedEffW / 1000;
                         flow.fromGrid += deficit;
                     }
                     flow.toBat += sysBatChargeW;
