@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PV-Planung Pro 3.8 (Batterie & Schatten)</title>
+    <title>PV-Planung Pro 3.8.1 (Bugfix)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="database.js"></script>
@@ -55,7 +55,7 @@
         <div class="max-w-7xl mx-auto px-4 py-4">
             <div class="flex justify-between items-center mb-3">
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">PV-Planung <span class="text-blue-400">Pro 3.8</span></h1>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">PV-Planung <span class="text-blue-400">Pro 3.8.1</span></h1>
                     <p class="text-slate-400 text-[10px] md:text-xs mt-1">Batterie-Pufferung & Schatten-Verluste</p>
                 </div>
                 <div class="flex items-center gap-3">
@@ -103,12 +103,17 @@
                 <button onclick="clearFocus()" class="bg-white/50 hover:bg-white text-blue-700 px-2 py-1 rounded text-xs border border-blue-200">Fokus aufheben</button>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <!-- BUGFIX: grid-cols auf 5 erweitert und Leistung (kWp) Kachel wiederhergestellt -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-blue-500 transition-all" id="kpiBoxYield">
-                    <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider">Ertrag (PVGIS - Schatten)</p>
+                    <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider">Ertrag (Schatten)</p>
                     <p id="dashTotalYield" class="text-xl md:text-3xl font-bold text-slate-800 mt-1">0 <span class="text-sm font-normal text-slate-500">kWh</span></p>
                 </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500 transition-all" id="kpiBoxBat">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500 transition-all" id="kpiBoxPower">
+                    <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider">Leistung</p>
+                    <p id="dashTotalKwp" class="text-xl md:text-3xl font-bold text-slate-800 mt-1">0.00 <span class="text-sm font-normal text-slate-500">kWp</span></p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-teal-500 transition-all" id="kpiBoxBat">
                     <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider ttip">Bat. Rettung
                         <span class="ttip-text">Gesamte Energie, die vor dem AC-Limit gerettet und (abzüglich 10% Ladeverlust) in die Batterie gepuffert wurde.</span>
                     </p>
@@ -231,7 +236,8 @@
 
                 <h2 class="text-xl font-bold border-b pb-2 mb-4 mt-10">Versionshistorie (Changelog)</h2>
                 <ul class="space-y-2">
-                    <li><strong>v3.8 (Aktuell):</strong> Vollständige Integration der Batterie-Simulation. DC-gekoppelte Systeme puffern AC-Clipping jetzt stundengenau in den Akku (abzüglich 10% Ladeverlust). Verschattungs-Slider pro String hinzugefügt.</li>
+                    <li><strong>v3.8.1 (Aktuell):</strong> Bugfix - Fehlende kWp-Box nach Batterie-Integration wiederhergestellt.</li>
+                    <li><strong>v3.8:</strong> Vollständige Integration der Batterie-Simulation. DC-gekoppelte Systeme puffern AC-Clipping jetzt stundengenau in den Akku (abzüglich 10% Ladeverlust). Verschattungs-Slider pro String hinzugefügt.</li>
                     <li><strong>v3.7:</strong> Einführung von "Anzeigegruppen" für Strings. Pauschaler "Alle Tracker"-Modus entfernt zugunsten präzisen MPPT-Routings. Formulare komplettiert.</li>
                     <li><strong>v3.6:</strong> Hybride Datenbank (<code>database.js</code> + LocalStorage) für sicheres Speichern im Web.</li>
                     <li><strong>v3.5:</strong> Smooth-Swipe Gestensteuerung. Proportionales AC-Clipping mit Dashboard-Fokus.</li>
