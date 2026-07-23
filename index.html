@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PV-Planung Pro 4.0.1 (Autarkie & Verbrauch)</title>
+    <title>PV-Planung Pro 4.0.2 (Bugfix Autarkie)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="database.js"></script>
@@ -47,7 +47,6 @@
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #cbd5e1; border-radius: 2px; }
         input[type=range]:focus { outline: none; }
 
-        /* Dashboard 2 Specific Styles */
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .text-gradient { background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     </style>
@@ -58,7 +57,7 @@
         <div class="max-w-7xl mx-auto px-4 py-4">
             <div class="flex justify-between items-center mb-3">
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">PV-Planung <span class="text-blue-400">Pro 4.0.1</span></h1>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">PV-Planung <span class="text-blue-400">Pro 4.0.2</span></h1>
                     <p class="text-slate-400 text-[10px] md:text-xs mt-1">Ertrags- & Autarkiesimulation (VDI 4655 SLP)</p>
                 </div>
                 <div class="flex items-center gap-3">
@@ -81,7 +80,6 @@
 
     <main class="flex-1 overflow-y-auto p-4 md:p-6 pb-32 max-w-7xl mx-auto w-full relative">
         
-        <!-- GLOBAL ACTION BAR (VISIBLE ON DASHBOARDS) -->
         <div id="globalActionBar" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
             <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row justify-between md:items-center gap-4">
                 <div class="flex-1">
@@ -149,7 +147,6 @@
         <!-- TAB 2: DASHBOARD 2 (MODERN AUTARKY) -->
         <div id="tab-dashboard2" class="tab-content space-y-6">
             <div class="bg-slate-900 rounded-2xl shadow-2xl overflow-hidden text-white relative">
-                <!-- Background decoration -->
                 <div class="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-blue-600/20 blur-3xl pointer-events-none"></div>
                 <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
                 
@@ -173,7 +170,6 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                        <!-- Autarkie Gauge -->
                         <div class="glass-card rounded-xl p-6 flex flex-col items-center justify-center relative">
                             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Autarkiegrad</h3>
                             <div class="relative w-32 h-32 flex items-center justify-center">
@@ -188,7 +184,6 @@
                             <p class="text-[10px] text-slate-400 mt-4 text-center">Anteil des Verbrauchs, der durch PV & Batterie gedeckt wird.</p>
                         </div>
 
-                        <!-- Eigenverbrauch Gauge -->
                         <div class="glass-card rounded-xl p-6 flex flex-col items-center justify-center relative">
                             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Eigenverbrauch</h3>
                             <div class="relative w-32 h-32 flex items-center justify-center">
@@ -203,7 +198,6 @@
                             <p class="text-[10px] text-slate-400 mt-4 text-center">Anteil der PV-Erzeugung, der im Haus genutzt wird.</p>
                         </div>
 
-                        <!-- Flow Balances -->
                         <div class="flex flex-col gap-4">
                             <div class="glass-card rounded-xl p-4 flex items-center justify-between">
                                 <div class="flex items-center gap-3">
@@ -238,7 +232,7 @@
             </div>
         </div>
 
-        <!-- TAB 3: VERBRAUCH (NEU) -->
+        <!-- TAB 3: VERBRAUCH -->
         <div id="tab-verbrauch" class="tab-content space-y-6">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-4 border-b border-slate-200 bg-slate-50">
@@ -277,12 +271,11 @@
                     <p class="text-xs text-slate-500 mt-1">Diese Verbraucher erhalten eigene, realistische Zeitprofile (z.B. Sommer/Winter-Peaks).</p>
                 </div>
                 <div class="p-4 md:p-6 space-y-6">
-                    <!-- 24/7 IT -->
                     <div class="flex items-start gap-4 p-4 border border-slate-100 rounded-lg bg-slate-50/50 hover:bg-slate-50 transition-colors">
                         <div class="mt-1"><input type="checkbox" id="cons_it_active" class="w-4 h-4 text-blue-600 rounded" onchange="toggleConsGroup('it')"></div>
                         <div class="flex-1">
                             <label for="cons_it_active" class="block text-sm font-bold text-slate-800 cursor-pointer">24/7 Dauerlast (IT / Smarthome)</label>
-                            <p class="text-[10px] text-slate-500 mb-2">z.B. Proxmox Server, Home Assistant, Synology NAS, Shelly Relais</p>
+                            <p class="text-[10px] text-slate-500 mb-2">z.B. Proxmox Server, Home Assistant, Synology NAS</p>
                             <div id="grp_it" class="hidden flex items-center gap-2">
                                 <input type="number" id="cons_it_w" value="100" class="w-24 border rounded px-2 py-1 text-sm" onchange="updateConsumptionEstimate()">
                                 <span class="text-xs text-slate-600">Watt (konstant durchgehend)</span>
@@ -290,12 +283,11 @@
                         </div>
                     </div>
 
-                    <!-- Klima -->
                     <div class="flex items-start gap-4 p-4 border border-slate-100 rounded-lg bg-slate-50/50 hover:bg-slate-50 transition-colors">
                         <div class="mt-1"><input type="checkbox" id="cons_ac_active" class="w-4 h-4 text-blue-600 rounded" onchange="toggleConsGroup('ac')"></div>
                         <div class="flex-1">
                             <label for="cons_ac_active" class="block text-sm font-bold text-slate-800 cursor-pointer">Klimaanlage(n)</label>
-                            <p class="text-[10px] text-slate-500 mb-2">z.B. Daikin Multisplit. Zieht primär an heißen Tagen (Mai-Sept).</p>
+                            <p class="text-[10px] text-slate-500 mb-2">Zieht primär an heißen Tagen (Mai-Sept).</p>
                             <div id="grp_ac" class="hidden flex items-center gap-2">
                                 <input type="number" id="cons_ac_kwh" value="400" class="w-24 border rounded px-2 py-1 text-sm" onchange="updateConsumptionEstimate()">
                                 <span class="text-xs text-slate-600">kWh pro Jahr</span>
@@ -303,7 +295,6 @@
                         </div>
                     </div>
 
-                    <!-- Wärmepumpe -->
                     <div class="flex items-start gap-4 p-4 border border-slate-100 rounded-lg bg-slate-50/50 hover:bg-slate-50 transition-colors">
                         <div class="mt-1"><input type="checkbox" id="cons_wp_active" class="w-4 h-4 text-blue-600 rounded" onchange="toggleConsGroup('wp')"></div>
                         <div class="flex-1">
@@ -316,7 +307,6 @@
                         </div>
                     </div>
                     
-                    <!-- BWWP -->
                     <div class="flex items-start gap-4 p-4 border border-slate-100 rounded-lg bg-slate-50/50 hover:bg-slate-50 transition-colors">
                         <div class="mt-1"><input type="checkbox" id="cons_bw_active" class="w-4 h-4 text-blue-600 rounded" onchange="toggleConsGroup('bw')"></div>
                         <div class="flex-1">
@@ -334,7 +324,6 @@
                         </div>
                     </div>
 
-                    <!-- E-Auto -->
                     <div class="flex items-start gap-4 p-4 border border-slate-100 rounded-lg bg-slate-50/50 hover:bg-slate-50 transition-colors">
                         <div class="mt-1"><input type="checkbox" id="cons_ev_active" class="w-4 h-4 text-blue-600 rounded" onchange="toggleConsGroup('ev')"></div>
                         <div class="flex-1">
@@ -408,39 +397,27 @@
 
     <script>
         let DB = { panels: [], batteries: [], inverters: [] };
-        // Flatten DB for easy searching in loops
-        let flatPanels = [];
-        let flatInverters = [];
-
+        let flatPanels = []; let flatInverters = [];
         const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#84cc16'];
         
         let LocationData = { lat: 48.06, lon: 8.46, name: "Villingen-Schwenningen" };
-        let YieldDataCache = null; 
-        let ConsumptionCache = null;
-        let FlowCache = null;
-        let activeGroupIndex = null;
+        let YieldDataCache = null; let ConsumptionCache = null; let FlowCache = null; let activeGroupIndex = null;
         
         let strings = [
             { id: 1, name: "Süd 1", group: "Hauptdach", shading: 0, azimuth: 180, inverterId: 16, mpptId: 1, color: colors[0], fields: [{ id: 101, panelId: 104, count: 15, tilt: 35 }] },
             { id: 2, name: "Süd 2", group: "Hauptdach", shading: 5, azimuth: 180, inverterId: 16, mpptId: 2, color: colors[0], fields: [{ id: 102, panelId: 104, count: 8, tilt: 35 }] }
         ];
 
-        let chartYield = null;
-        let chartAutarky = null;
+        let chartYield = null; let chartAutarky = null;
 
         function initDatabase() {
             if (typeof MasterDB !== 'undefined') {
-                DB.panels = [...MasterDB.panels]; 
-                DB.batteries = [...MasterDB.batteries]; 
-                DB.inverters = [...MasterDB.inverters];
-            } else {
-                console.error("MasterDB nicht gefunden! Bitte database.js prüfen.");
-            }
+                DB.panels = [...MasterDB.panels]; DB.batteries = [...MasterDB.batteries]; DB.inverters = [...MasterDB.inverters];
+            } else { console.error("MasterDB fehlt!"); }
             
             flatPanels = DB.panels.flatMap(s => s.models || []);
             flatInverters = DB.inverters.flatMap(s => s.models || []);
 
-            // Eigene (lokale) Geräte aus dem Speicher laden (hier noch nicht hierarchisch unterstützt, daher flach angehängt)
             const userDB = JSON.parse(localStorage.getItem('pvpro_user_db')) || { panels: [], batteries: [], inverters: [] };
             if (userDB.panels.length > 0) { DB.panels.push({ series: "Eigene Module", models: userDB.panels }); flatPanels.push(...userDB.panels); }
             if (userDB.inverters.length > 0) { DB.inverters.push({ series: "Eigene WR", models: userDB.inverters }); flatInverters.push(...userDB.inverters); }
@@ -461,11 +438,9 @@
         function saveConfiguration() { 
             localStorage.setItem('pvpro_strings', JSON.stringify(strings)); 
             localStorage.setItem('pvpro_loc', JSON.stringify(LocationData)); 
-            saveConsumptionSettings();
-            alert("Konfiguration gespeichert!"); 
+            saveConsumptionSettings(); alert("Konfiguration gespeichert!"); 
         }
 
-        // --- GESTEN & TABS ---
         let touchStartX = 0; let touchStartY = 0; const tabOrder = ['dashboard', 'dashboard2', 'verbrauch', 'system', 'database'];
         document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; }, { passive: true });
         document.addEventListener('touchend', e => {
@@ -485,41 +460,30 @@
         }
         function toggleAccordion(event, idStr) { if(event) event.stopPropagation(); const content = document.getElementById('acc-' + idStr); const icon = document.getElementById('icon-' + idStr); if(content && icon) { content.classList.toggle('open'); icon.style.transform = content.classList.contains('open') ? "rotate(180deg)" : "rotate(0deg)"; } }
 
-        // --- VERBRAUCHS LOGIK ---
-        function toggleConsGroup(id) {
-            const isChecked = document.getElementById(`cons_${id}_active`).checked;
-            document.getElementById(`grp_${id}`).classList.toggle('hidden', !isChecked);
-            updateConsumptionEstimate();
-        }
+        function toggleConsGroup(id) { const isChecked = document.getElementById(`cons_${id}_active`).checked; document.getElementById(`grp_${id}`).classList.toggle('hidden', !isChecked); updateConsumptionEstimate(); }
 
         function getConsumptionConfig() {
-            let p = parseInt(document.getElementById('cons_persons').value);
-            let h = parseInt(document.getElementById('cons_house').value);
-            let base = 500 + (p * 1000) + h; 
-
+            let p = parseInt(document.getElementById('cons_persons').value) || 3;
+            let h = parseInt(document.getElementById('cons_house').value) || 0;
             return {
-                baseKwh: base,
-                it: document.getElementById('cons_it_active').checked ? parseFloat(document.getElementById('cons_it_w').value) : 0,
-                ac: document.getElementById('cons_ac_active').checked ? parseFloat(document.getElementById('cons_ac_kwh').value) : 0,
-                wp: document.getElementById('cons_wp_active').checked ? parseFloat(document.getElementById('cons_wp_kwh').value) : 0,
-                bw: document.getElementById('cons_bw_active').checked ? parseFloat(document.getElementById('cons_bw_kwh').value) : 0,
+                baseKwh: 500 + (p * 1000) + h,
+                it: document.getElementById('cons_it_active').checked ? (parseFloat(document.getElementById('cons_it_w').value) || 0) : 0,
+                ac: document.getElementById('cons_ac_active').checked ? (parseFloat(document.getElementById('cons_ac_kwh').value) || 0) : 0,
+                wp: document.getElementById('cons_wp_active').checked ? (parseFloat(document.getElementById('cons_wp_kwh').value) || 0) : 0,
+                bw: document.getElementById('cons_bw_active').checked ? (parseFloat(document.getElementById('cons_bw_kwh').value) || 0) : 0,
                 bwSmart: document.getElementById('cons_bw_smart').checked,
-                ev: document.getElementById('cons_ev_active').checked ? (parseFloat(document.getElementById('cons_ev_km').value)/100) * parseFloat(document.getElementById('cons_ev_kwh100').value) : 0,
+                ev: document.getElementById('cons_ev_active').checked ? ((parseFloat(document.getElementById('cons_ev_km').value)||0)/100) * (parseFloat(document.getElementById('cons_ev_kwh100').value)||0) : 0,
                 evSmart: document.getElementById('cons_ev_smart').checked
             };
         }
 
         function updateConsumptionEstimate() {
-            let c = getConsumptionConfig();
-            let total = c.baseKwh + (c.it * 8.76) + c.ac + c.wp + c.bw + c.ev;
-            document.getElementById('lbl_total_kwh_est').innerText = Math.round(total).toLocaleString();
-            requireRecalculation();
+            let c = getConsumptionConfig(); let total = c.baseKwh + (c.it * 8.76) + c.ac + c.wp + c.bw + c.ev;
+            document.getElementById('lbl_total_kwh_est').innerText = Math.round(total).toLocaleString(); requireRecalculation();
         }
 
         function saveConsumptionSettings() {
-            let c = getConsumptionConfig();
-            c.persons = document.getElementById('cons_persons').value;
-            c.house = document.getElementById('cons_house').value;
+            let c = getConsumptionConfig(); c.persons = document.getElementById('cons_persons').value; c.house = document.getElementById('cons_house').value;
             localStorage.setItem('pvpro_cons', JSON.stringify(c));
         }
 
@@ -531,87 +495,35 @@
                 
                 document.getElementById('cons_it_active').checked = c.it > 0;
                 if(c.it > 0) { document.getElementById('cons_it_w').value = c.it; document.getElementById('grp_it').classList.remove('hidden'); }
-                
                 document.getElementById('cons_ac_active').checked = c.ac > 0;
                 if(c.ac > 0) { document.getElementById('cons_ac_kwh').value = c.ac; document.getElementById('grp_ac').classList.remove('hidden'); }
-                
                 document.getElementById('cons_wp_active').checked = c.wp > 0;
                 if(c.wp > 0) { document.getElementById('cons_wp_kwh').value = c.wp; document.getElementById('grp_wp').classList.remove('hidden'); }
-                
                 document.getElementById('cons_bw_active').checked = c.bw > 0;
                 if(c.bw > 0) { document.getElementById('cons_bw_kwh').value = c.bw; document.getElementById('cons_bw_smart').checked = c.bwSmart; document.getElementById('grp_bw').classList.remove('hidden'); }
-                
                 document.getElementById('cons_ev_active').checked = c.ev > 0;
-                if(c.ev > 0) { 
-                    document.getElementById('cons_ev_km').value = (c.ev / 18) * 100; // rough backward calc for UI
-                    document.getElementById('cons_ev_smart').checked = c.evSmart; 
-                    document.getElementById('grp_ev').classList.remove('hidden'); 
-                }
+                if(c.ev > 0) { document.getElementById('cons_ev_km').value = (c.ev / 18) * 100; document.getElementById('cons_ev_smart').checked = c.evSmart; document.getElementById('grp_ev').classList.remove('hidden'); }
                 updateConsumptionEstimate();
             }
         }
 
         function build8760ConsumptionArray() {
-            let c = getConsumptionConfig();
-            let arr = new Float32Array(8760);
-            let itHourly = c.it;
-
+            let c = getConsumptionConfig(); let arr = new Float32Array(8760);
             for(let h=0; h<8760; h++) {
-                let dayOfYear = Math.floor(h / 24);
-                let hourOfDay = h % 24;
-                let isWeekend = (dayOfYear % 7 === 5 || dayOfYear % 7 === 6); // simple approximation
-
-                // 1. Grundlast (SLP Approximation)
+                let dayOfYear = Math.floor(h / 24); let hourOfDay = h % 24; let isWeekend = (dayOfYear % 7 === 5 || dayOfYear % 7 === 6);
                 let seasonalFactor = 1 + 0.3 * Math.cos((dayOfYear - 15) * 2 * Math.PI / 365);
-                let hourFactor = 0.5; 
-                if(hourOfDay >= 7 && hourOfDay <= 9) hourFactor = 1.2;
-                if(hourOfDay >= 10 && hourOfDay <= 17) hourFactor = 0.8;
-                if(hourOfDay >= 18 && hourOfDay <= 22) hourFactor = 1.5;
+                let hourFactor = 0.5; if(hourOfDay >= 7 && hourOfDay <= 9) hourFactor = 1.2; if(hourOfDay >= 10 && hourOfDay <= 17) hourFactor = 0.8; if(hourOfDay >= 18 && hourOfDay <= 22) hourFactor = 1.5;
                 
-                let baseLoadW = (c.baseKwh * 1000 / 8760) * seasonalFactor * hourFactor;
-                let load = baseLoadW + itHourly;
-
-                // 2. Klimaanlage (Sommer Peak, Tag)
-                if (c.ac > 0 && dayOfYear >= 120 && dayOfYear <= 270) {
-                    if (hourOfDay >= 12 && hourOfDay <= 18) {
-                        load += (c.ac * 1000) / (150 * 7); 
-                    }
-                }
-
-                // 3. Heizungs-Wärmepumpe (Winter, nachts etwas mehr)
-                if (c.wp > 0 && (dayOfYear < 120 || dayOfYear > 270)) {
-                    let wpSeasonal = 1 + 0.5 * Math.cos((dayOfYear - 15) * 2 * Math.PI / 365);
-                    let wpHourly = (c.wp * 1000 / (215 * 24)) * wpSeasonal;
-                    load += wpHourly;
-                }
-
-                // 4. BWWP
-                if (c.bw > 0) {
-                    let bwDailyW = (c.bw * 1000) / 365;
-                    if (c.bwSmart && hourOfDay >= 11 && hourOfDay <= 14) {
-                        load += bwDailyW / 4; 
-                    } else if (!c.bwSmart && hourOfDay >= 18 && hourOfDay <= 21) {
-                        load += bwDailyW / 4; 
-                    }
-                }
-
-                // 5. E-Auto
-                if (c.ev > 0) {
-                    let evDailyW = (c.ev * 1000) / 365;
-                    if (c.evSmart && isWeekend && hourOfDay >= 10 && hourOfDay <= 16) {
-                        load += (evDailyW * 7) / 14; 
-                    } else if (!c.evSmart && hourOfDay >= 18 && hourOfDay <= 23) {
-                        load += evDailyW / 6; 
-                    }
-                }
-
+                let load = ((c.baseKwh * 1000 / 8760) * seasonalFactor * hourFactor) + c.it;
+                if (c.ac > 0 && dayOfYear >= 120 && dayOfYear <= 270) { if (hourOfDay >= 12 && hourOfDay <= 18) load += (c.ac * 1000) / (150 * 7); }
+                if (c.wp > 0 && (dayOfYear < 120 || dayOfYear > 270)) { load += (c.wp * 1000 / (215 * 24)) * (1 + 0.5 * Math.cos((dayOfYear - 15) * 2 * Math.PI / 365)); }
+                if (c.bw > 0) { let bwDailyW = (c.bw * 1000) / 365; if (c.bwSmart && hourOfDay >= 11 && hourOfDay <= 14) { load += bwDailyW / 4; } else if (!c.bwSmart && hourOfDay >= 18 && hourOfDay <= 21) { load += bwDailyW / 4; } }
+                if (c.ev > 0) { let evDailyW = (c.ev * 1000) / 365; if (c.evSmart && isWeekend && hourOfDay >= 10 && hourOfDay <= 16) { load += (evDailyW * 7) / 14; } else if (!c.evSmart && hourOfDay >= 18 && hourOfDay <= 23) { load += evDailyW / 6; } }
                 arr[h] = load;
             }
-            ConsumptionCache = arr;
-            return arr;
+            ConsumptionCache = arr; return arr;
         }
 
-        // --- 3. BERECHNUNG & API ---
         async function searchLocation() { 
             const query = document.getElementById('locSearchInput').value; if(!query) return;
             try { const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`); const data = await res.json();
@@ -624,9 +536,7 @@
             flatInverters.forEach(inv => { invTotals[inv.id] = { mpptIscSums: {} }; inv.mppts.forEach(m => invTotals[inv.id].mpptIscSums[m.id] = 0); });
 
             strings.forEach(str => {
-                let vocStc = 0; let vmpStc = 0; let isc = 0; let tk = -0.25; 
-                let minT = 999; let maxT = 0;
-                
+                let vocStc = 0; let vmpStc = 0; let isc = 0; let tk = -0.25; let minT = 999; let maxT = 0;
                 if(str.fields.length > 0) { const p = flatPanels.find(p => p.id === parseInt(str.fields[0].panelId)); if(p) tk = p.tempVoc; }
                 
                 str.fields.forEach(f => {
@@ -645,9 +555,9 @@
                     let limits = inv.mppts.find(m => m.id === parseInt(str.mpptId)) || inv.mppts[0];
                     if(limits) {
                         invTotals[inv.id].mpptIscSums[limits.id] += isc;
-                        str._phys.limitMaxV = inv.maxV;
+                        str._phys.limitMaxV = inv.maxV || 1000;
                         str._phys.limitMaxI = limits.maxIsc;
-                        str._phys.isVocSafe = vCold <= inv.maxV; 
+                        str._phys.isVocSafe = vCold <= (inv.maxV || 1000); 
                         str._phys.isIscSafe = isc <= limits.maxIsc; 
                         str._phys.isVmpSafe = vHot >= inv.startV;
                     }
@@ -670,7 +580,7 @@
             try {
                 let proms = [];
                 strings.forEach(str => {
-                    let misFac = 1 - (str._phys.mismatchPct / 100);
+                    let misFac = 1 - ((str._phys.mismatchPct || 0) / 100);
                     let shadingFactor = 1 - ((str.shading || 0) / 100);
 
                     str.fields.forEach(f => {
@@ -684,7 +594,12 @@
                 });
 
                 const res = await Promise.all(proms);
-                let invH = {}; flatInverters.forEach(i => invH[i.id] = new Float32Array(8760));
+                let invH = {}; 
+                // BUGFIX: Only loop over inverters that are actually used!
+                let activeInvIds = [...new Set(strings.map(s => parseInt(s.inverterId)))];
+                let activeInvs = flatInverters.filter(i => activeInvIds.includes(i.id));
+                activeInvs.forEach(i => invH[i.id] = new Float32Array(8760));
+
                 let sRes = strings.map(s => ({ id: s.id, name: s.name, color: s.color, kwp: 0, yield: 0, clip: 0, batYield: 0, mo: new Array(12).fill(0), hr: new Float32Array(8760) }));
                 const mStart = [0, 744, 1416, 2160, 2880, 3624, 4344, 5088, 5832, 6552, 7296, 8016];
 
@@ -692,105 +607,116 @@
                     let sr = sRes.find(s=>s.id===r.sId); let so = strings.find(s=>s.id===r.sId);
                     for(let h=0; h<8760; h++){ 
                         let w = r.d[h].P * r.mF * r.sF; 
-                        sr.hr[h]+=w; if(so) invH[so.inverterId][h]+=w; 
+                        sr.hr[h]+=w; if(so && invH[so.inverterId]) invH[so.inverterId][h]+=w; 
                     }
                 });
 
-                // Generate Consumption
                 let consH = build8760ConsumptionArray();
-
-                // Balances
-                const systemLossFactor = 0.95; 
-                const batteryCycleLoss = 0.90; 
+                const systemLossFactor = 0.95; const batteryCycleLoss = 0.90; 
                 
                 let flow = { direct: 0, toBat: 0, fromBat: 0, toGrid: 0, fromGrid: 0, moCons: new Array(12).fill(0), moGen: new Array(12).fill(0), moBat: new Array(12).fill(0) };
+                
+                // Track DC battery charge state per inverter
+                let batCharges = {};
+                activeInvs.forEach(inv => batCharges[inv.id] = 0);
 
-                // Inverter & Battery processing
-                let globalAcOutputH = new Float32Array(8760);
+                for(let h=0; h<8760; h++) {
+                    let sysAcAvailableW = 0;
+                    let sysBatChargeW = 0;
 
-                flatInverters.forEach(inv => {
-                    let iStrs = sRes.filter(sr => strings.find(s=>s.id===sr.id)?.inverterId == inv.id);
-                    let bat = DB.batteries.find(b => b.id === inv.batteryId);
-                    
-                    let batCapacityWh = bat ? bat.cap * 1000 : 0;
-                    let maxChargeW = bat ? bat.power : 0;
-                    let currentBatChargeWh = 0;
-
-                    for(let h=0; h<8760; h++) {
+                    // 1. Process DC Generation & Limits per Inverter
+                    activeInvs.forEach(inv => {
                         let totalDcW = invH[inv.id][h] * systemLossFactor;
-                        let acLimit = inv.acMax;
-                        let availableAcW = 0;
-                        let hourlyBatSaved = 0; 
-                        let hourlyBatDischarged = 0;
-                        let loadW = consH[h];
+                        let acLimit = inv.acMax || 0;
+                        let bat = DB.batteries.find(b => b.id == inv.batteryId);
+                        let batCapWh = bat ? (bat.cap * 1000) : 0;
+                        let batPowerW = bat ? bat.power : 0;
                         
+                        let availableAcW = 0;
                         if (totalDcW > acLimit) {
-                            // DC Exceeds AC Limit
                             availableAcW = acLimit;
                             let excessW = totalDcW - acLimit;
                             
-                            // 1. Try to save excess in battery (DC coupled)
-                            if (batCapacityWh > 0) {
-                                let chargeW = Math.min(excessW, maxChargeW);
-                                let freeSpaceWh = batCapacityWh - currentBatChargeWh;
-                                let actualChargeWh = Math.min(chargeW, freeSpaceWh);
-                                currentBatChargeWh += actualChargeWh;
-                                excessW -= actualChargeWh;
-                                hourlyBatSaved = actualChargeWh * batteryCycleLoss; // Usable energy saved
-                                flow.toBat += actualChargeWh;
+                            // Save to DC Battery
+                            if (batCapWh > 0) {
+                                let chargeW = Math.min(excessW, batPowerW);
+                                let freeSpace = batCapWh - batCharges[inv.id];
+                                let actualCharge = Math.min(chargeW, freeSpace);
+                                
+                                batCharges[inv.id] += actualCharge;
+                                excessW -= actualCharge;
+                                sysBatChargeW += actualCharge;
+                                
+                                // Attribute gerettete PV-Energie zum String
+                                if (actualCharge > 0) {
+                                    let iStrs = sRes.filter(sr => strings.find(s=>s.id===sr.id)?.inverterId == inv.id);
+                                    iStrs.forEach(sr => { if(invH[inv.id][h]>0) sr.batYield += (actualCharge * batteryCycleLoss * (sr.hr[h]/invH[inv.id][h])) / 1000; });
+                                }
                             }
-                            
-                            // 2. Remaining excess is hardware clipped
-                            if(excessW > 0) { iStrs.forEach(sr => { if(invH[inv.id][h]>0) sr.clip += (excessW * (sr.hr[h]/invH[inv.id][h])) / 1000; }); }
+                            // Hardware Clip Rest
+                            if (excessW > 0) {
+                                let iStrs = sRes.filter(sr => strings.find(s=>s.id===sr.id)?.inverterId == inv.id);
+                                iStrs.forEach(sr => { if(invH[inv.id][h]>0) sr.clip += (excessW * (sr.hr[h]/invH[inv.id][h])) / 1000; });
+                            }
                         } else {
                             availableAcW = totalDcW;
                         }
+                        sysAcAvailableW += availableAcW;
+                    });
 
-                        // Now resolve AC side (Available AC vs House Load)
-                        if (availableAcW >= loadW) {
-                            // Surplus AC!
-                            let acSurplus = availableAcW - loadW;
-                            flow.direct += loadW;
-                            
-                            // Can we put AC surplus into battery? (Only if Hybrid supports it, assuming yes here up to limits)
-                            if (acSurplus > 0 && batCapacityWh > 0) {
-                                let chargeW = Math.min(acSurplus, maxChargeW);
-                                let freeSpaceWh = batCapacityWh - currentBatChargeWh;
-                                let actualChargeWh = Math.min(chargeW, freeSpaceWh);
-                                currentBatChargeWh += actualChargeWh;
-                                acSurplus -= actualChargeWh;
-                                flow.toBat += actualChargeWh;
+                    // 2. Process Global AC vs House Load
+                    let loadW = consH[h] || 0;
+                    let m = 0; for(let i=11; i>=0; i--) { if(h >= mStart[i]) { m = i; break; } }
+                    
+                    flow.moCons[m] += loadW / 1000;
+                    flow.moGen[m] += sysAcAvailableW / 1000;
+
+                    if (sysAcAvailableW >= loadW) {
+                        // PV Überschuss
+                        let acSurplus = sysAcAvailableW - loadW;
+                        flow.direct += loadW;
+                        
+                        // AC-gekoppeltes Laden (Puffern im Rest-Speicher)
+                        activeInvs.forEach(inv => {
+                            if (acSurplus <= 0) return;
+                            let bat = DB.batteries.find(b => b.id == inv.batteryId);
+                            if(!bat || bat.cap === 0) return;
+                            let freeSpace = (bat.cap * 1000) - batCharges[inv.id];
+                            if (freeSpace > 0) {
+                                let chargeW = Math.min(acSurplus, bat.power);
+                                let actualCharge = Math.min(chargeW, freeSpace);
+                                batCharges[inv.id] += actualCharge;
+                                acSurplus -= actualCharge;
+                                sysBatChargeW += actualCharge;
                             }
-                            // Rest goes to grid
-                            flow.toGrid += acSurplus;
-                        } else {
-                            // Deficit! We need more power than AC generates
-                            let deficit = loadW - availableAcW;
-                            flow.direct += availableAcW;
-
-                            if (batCapacityWh > 0 && currentBatChargeWh > 0) {
-                                let dischargeW = Math.min(deficit, maxChargeW, currentBatChargeWh);
-                                currentBatChargeWh -= dischargeW;
-                                deficit -= dischargeW;
-                                flow.fromBat += dischargeW * batteryCycleLoss; // Apply loss on discharge
-                                hourlyBatDischarged = dischargeW * batteryCycleLoss;
+                        });
+                        flow.toGrid += acSurplus;
+                    } else {
+                        // PV reicht nicht -> Batterie oder Netz
+                        let deficit = loadW - sysAcAvailableW;
+                        flow.direct += sysAcAvailableW;
+                        
+                        let dischargedW = 0;
+                        activeInvs.forEach(inv => {
+                            if (deficit <= 0) return;
+                            let bat = DB.batteries.find(b => b.id == inv.batteryId);
+                            if(!bat || bat.cap === 0) return;
+                            let availableCharge = batCharges[inv.id];
+                            if (availableCharge > 0) {
+                                let drawW = Math.min(deficit, bat.power, availableCharge);
+                                batCharges[inv.id] -= drawW;
+                                deficit -= drawW;
+                                dischargedW += drawW;
                             }
-                            // Rest from grid
-                            flow.fromGrid += deficit;
-                        }
-
-                        // Month aggregates
-                        let m = 0;
-                        for(let i=11; i>=0; i--) { if(h >= mStart[i]) { m = i; break; } }
-                        flow.moCons[m] += loadW / 1000;
-                        flow.moGen[m] += availableAcW / 1000;
-                        flow.moBat[m] += hourlyBatDischarged / 1000;
-
-                        if (hourlyBatSaved > 0) { iStrs.forEach(sr => { if(invH[inv.id][h]>0) sr.batYield += (hourlyBatSaved * (sr.hr[h]/invH[inv.id][h])) / 1000; }); }
+                        });
+                        
+                        flow.fromBat += dischargedW * batteryCycleLoss; 
+                        flow.moBat[m] += (dischargedW * batteryCycleLoss) / 1000;
+                        flow.fromGrid += deficit;
                     }
-                });
+                    flow.toBat += sysBatChargeW;
+                }
 
-                // Calculate Yield arrays
                 sRes.forEach(sr => {
                     sr.yield = (sr.hr.reduce((a,b)=>a+b,0)/1000) * systemLossFactor - sr.clip; 
                     for(let m=0; m<12; m++){ let mSum=0; for(let h=mStart[m]; h<(m===11?8760:mStart[m+1]); h++) mSum+=sr.hr[h]; sr.mo[m]=(mSum/1000)*systemLossFactor; }
@@ -811,20 +737,14 @@
                     for(let m=0; m<12; m++) g.mo[m] += sr.mo[m];
                 });
 
-                // Convert flow W to kWh
                 flow.direct /= 1000; flow.fromBat /= 1000; flow.toGrid /= 1000; flow.fromGrid /= 1000;
-                
-                YieldDataCache = groupedResults; 
-                FlowCache = flow;
-                activeGroupIndex = null; 
-                renderDashboard();
+                YieldDataCache = groupedResults; FlowCache = flow; activeGroupIndex = null; renderDashboard();
             } catch(e) { console.error(e); alert("API Fehler: " + e.message); }
             btn.innerHTML = origTxt; btn.disabled = false;
         }
 
         function requireRecalculation() { document.getElementById('calcWarning').classList.remove('hidden'); updatePhysicsOnly(); }
 
-        // --- 4. DASHBOARD RENDER ---
         function setFocus(idx) { activeGroupIndex = activeGroupIndex === idx ? null : idx; renderDashboard(); }
         function clearFocus() { activeGroupIndex = null; renderDashboard(); }
 
@@ -832,7 +752,6 @@
             if(!YieldDataCache || !FlowCache) return;
             let grpRes = YieldDataCache; let dK = 0, dY = 0, dC = 0, dB = 0;
 
-            // DASH 1 (Classic)
             if (activeGroupIndex !== null) {
                 const g = grpRes[activeGroupIndex]; dK = g.kwp; dY = g.yield; dC = g.clip; dB = g.batYield;
                 document.getElementById('focusBanner').classList.remove('hidden'); document.getElementById('focusBannerText').innerText = `Fokus: ${g.name}`;
@@ -871,22 +790,15 @@
             }).join('');
 
             const ctxYield = document.getElementById('yieldChart').getContext('2d');
-            const datasetsYield = grpRes.map((g, idx) => ({ 
-                label: g.name, data: g.mo.map(v => Math.round(v)), 
-                backgroundColor: (activeGroupIndex !== null && activeGroupIndex !== idx) ? g.color+'20' : g.color, borderRadius: 2 
-            }));
+            const datasetsYield = grpRes.map((g, idx) => ({ label: g.name, data: g.mo.map(v => Math.round(v)), backgroundColor: (activeGroupIndex !== null && activeGroupIndex !== idx) ? g.color+'20' : g.color, borderRadius: 2 }));
 
             if(chartYield) { chartYield.data.datasets = datasetsYield; chartYield.update(); } 
             else {
-                chartYield = new Chart(ctxYield, {
-                    type: 'bar', data: { labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"], datasets: datasetsYield },
-                    options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, grid: { color: '#f1f5f9' }, min: 0 } }, plugins: { legend: { position: 'bottom' }, tooltip: { enabled: true, mode: 'index', intersect: false } }, onClick: (e, els) => { if(els.length > 0) setFocus(els[0].datasetIndex); } }
-                });
+                chartYield = new Chart(ctxYield, { type: 'bar', data: { labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"], datasets: datasetsYield }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, grid: { color: '#f1f5f9' }, min: 0 } }, plugins: { legend: { position: 'bottom' }, tooltip: { enabled: true, mode: 'index', intersect: false } }, onClick: (e, els) => { if(els.length > 0) setFocus(els[0].datasetIndex); } } });
             }
 
-            // DASH 2 (Autarky)
+            // DASH 2
             let totalCons = FlowCache.direct + FlowCache.fromBat + FlowCache.fromGrid;
-            let totalGen = FlowCache.direct + FlowCache.toGrid + FlowCache.fromBat; // simplified generated use
             
             document.getElementById('d2-total-cons').innerText = Math.round(totalCons).toLocaleString() + " kWh";
             document.getElementById('d2-total-gen').innerText = Math.round(sysY).toLocaleString() + " kWh";
@@ -896,7 +808,8 @@
             document.getElementById('d2-grid-out').innerText = Math.round(FlowCache.toGrid).toLocaleString() + " kWh";
 
             let autarkyPct = totalCons > 0 ? ((FlowCache.direct + FlowCache.fromBat) / totalCons) * 100 : 0;
-            let eigenPct = sysY > 0 ? ((FlowCache.direct + FlowCache.fromBat) / sysY) * 100 : 0;
+            let eigenPct = sysY > 0 ? (1 - (FlowCache.toGrid / sysY)) * 100 : 0;
+            eigenPct = Math.min(Math.max(eigenPct, 0), 100);
 
             document.getElementById('d2-val-autarky').innerText = Math.round(autarkyPct) + "%";
             document.getElementById('d2-val-eigen').innerText = Math.round(eigenPct) + "%";
@@ -905,27 +818,12 @@
 
             const ctxAutarky = document.getElementById('autarkyChart').getContext('2d');
             if(chartAutarky) {
-                chartAutarky.data.datasets[0].data = FlowCache.moGen;
-                chartAutarky.data.datasets[1].data = FlowCache.moBat;
-                chartAutarky.data.datasets[2].data = FlowCache.moCons;
-                chartAutarky.update();
+                chartAutarky.data.datasets[0].data = FlowCache.moGen; chartAutarky.data.datasets[1].data = FlowCache.moBat; chartAutarky.data.datasets[2].data = FlowCache.moCons; chartAutarky.update();
             } else {
-                chartAutarky = new Chart(ctxAutarky, {
-                    type: 'bar',
-                    data: {
-                        labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],
-                        datasets: [
-                            { label: 'Erzeugung direkt', data: FlowCache.moGen, backgroundColor: '#3b82f6', borderRadius: 2, stack: 'Stack 0' },
-                            { label: 'Aus Batterie', data: FlowCache.moBat, backgroundColor: '#a855f7', borderRadius: 2, stack: 'Stack 0' },
-                            { label: 'Verbrauch (Last)', data: FlowCache.moCons, borderColor: '#f43f5e', backgroundColor: 'transparent', type: 'line', borderWidth: 2, pointRadius: 3, tension: 0.3 }
-                        ]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, grid: { color: 'rgba(255,255,255,0.1)' }, min: 0, ticks: {color: '#94a3b8'} } }, plugins: { legend: { position: 'bottom', labels: {color: '#cbd5e1'} } } }
-                });
+                chartAutarky = new Chart(ctxAutarky, { type: 'bar', data: { labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"], datasets: [ { label: 'Erzeugung direkt', data: FlowCache.moGen, backgroundColor: '#3b82f6', borderRadius: 2, stack: 'Stack 0' }, { label: 'Aus Batterie', data: FlowCache.moBat, backgroundColor: '#a855f7', borderRadius: 2, stack: 'Stack 0' }, { label: 'Verbrauch (Last)', data: FlowCache.moCons, borderColor: '#f43f5e', backgroundColor: 'transparent', type: 'line', borderWidth: 2, pointRadius: 3, tension: 0.3 } ] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, grid: { color: 'rgba(255,255,255,0.1)' }, min: 0, ticks: {color: '#94a3b8'} } }, plugins: { legend: { position: 'bottom', labels: {color: '#cbd5e1'} } } } });
             }
         }
 
-        // --- UI CRUD ---
         function renderDatabaseUI() {
             document.getElementById('wrTableBody').innerHTML = flatInverters.map(w => {
                 const bOpt = DB.batteries.map(b => `<option value="${b.id}" ${w.batteryId == b.id ? 'selected':''}>${b.name}</option>`).join('');
@@ -947,7 +845,6 @@
             const container = document.getElementById('stringsList');
             let openAccs = []; document.querySelectorAll('.accordion-content.open').forEach(el => openAccs.push(el.id));
 
-            // Generate OptGroups
             let panelOptions = DB.panels.map(s => `<optgroup label="${s.series}">${s.models.map(m => `<option value="${m.id}">${m.name}</option>`).join('')}</optgroup>`).join('');
             let invOptions = DB.inverters.map(s => `<optgroup label="${s.series}">${s.models.map(m => `<option value="${m.id}">${m.name}</option>`).join('')}</optgroup>`).join('');
 
@@ -955,13 +852,10 @@
                 const p = str._phys || { isVocSafe: true, isIscSafe: true, isVmpSafe: true, vocCold: 0, vmpHot: 0, isc: 0, limitMaxV: 1000, limitMaxI: 20, minMppV: 0, maxMppV: 0, invStartV: 0, mismatchPct: 0 };
                 const inv = flatInverters.find(i => i.id === parseInt(str.inverterId)) || flatInverters[0];
                 
-                // Set selections
                 let wOpt = invOptions.replace(`value="${str.inverterId}"`, `value="${str.inverterId}" selected`);
                 let mOpt = inv.mppts.map(m => `<option value="${m.id}" ${str.mpptId == m.id ? 'selected':''}>${m.name}</option>`).join('');
                 
                 const safe = p.isVocSafe && p.isIscSafe;
-
-                // Color Logic for Umpp
                 let vmpColor = 'bg-amber-400'; let vmpText = 'text-amber-400'; let vmpWidth = Math.max((p.vmpHot/p.invStartV)*100, 10);
                 if (p.vmpHot >= p.minMppV && p.vmpHot <= p.maxMppV) { vmpColor = 'bg-emerald-500'; vmpText = 'text-emerald-400'; vmpWidth = 100; }
                 else if (p.vmpHot >= p.invStartV) { vmpColor = 'bg-blue-400'; vmpText = 'text-blue-400'; vmpWidth = 70; }
