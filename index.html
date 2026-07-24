@@ -3,232 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PV-Planung Pro 4.4 (Full Glossary & Logic Fix)</title>
+    <title>PV-Planung Pro 5.0 (App Edition)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="database.js"></script>
     <style>
-        body { overscroll-behavior-y: none; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        /* Anti Pull-to-Refresh & weiches Scrollen */
+        body { overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 2px; }
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-        .tab-content { display: none; } .tab-content.active { display: block; }
-        .slide-left { animation: slideLeft 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
-        .slide-right { animation: slideRight 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
-        @keyframes slideLeft { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes slideRight { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+        
+        /* Tab Transitions */
+        .tab-content { display: none; opacity: 0; } 
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
         .accordion-content { display: none; } .accordion-content.open { display: block; }
-        .ttip { position: relative; display: inline-block; cursor: help; }
-        .ttip .ttip-text { visibility: hidden; width: 220px; background-color: #1e293b; color: #fff; text-align: left; border-radius: 6px; padding: 8px 12px; font-size: 11px; font-weight: normal; font-family: sans-serif; position: absolute; z-index: 50; bottom: 125%; left: 50%; margin-left: -110px; opacity: 0; transition: opacity 0.2s; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
-        .ttip .ttip-text::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: #1e293b transparent transparent transparent; }
-        .ttip:hover .ttip-text { visibility: visible; opacity: 1; }
-        input[type="color"] { -webkit-appearance: none; border: none; width: 20px; height: 20px; border-radius: 50%; padding: 0; cursor: pointer; overflow: hidden; }
+        
+        /* Styling Details */
+        input[type="color"] { -webkit-appearance: none; border: none; width: 24px; height: 24px; border-radius: 50%; padding: 0; cursor: pointer; overflow: hidden; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-        input[type="color"]::-webkit-color-swatch { border: 2px solid #fff; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        input[type="color"]::-webkit-color-swatch { border: 2px solid #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
         .spinner { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #3b82f6; cursor: pointer; margin-top: -6px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #3b82f6; cursor: pointer; margin-top: -7px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #cbd5e1; border-radius: 2px; }
         input[type=range]:focus { outline: none; }
-        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .glass-card { background: rgba(30, 41, 59, 0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
         .text-gradient { background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased h-[100dvh] flex flex-col overflow-hidden">
 
-    <header class="bg-slate-900 text-white shadow-md z-10 shrink-0">
-        <div class="max-w-7xl mx-auto px-4 py-4">
+    <header class="bg-slate-900 text-white shadow-md z-20 shrink-0 relative">
+        <div class="max-w-7xl mx-auto px-4 py-3 md:py-4">
             <div class="flex justify-between items-center mb-3">
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white">PV-Planung <span class="text-blue-400">Pro 4.4</span></h1>
-                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Full Glossary & Entlade-Logik Fix</p>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">PV-Planung <span class="text-blue-400">Pro 5.0</span></h1>
+                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Deep-Dive Analytics & App UI</p>
                 </div>
-                <div class="flex items-center gap-3">
-                    <div id="globalStatusBadge" class="hidden md:inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Physik OK</div>
-                    <button onclick="saveConfiguration()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow flex items-center gap-1 transition-colors">
+                <div class="flex items-center gap-2">
+                    <button id="btnCalcHeader" onclick="calculateYieldAPI()" class="hidden animate-pulse bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs font-bold px-3 py-1.5 rounded-lg shadow-md transition-all flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> <span class="hidden md:inline">Berechnen</span>
+                    </button>
+                    <button onclick="saveConfiguration()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition-colors flex items-center gap-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
-                        Speichern
                     </button>
                 </div>
             </div>
-            <div class="flex overflow-x-auto hide-scroll space-x-2 bg-slate-800 p-1 rounded-lg">
-                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md bg-blue-600 text-white transition-colors shadow-sm">Ertrag (Dash 1)</button>
-                <button onclick="switchTab('dashboard2')" id="btn-dashboard2" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">Autarkie (Dash 2)</button>
-                <button onclick="switchTab('verbrauch')" id="btn-verbrauch" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>Verbrauch</button>
-                <button onclick="switchTab('system')" id="btn-system" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">Stränge</button>
-                <button onclick="switchTab('database')" id="btn-database" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors">Datenbank</button>
-                <button onclick="switchTab('faq')" id="btn-faq" class="shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>FAQ & Glossar</button>
+            
+            <div id="navScroller" class="flex overflow-x-auto hide-scroll space-x-1 bg-slate-800/50 p-1 rounded-lg items-center snap-x snap-mandatory">
+                <button onclick="switchTab('start')" id="btn-start" class="snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-all flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>Start</button>
+                <button onclick="switchTab('system')" id="btn-system" class="snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-all flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>Strings</button>
+                <button onclick="switchTab('verbrauch')" id="btn-verbrauch" class="snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-all flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>Verbrauch</button>
+                <div class="w-px h-4 bg-slate-600 shrink-0 mx-1"></div>
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-all flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>Ertrag</button>
+                <button onclick="switchTab('dashboard2')" id="btn-dashboard2" class="snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-all flex items-center gap-1.5"><svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>Autarkie</button>
+                <div class="w-px h-4 bg-slate-600 shrink-0 mx-1"></div>
+                <button onclick="switchTab('database')" id="btn-database" class="snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-all flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>Geräte</button>
+                <button onclick="switchTab('faq')" id="btn-faq" class="snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-all flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>FAQ</button>
             </div>
         </div>
     </header>
 
-    <main class="flex-1 overflow-y-auto p-4 md:p-6 pb-32 max-w-7xl mx-auto w-full relative">
-        <div id="globalActionBar" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
-            <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row justify-between md:items-center gap-4">
-                <div class="flex-1">
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Standort (Geocoding)</label>
-                    <div class="flex gap-2">
-                        <input type="text" id="locSearchInput" placeholder="Z.B. Villingen-Schwenningen" class="w-full md:max-w-xs text-sm border border-slate-300 rounded px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500">
-                        <button onclick="searchLocation()" class="bg-slate-700 hover:bg-slate-800 text-white text-sm px-4 py-2 rounded transition-colors">Suchen</button>
-                    </div>
-                    <p id="locDisplay" class="text-xs text-slate-600 mt-2 font-medium">Aktuell: <span id="locNameText" class="text-blue-600">Villingen-Schwenningen</span> (Lat: <span id="locLatText">48.06</span>, Lon: <span id="locLonText">8.46</span>)</p>
+    <main class="flex-1 overflow-y-auto p-4 md:p-6 pb-24 w-full relative">
+        
+        <!-- TAB 0: START (Standort & Berechnen) -->
+        <div id="tab-start" class="tab-content active max-w-2xl mx-auto space-y-6 mt-4">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden text-center p-8">
+                <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
-                <div class="border-t md:border-t-0 md:border-l border-slate-200 pt-4 md:pt-0 md:pl-6">
-                    <button id="btnCalculate" onclick="calculateYieldAPI()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all flex items-center justify-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        <span>Gesamt-Simulation starten</span>
-                    </button>
-                    <p id="calcWarning" class="text-[10px] text-amber-600 font-bold mt-2 text-center hidden">Parameter geändert! Bitte neu berechnen.</p>
-                </div>
-            </div>
-        </div>
-
-        <div id="tab-dashboard" class="tab-content active space-y-6">
-            <div id="focusBanner" class="hidden bg-blue-100 border border-blue-300 text-blue-800 px-4 py-2 rounded-lg flex justify-between items-center text-sm font-medium shadow-sm transition-all">
-                <span id="focusBannerText">Fokus: Gruppe</span>
-                <button onclick="clearFocus()" class="bg-white/50 hover:bg-white text-blue-700 px-2 py-1 rounded text-xs border border-blue-200">Fokus aufheben</button>
-            </div>
-
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-blue-500 transition-all" id="kpiBoxYield">
-                    <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider">Netto-Ertrag (AC)</p>
-                    <p id="dashTotalYield" class="text-xl md:text-3xl font-bold text-slate-800 mt-1">0 <span class="text-sm font-normal text-slate-500">kWh</span></p>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500 transition-all" id="kpiBoxPower">
-                    <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider">Leistung</p>
-                    <p id="dashTotalKwp" class="text-xl md:text-3xl font-bold text-slate-800 mt-1">0.00 <span class="text-sm font-normal text-slate-500">kWp</span></p>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-teal-500 transition-all" id="kpiBoxBat">
-                    <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider ttip">Bat. Rettung
-                        <span class="ttip-text">Gesamte PV-Energie, die in die Batterie geladen wurde.</span>
-                    </p>
-                    <p id="dashBatteryYield" class="text-xl md:text-3xl font-bold text-slate-800 mt-1">0 <span class="text-sm font-normal text-slate-500">kWh</span></p>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-purple-500 transition-all" id="kpiBoxSpec">
-                    <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider">Spez. Ertrag</p>
-                    <p id="dashSpecYield" class="text-xl md:text-3xl font-bold text-slate-800 mt-1">0 <span class="text-sm font-normal text-slate-500">kWh/kWp</span></p>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-rose-500 transition-all" id="kpiBoxClip">
-                    <p class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase tracking-wider ttip">AC-Clipping
-                        <span class="ttip-text">Energie, die endgültig verloren ging.</span>
-                    </p>
-                    <p id="dashClipping" class="text-xl md:text-3xl font-bold text-slate-800 mt-1">0 <span class="text-sm font-normal text-slate-500">kWh</span></p>
-                </div>
-            </div>
-
-            <div id="stringBreakdown" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
-
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-base md:text-lg font-bold text-slate-800">Monatlicher PV-Ertrag nach Gruppen</h3>
-                </div>
-                <div class="relative h-64 md:h-96 w-full"><canvas id="yieldChart"></canvas></div>
-            </div>
-        </div>
-
-        <div id="tab-dashboard2" class="tab-content space-y-6">
-            <div class="bg-slate-900 rounded-2xl shadow-2xl overflow-hidden text-white relative">
-                <div class="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-blue-600/20 blur-3xl pointer-events-none"></div>
-                <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
+                <h2 class="text-2xl font-bold text-slate-800">Standort der Anlage</h2>
+                <p class="text-sm text-slate-500 mt-2 mb-6">Wähle deinen Ort für die exakte PVGIS Wetter- & Sonnensimulation.</p>
                 
-                <div class="relative p-6 md:p-10">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
-                        <div>
-                            <h2 class="text-3xl font-extrabold text-transparent text-gradient bg-gradient-to-r from-blue-400 to-emerald-400">Energiefluss & Autarkie</h2>
-                            <p class="text-slate-400 text-sm mt-1">Stundengenaue Bilanzierung basierend auf simuliertem Lastprofil</p>
-                        </div>
-                        <div class="bg-slate-800/80 rounded-lg p-3 border border-slate-700 flex items-center gap-4">
-                            <div>
-                                <p class="text-[10px] text-slate-400 uppercase tracking-widest">Jahresverbrauch</p>
-                                <p class="text-lg font-bold text-white" id="d2-total-cons">0 kWh</p>
-                            </div>
-                            <div class="w-px h-8 bg-slate-700"></div>
-                            <div>
-                                <p class="text-[10px] text-slate-400 uppercase tracking-widest">Jahreserzeugung</p>
-                                <p class="text-lg font-bold text-blue-400" id="d2-total-gen">0 kWh</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                        <div class="glass-card rounded-xl p-6 flex flex-col items-center justify-center relative">
-                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Autarkiegrad</h3>
-                            <div class="relative w-32 h-32 flex items-center justify-center">
-                                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                                    <path class="text-slate-700" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                    <path id="gauge-autarky" class="text-emerald-400 transition-all duration-1000 ease-out" stroke-width="3" stroke-dasharray="0, 100" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                </svg>
-                                <div class="absolute flex flex-col items-center">
-                                    <span class="text-3xl font-bold text-white" id="d2-val-autarky">0%</span>
-                                </div>
-                            </div>
-                            <p class="text-[10px] text-slate-400 mt-4 text-center">Anteil des Verbrauchs, der durch PV & Batterie gedeckt wird.</p>
-                        </div>
-
-                        <div class="glass-card rounded-xl p-6 flex flex-col items-center justify-center relative">
-                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Eigenverbrauch</h3>
-                            <div class="relative w-32 h-32 flex items-center justify-center">
-                                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                                    <path class="text-slate-700" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                    <path id="gauge-eigen" class="text-blue-400 transition-all duration-1000 ease-out" stroke-width="3" stroke-dasharray="0, 100" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                </svg>
-                                <div class="absolute flex flex-col items-center">
-                                    <span class="text-3xl font-bold text-white" id="d2-val-eigen">0%</span>
-                                </div>
-                            </div>
-                            <p class="text-[10px] text-slate-400 mt-4 text-center">Anteil der PV-Erzeugung, der im Haus genutzt wird.</p>
-                        </div>
-
-                        <div class="flex flex-col gap-4">
-                            <div class="glass-card rounded-xl p-4 flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
-                                    <div><p class="text-[10px] text-slate-400 uppercase">Direktverbrauch</p><p class="text-lg font-bold text-white" id="d2-direct">0 kWh</p></div>
-                                </div>
-                            </div>
-                            <div class="glass-card rounded-xl p-4 flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg></div>
-                                    <div><p class="text-[10px] text-slate-400 uppercase">Aus Batterie bezogen</p><p class="text-lg font-bold text-white" id="d2-frombat">0 kWh</p></div>
-                                </div>
-                            </div>
-                            <div class="flex gap-4">
-                                <div class="glass-card rounded-xl p-4 flex-1">
-                                    <p class="text-[10px] text-slate-400 uppercase text-center mb-1">Netzbezug</p>
-                                    <p class="text-lg font-bold text-rose-400 text-center" id="d2-grid-in">0 kWh</p>
-                                </div>
-                                <div class="glass-card rounded-xl p-4 flex-1">
-                                    <p class="text-[10px] text-slate-400 uppercase text-center mb-1">Einspeisung</p>
-                                    <p class="text-lg font-bold text-amber-400 text-center" id="d2-grid-out">0 kWh</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="glass-card rounded-xl p-4 md:p-6">
-                        <h3 class="text-sm font-bold text-white mb-4">Monatliche Energiebilanz (Erzeugung vs. Last)</h3>
-                        <div class="relative h-64 md:h-80 w-full"><canvas id="autarkyChart"></canvas></div>
-                    </div>
+                <div class="flex flex-col md:flex-row gap-2 max-w-md mx-auto">
+                    <input type="text" id="locSearchInput" placeholder="Z.B. Villingen-Schwenningen" class="flex-1 text-sm border-2 border-slate-300 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all shadow-inner">
+                    <button onclick="searchLocation()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold px-6 py-3 rounded-xl transition-colors shadow-md">Suchen</button>
                 </div>
+                <p class="text-xs text-slate-600 mt-4 bg-slate-100 inline-block px-4 py-2 rounded-lg font-mono">
+                    Gewählt: <span id="locNameText" class="text-blue-600 font-bold">Villingen-Schwenningen</span> <br class="md:hidden"><span class="text-[10px]">(Lat: <span id="locLatText">48.06</span>, Lon: <span id="locLonText">8.46</span>)</span>
+                </p>
             </div>
+
+            <button id="btnCalculateMain" onclick="calculateYieldAPI()" class="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-extrabold text-lg py-5 px-6 rounded-2xl shadow-xl transition-all transform active:scale-95 flex items-center justify-center gap-3">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                <span>Gesamt-Simulation jetzt starten</span>
+            </button>
         </div>
 
-        <div id="tab-verbrauch" class="tab-content space-y-6">
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-4 border-b border-slate-200 bg-slate-50">
+        <!-- TAB 1: SYSTEM SETUP (STRINGS) -->
+        <div id="tab-system" class="tab-content max-w-4xl mx-auto space-y-6">
+            <div class="flex justify-between items-end mb-2">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-800">Verschaltung & Strings</h3>
+                    <p class="text-xs text-slate-500">Definiere Dachflächen, Module und Wechselrichter.</p>
+                </div>
+                <button onclick="addString()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm font-bold px-4 py-2.5 rounded-xl shadow-md transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    Neuer String
+                </button>
+            </div>
+            <div id="stringsList" class="space-y-4"></div>
+        </div>
+
+        <!-- TAB 2: VERBRAUCH -->
+        <div id="tab-verbrauch" class="tab-content max-w-4xl mx-auto space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-5 border-b border-slate-200 bg-slate-50/50">
                     <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                         <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                        Haushalts-Grundlast (SLP)
+                        Haushalts-Grundlast (SLP VDI 4655)
                     </h3>
                 </div>
-                <div class="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Personen im Haushalt</label>
-                        <select id="cons_persons" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" onchange="updateConsumptionEstimate()">
+                        <select id="cons_persons" class="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:border-blue-500 focus:ring-0 outline-none" onchange="updateConsumptionEstimate()">
                             <option value="1">1 Person (~1.500 kWh)</option>
                             <option value="2">2 Personen (~2.500 kWh)</option>
                             <option value="3" selected>3 Personen (~3.500 kWh)</option>
@@ -238,7 +133,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Wohnform</label>
-                        <select id="cons_house" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" onchange="updateConsumptionEstimate()">
+                        <select id="cons_house" class="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:border-blue-500 focus:ring-0 outline-none" onchange="updateConsumptionEstimate()">
                             <option value="0">Wohnung</option>
                             <option value="500" selected>Einfamilienhaus (+500 kWh für Außen/Pumpen)</option>
                         </select>
@@ -246,148 +141,298 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-4 border-b border-slate-200 bg-slate-50">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-5 border-b border-slate-200 bg-slate-50/50">
                     <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                         <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        Zusätzliche Großverbraucher
+                        Großverbraucher (Stundenprofile)
                     </h3>
                 </div>
-                <div class="p-4 md:p-6 space-y-6">
-                    <div class="flex items-start gap-4 p-4 border border-slate-100 rounded-lg bg-slate-50/50 hover:bg-slate-50 transition-colors">
-                        <div class="mt-1"><input type="checkbox" id="cons_it_active" class="w-4 h-4 text-blue-600 rounded" onchange="toggleConsGroup('it')"></div>
+                <div class="p-5 md:p-6 space-y-4">
+                    <!-- IT -->
+                    <div class="flex items-start gap-4 p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors shadow-sm">
+                        <div class="mt-0.5"><input type="checkbox" id="cons_it_active" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" onchange="toggleConsGroup('it')"></div>
                         <div class="flex-1">
-                            <label for="cons_it_active" class="block text-sm font-bold text-slate-800 cursor-pointer">24/7 Dauerlast (IT / Smarthome)</label>
+                            <label for="cons_it_active" class="block text-sm font-bold text-slate-800 cursor-pointer">24/7 Dauerlast (IT / Server / Smarthome)</label>
+                            <p class="text-[10px] text-slate-500 mb-2">Konstante, ganzjährige Grundlast.</p>
                             <div id="grp_it" class="hidden flex items-center gap-2 mt-2">
-                                <input type="number" id="cons_it_w" value="100" class="w-24 border rounded px-2 py-1 text-sm" onchange="updateConsumptionEstimate()">
-                                <span class="text-xs text-slate-600">Watt (konstant)</span>
+                                <input type="number" id="cons_it_w" value="100" class="w-24 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 outline-none" onchange="updateConsumptionEstimate()">
+                                <span class="text-xs font-bold text-slate-600">Watt</span>
                             </div>
                         </div>
                     </div>
-
-                    <div class="flex items-start gap-4 p-4 border border-slate-100 rounded-lg bg-slate-50/50 hover:bg-slate-50 transition-colors">
-                        <div class="mt-1"><input type="checkbox" id="cons_ac_active" class="w-4 h-4 text-blue-600 rounded" onchange="toggleConsGroup('ac')"></div>
+                    <!-- Klima -->
+                    <div class="flex items-start gap-4 p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors shadow-sm">
+                        <div class="mt-0.5"><input type="checkbox" id="cons_ac_active" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" onchange="toggleConsGroup('ac')"></div>
                         <div class="flex-1">
                             <label for="cons_ac_active" class="block text-sm font-bold text-slate-800 cursor-pointer">Klimaanlage(n)</label>
+                            <p class="text-[10px] text-slate-500 mb-2">Zieht primär an heißen Sommertagen (Mai-Sept).</p>
                             <div id="grp_ac" class="hidden flex items-center gap-2 mt-2">
-                                <input type="number" id="cons_ac_kwh" value="400" class="w-24 border rounded px-2 py-1 text-sm" onchange="updateConsumptionEstimate()">
-                                <span class="text-xs text-slate-600">kWh pro Jahr</span>
+                                <input type="number" id="cons_ac_kwh" value="400" class="w-24 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 outline-none" onchange="updateConsumptionEstimate()">
+                                <span class="text-xs font-bold text-slate-600">kWh/a</span>
                             </div>
                         </div>
                     </div>
-
-                    <div class="flex items-start gap-4 p-4 border border-slate-100 rounded-lg bg-slate-50/50 hover:bg-slate-50 transition-colors">
-                        <div class="mt-1"><input type="checkbox" id="cons_wp_active" class="w-4 h-4 text-blue-600 rounded" onchange="toggleConsGroup('wp')"></div>
+                    <!-- WP -->
+                    <div class="flex items-start gap-4 p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors shadow-sm">
+                        <div class="mt-0.5"><input type="checkbox" id="cons_wp_active" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" onchange="toggleConsGroup('wp')"></div>
                         <div class="flex-1">
                             <label for="cons_wp_active" class="block text-sm font-bold text-slate-800 cursor-pointer">Heizungs-Wärmepumpe</label>
+                            <p class="text-[10px] text-slate-500 mb-2">Zieht massiv in der kalten Jahreszeit (Okt-April).</p>
                             <div id="grp_wp" class="hidden flex items-center gap-2 mt-2">
-                                <input type="number" id="cons_wp_kwh" value="3500" class="w-24 border rounded px-2 py-1 text-sm" onchange="updateConsumptionEstimate()">
-                                <span class="text-xs text-slate-600">kWh pro Jahr</span>
+                                <input type="number" id="cons_wp_kwh" value="3500" class="w-24 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 outline-none" onchange="updateConsumptionEstimate()">
+                                <span class="text-xs font-bold text-slate-600">kWh/a</span>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="flex items-start gap-4 p-4 border border-slate-100 rounded-lg bg-slate-50/50 hover:bg-slate-50 transition-colors">
-                        <div class="mt-1"><input type="checkbox" id="cons_bw_active" class="w-4 h-4 text-blue-600 rounded" onchange="toggleConsGroup('bw')"></div>
+                    <!-- BWWP -->
+                    <div class="flex items-start gap-4 p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors shadow-sm">
+                        <div class="mt-0.5"><input type="checkbox" id="cons_bw_active" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" onchange="toggleConsGroup('bw')"></div>
                         <div class="flex-1">
                             <label for="cons_bw_active" class="block text-sm font-bold text-slate-800 cursor-pointer">Brauchwasser-Wärmepumpe (BWWP)</label>
+                            <p class="text-[10px] text-slate-500 mb-2">Konstante Nutzung über das ganze Jahr.</p>
                             <div id="grp_bw" class="hidden flex flex-col gap-2 mt-2">
                                 <div class="flex items-center gap-2">
-                                    <input type="number" id="cons_bw_kwh" value="800" class="w-24 border rounded px-2 py-1 text-sm" onchange="updateConsumptionEstimate()">
-                                    <span class="text-xs text-slate-600">kWh pro Jahr</span>
+                                    <input type="number" id="cons_bw_kwh" value="800" class="w-24 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 outline-none" onchange="updateConsumptionEstimate()">
+                                    <span class="text-xs font-bold text-slate-600">kWh/a</span>
                                 </div>
-                                <label class="flex items-center gap-2 text-xs text-blue-600 font-medium">
-                                    <input type="checkbox" id="cons_bw_smart" class="rounded" checked onchange="requireRecalculation()"> Smart-Routing (Mittagsstunden)
+                                <label class="flex items-center gap-2 text-xs text-emerald-600 font-bold bg-emerald-50 w-fit px-2 py-1 rounded cursor-pointer mt-1">
+                                    <input type="checkbox" id="cons_bw_smart" class="rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" checked onchange="requireRecalculation()"> Smart-Routing (Mittagsstunden)
                                 </label>
                             </div>
                         </div>
                     </div>
-
-                    <div class="flex items-start gap-4 p-4 border border-slate-100 rounded-lg bg-slate-50/50 hover:bg-slate-50 transition-colors">
-                        <div class="mt-1"><input type="checkbox" id="cons_ev_active" class="w-4 h-4 text-blue-600 rounded" onchange="toggleConsGroup('ev')"></div>
+                    <!-- E-Auto -->
+                    <div class="flex items-start gap-4 p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors shadow-sm">
+                        <div class="mt-0.5"><input type="checkbox" id="cons_ev_active" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" onchange="toggleConsGroup('ev')"></div>
                         <div class="flex-1">
                             <label for="cons_ev_active" class="block text-sm font-bold text-slate-800 cursor-pointer">E-Auto (Wallbox)</label>
-                            <div id="grp_ev" class="hidden flex flex-col gap-2 mt-2">
+                            <p class="text-[10px] text-slate-500 mb-2">Ladevorgänge primär abends/nachts.</p>
+                            <div id="grp_ev" class="hidden flex flex-col gap-3 mt-2">
                                 <div class="flex gap-4">
-                                    <div><span class="block text-[10px] text-slate-500">Jahresfahrleistung</span><input type="number" id="cons_ev_km" value="12000" class="w-24 border rounded px-2 py-1 text-sm" onchange="updateConsumptionEstimate()"> <span class="text-xs">km</span></div>
-                                    <div><span class="block text-[10px] text-slate-500">Verbrauch</span><input type="number" id="cons_ev_kwh100" value="18" class="w-20 border rounded px-2 py-1 text-sm" onchange="updateConsumptionEstimate()"> <span class="text-xs">kWh/100km</span></div>
+                                    <div><span class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Jahresfahrleistung</span><div class="flex items-center"><input type="number" id="cons_ev_km" value="12000" class="w-24 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600 ml-2">km</span></div></div>
+                                    <div><span class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Verbrauch</span><div class="flex items-center"><input type="number" id="cons_ev_kwh100" value="18" class="w-20 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600 ml-2">kWh/100km</span></div></div>
                                 </div>
-                                <label class="flex items-center gap-2 text-xs text-blue-600 font-medium">
-                                    <input type="checkbox" id="cons_ev_smart" class="rounded" onchange="requireRecalculation()"> PV-Überschussladen (Wochenende)
+                                <label class="flex items-center gap-2 text-xs text-emerald-600 font-bold bg-emerald-50 w-fit px-2 py-1 rounded cursor-pointer mt-1">
+                                    <input type="checkbox" id="cons_ev_smart" class="rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" onchange="requireRecalculation()"> PV-Überschussladen (Wochenende)
                                 </label>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="p-4 bg-slate-100 border-t border-slate-200 text-right">
-                    <p class="text-xs text-slate-500 uppercase tracking-widest mb-1">Geschätzter Gesamt-Jahresverbrauch</p>
-                    <p class="text-2xl font-bold text-slate-800"><span id="lbl_total_kwh_est">4000</span> kWh/a</p>
+                <div class="p-5 bg-slate-800 text-white text-right flex justify-between items-center">
+                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Simulierter Jahresbedarf:</p>
+                    <p class="text-2xl font-black text-emerald-400"><span id="lbl_total_kwh_est">4000</span> <span class="text-sm font-normal text-slate-300">kWh/a</span></p>
                 </div>
             </div>
         </div>
 
-        <div id="tab-system" class="tab-content space-y-6">
-            <div class="flex justify-between items-end mb-4">
-                <h3 class="text-lg md:text-xl font-bold text-slate-800">Strang-Planung</h3>
-                <button onclick="addString()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm font-medium px-4 py-2 rounded-lg shadow-sm transition-colors flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    Neuer String
+        <!-- TAB 3: DASHBOARD 1 (YIELD) -->
+        <div id="tab-dashboard" class="tab-content max-w-7xl mx-auto space-y-6">
+            <div id="focusBanner" class="hidden bg-blue-100 border border-blue-300 text-blue-800 px-4 py-3 rounded-xl flex justify-between items-center text-sm font-bold shadow-sm transition-all">
+                <span id="focusBannerText">Fokus: Gruppe</span>
+                <button onclick="clearFocus()" class="bg-white/80 hover:bg-white text-blue-700 px-3 py-1.5 rounded-lg text-xs border border-blue-200 shadow-sm transition-colors">Gesamtansicht wiederherstellen</button>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-b-4 border-b-blue-500 transition-all flex flex-col justify-between" id="kpiBoxYield">
+                    <p class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider">Netto-Ertrag (AC)</p>
+                    <p id="dashTotalYield" class="text-xl md:text-3xl font-black text-slate-800 mt-2">0 <span class="text-sm font-bold text-slate-400">kWh</span></p>
+                    <p class="text-[9px] text-slate-400 mt-1 leading-tight">Nutzbarer Strom nach Wechselrichter.</p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-b-4 border-b-emerald-500 transition-all flex flex-col justify-between" id="kpiBoxPower">
+                    <p class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider">PV Leistung</p>
+                    <p id="dashTotalKwp" class="text-xl md:text-3xl font-black text-slate-800 mt-2">0.00 <span class="text-sm font-bold text-slate-400">kWp</span></p>
+                    <p class="text-[9px] text-slate-400 mt-1 leading-tight">Installierte Modulleistung (STC).</p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-b-4 border-b-teal-500 transition-all flex flex-col justify-between" id="kpiBoxBat">
+                    <p class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider">Bat. Rettung</p>
+                    <p id="dashBatteryYield" class="text-xl md:text-3xl font-black text-slate-800 mt-2">0 <span class="text-sm font-bold text-slate-400">kWh</span></p>
+                    <p class="text-[9px] text-slate-400 mt-1 leading-tight">PV-Strom, der in den Akku floss.</p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-b-4 border-b-purple-500 transition-all flex flex-col justify-between" id="kpiBoxSpec">
+                    <p class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider">Spez. Ertrag</p>
+                    <p id="dashSpecYield" class="text-xl md:text-3xl font-black text-slate-800 mt-2">0 <span class="text-sm font-bold text-slate-400">kWh/kWp</span></p>
+                    <p class="text-[9px] text-slate-400 mt-1 leading-tight">Effizienz-Indikator des Standorts.</p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-b-4 border-b-rose-500 transition-all flex flex-col justify-between" id="kpiBoxClip">
+                    <p class="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider">AC-Clipping</p>
+                    <p id="dashClipping" class="text-xl md:text-3xl font-black text-slate-800 mt-2">0 <span class="text-sm font-bold text-slate-400">kWh</span></p>
+                    <p class="text-[9px] text-slate-400 mt-1 leading-tight">Verlust (WR zu klein & Akku voll).</p>
+                </div>
+            </div>
+
+            <div id="stringBreakdown" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 md:p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-base md:text-lg font-bold text-slate-800">Monatlicher Netto-Ertrag</h3>
+                    <span class="text-[10px] text-blue-500 font-bold bg-blue-50 px-2 py-1 rounded">Klick auf Balken öffnet Tagesdetails!</span>
+                </div>
+                <div class="relative h-64 md:h-96 w-full"><canvas id="yieldChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- TAB 4: DASHBOARD 2 (AUTARKY) -->
+        <div id="tab-dashboard2" class="tab-content max-w-7xl mx-auto space-y-6">
+            <div class="bg-slate-900 rounded-3xl shadow-2xl overflow-hidden text-white relative">
+                <div class="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-blue-600/20 blur-3xl pointer-events-none"></div>
+                <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
+                
+                <div class="relative p-6 md:p-10">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4 border-b border-slate-700/50 pb-6">
+                        <div>
+                            <h2 class="text-3xl font-extrabold text-transparent text-gradient bg-gradient-to-r from-blue-400 to-emerald-400">Energiefluss & Autarkie</h2>
+                            <p class="text-slate-400 text-sm mt-1 font-medium">Stundengenaue Bilanzierung & Routing-Prio</p>
+                        </div>
+                        <div class="bg-slate-800/80 rounded-xl p-3 border border-slate-700 flex items-center gap-6 shadow-inner">
+                            <div>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Jahresbedarf</p>
+                                <p class="text-xl font-black text-white" id="d2-total-cons">0 kWh</p>
+                            </div>
+                            <div class="w-px h-10 bg-slate-600"></div>
+                            <div>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Jahreserzeugung</p>
+                                <p class="text-xl font-black text-blue-400" id="d2-total-gen">0 kWh</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                        <div class="glass-card rounded-2xl p-6 flex flex-col items-center justify-center relative">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Autarkiegrad</h3>
+                            <div class="relative w-36 h-36 flex items-center justify-center drop-shadow-lg">
+                                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                    <path class="text-slate-700/50" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                    <path id="gauge-autarky" class="text-emerald-400 transition-all duration-1000 ease-out" stroke-width="3" stroke-dasharray="0, 100" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                </svg>
+                                <div class="absolute flex flex-col items-center">
+                                    <span class="text-4xl font-black text-white drop-shadow" id="d2-val-autarky">0%</span>
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-4 text-center leading-tight">Anteil des Bedarfs, der durch PV & Batterie gedeckt wird.</p>
+                        </div>
+
+                        <div class="glass-card rounded-2xl p-6 flex flex-col items-center justify-center relative">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Eigenverbrauch</h3>
+                            <div class="relative w-36 h-36 flex items-center justify-center drop-shadow-lg">
+                                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                    <path class="text-slate-700/50" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                    <path id="gauge-eigen" class="text-blue-400 transition-all duration-1000 ease-out" stroke-width="3" stroke-dasharray="0, 100" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                </svg>
+                                <div class="absolute flex flex-col items-center">
+                                    <span class="text-4xl font-black text-white drop-shadow" id="d2-val-eigen">0%</span>
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-4 text-center leading-tight">Anteil der Erzeugung, der selbst genutzt wird.</p>
+                        </div>
+
+                        <div class="flex flex-col gap-4 justify-center">
+                            <div class="glass-card rounded-xl p-4 flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+                                <div><p class="text-[10px] text-slate-400 font-bold uppercase">Direktverbrauch</p><p class="text-xl font-black text-white" id="d2-direct">0 kWh</p></div>
+                            </div>
+                            <div class="glass-card rounded-xl p-4 flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 shrink-0"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg></div>
+                                <div><p class="text-[10px] text-slate-400 font-bold uppercase">Aus Batterie bezogen</p><p class="text-xl font-black text-white" id="d2-frombat">0 kWh</p></div>
+                            </div>
+                            <div class="flex gap-4">
+                                <div class="glass-card rounded-xl p-3 flex-1 border-rose-500/30">
+                                    <p class="text-[9px] text-slate-400 font-bold uppercase text-center mb-0.5">Netzbezug</p>
+                                    <p class="text-base font-bold text-rose-400 text-center" id="d2-grid-in">0 kWh</p>
+                                </div>
+                                <div class="glass-card rounded-xl p-3 flex-1 border-amber-500/30">
+                                    <p class="text-[9px] text-slate-400 font-bold uppercase text-center mb-0.5">Einspeisung</p>
+                                    <p class="text-base font-bold text-amber-400 text-center" id="d2-grid-out">0 kWh</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Chart 1: Wohin floss der Strom? -->
+                        <div class="glass-card rounded-2xl p-5">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-sm font-bold text-white">1. Verbrauchsanalyse (Wohin?)</h3>
+                                <span class="text-[9px] bg-slate-800 px-2 py-1 rounded text-slate-400 uppercase tracking-widest font-bold">Klick für Details</span>
+                            </div>
+                            <div class="relative h-64 w-full"><canvas id="autarkyConsChart"></canvas></div>
+                        </div>
+                        
+                        <!-- Chart 2: Woher kam der Strom? -->
+                        <div class="glass-card rounded-2xl p-5">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-sm font-bold text-white">2. Deckungsanalyse (Woher?)</h3>
+                                <span class="text-[9px] bg-slate-800 px-2 py-1 rounded text-slate-400 uppercase tracking-widest font-bold">Klick für Details</span>
+                            </div>
+                            <div class="relative h-64 w-full"><canvas id="autarkyGenChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: TAGES-DETAILANSICHT (Versteckt, nur per Klick aufrufbar) -->
+        <div id="tab-detail" class="tab-content max-w-7xl mx-auto space-y-6 mt-2">
+            <div class="flex items-center gap-4 mb-4">
+                <button onclick="switchTab('dashboard2')" class="bg-white hover:bg-slate-100 text-slate-700 font-bold px-4 py-2 rounded-xl shadow-sm border border-slate-200 flex items-center gap-2 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    Zurück
                 </button>
-            </div>
-            <div id="stringsList" class="space-y-4"></div>
-        </div>
-
-        <div id="tab-database" class="tab-content space-y-6">
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-4 border-b border-slate-200 bg-slate-50"><h3 class="text-lg font-bold text-slate-800">Wechselrichter (WR) & Batteriezuweisung</h3></div>
-                <div class="overflow-x-auto p-4">
-                    <table class="w-full text-left text-xs md:text-sm text-slate-600 mb-6 min-w-[900px]">
-                        <thead class="bg-slate-100 text-slate-700 uppercase"><tr><th class="px-3 py-2">Name</th><th class="px-3 py-2">AC Max (W)</th><th class="px-3 py-2">Start (V)</th><th class="px-3 py-2">MPPTs</th><th class="px-3 py-2">Angeschlossene Batterie</th></tr></thead>
-                        <tbody id="wrTableBody" class="divide-y divide-slate-200"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-4 border-b border-slate-200 bg-slate-50"><h3 class="text-lg font-bold text-slate-800">Solarmodule (Panels)</h3></div>
-                <div class="overflow-x-auto p-4">
-                    <table class="w-full text-left text-xs md:text-sm text-slate-600 mb-6 min-w-[700px]">
-                        <thead class="bg-slate-100 text-slate-700 uppercase"><tr><th class="px-3 py-2">Bezeichnung</th><th class="px-3 py-2">Pmax (W)</th><th class="px-3 py-2">Voc (V)</th><th class="px-3 py-2">Vmp (V)</th><th class="px-3 py-2">Isc (A)</th><th class="px-3 py-2">TK Voc</th></tr></thead>
-                        <tbody id="panelTableBody" class="divide-y divide-slate-200"></tbody>
-                    </table>
-                </div>
+                <h2 class="text-2xl font-black text-slate-800">Tagesdetails: <span id="detailMonthName" class="text-blue-600">Januar</span></h2>
             </div>
             
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-4 border-b border-slate-200 bg-slate-50"><h3 class="text-lg font-bold text-slate-800">Referenz: Modulare Batterien</h3></div>
-                <div class="overflow-x-auto p-4">
-                    <table class="w-full text-left text-xs md:text-sm text-slate-600 mb-6 min-w-[600px]">
-                        <thead class="bg-slate-100 text-slate-700 uppercase"><tr><th class="px-3 py-2">System / Konfiguration</th><th class="px-3 py-2">Gesamtkapazität (kWh)</th><th class="px-3 py-2">Max. Leistung (W)</th><th class="px-3 py-2">Wirkungsgrad</th></tr></thead>
-                        <tbody id="batTableBody" class="divide-y divide-slate-200"></tbody>
-                    </table>
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 md:p-6 mb-6">
+                <h3 class="text-base font-bold text-slate-800 mb-4">Tagesgenaue Auflösung (Woher kam der Strom?)</h3>
+                <div class="relative h-72 w-full"><canvas id="detailGenChart"></canvas></div>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 md:p-6">
+                <h3 class="text-base font-bold text-slate-800 mb-4">Tagesgenaue Auflösung (Wohin floss der Strom?)</h3>
+                <div class="relative h-72 w-full"><canvas id="detailConsChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- TAB 6: GERÄTEDATENBANK -->
+        <div id="tab-database" class="tab-content max-w-7xl mx-auto space-y-6">
+            <h3 class="text-xl font-bold text-slate-800 mb-4">Geräte & Zuweisung</h3>
+            
+            <div class="mb-8">
+                <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-3">1. Wechselrichter konfigurieren</h4>
+                <div id="wrCardGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div>
+                    <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-3">2. Modul-Referenz</h4>
+                    <div id="panelCardGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2 rounded-xl border border-slate-200 bg-slate-50 p-2"></div>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-3">3. Batterie-Referenz</h4>
+                    <div id="batCardGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2 rounded-xl border border-slate-200 bg-slate-50 p-2"></div>
                 </div>
             </div>
         </div>
 
-        <div id="tab-faq" class="tab-content space-y-6">
-            <div class="bg-white p-5 md:p-8 rounded-xl shadow-sm border border-slate-200 prose prose-slate text-sm max-w-none">
-                <h2 class="text-xl font-bold border-b pb-2 mb-6">Glossar & Logik der Berechnungen</h2>
+        <!-- TAB 7: FAQ & GLOSSAR -->
+        <div id="tab-faq" class="tab-content max-w-4xl mx-auto space-y-6">
+            <div class="bg-white p-6 md:p-10 rounded-2xl shadow-sm border border-slate-200 prose prose-slate text-sm max-w-none">
+                <h2 class="text-2xl font-black border-b-2 border-slate-100 pb-3 mb-6 text-slate-800">Glossar & Logik der Berechnungen</h2>
                 
                 <h3 class="font-bold text-blue-600 text-lg">1. Die Physik-Engine & PVGIS</h3>
                 <p>Das Tool greift live auf die europäische <strong>PVGIS-Datenbank</strong> zu. Es simuliert für deinen exakten Standort jede der 8.760 Stunden eines historischen Jahres. Dachneigung, Ausrichtung und lokale Wetterdaten fließen direkt in die Berechnung der Sonneneinstrahlung ein.</p>
-                <p>Die <strong>Reihenfolge der Stränge</strong> bei der Dateneingabe ist für die Gesamtberechnung mathematisch völlig irrelevant. Die Engine summiert stundengenau die DC-Leistung beider Dächer ($P_{Ost} + P_{West} = P_{Gesamt}$). Da die Addition kommutativ ist, ist der Strom-Pool immer exakt gleich.</p>
+                <p>Die <strong>Reihenfolge der Strings</strong> bei der Dateneingabe ist für die Gesamtberechnung mathematisch völlig irrelevant. Die Engine summiert stundengenau die DC-Leistung beider Dächer ($P_{Ost} + P_{West} = P_{Gesamt}$). Da die Addition kommutativ ist, ist der Strom-Pool immer exakt gleich.</p>
 
-                <h3 class="font-bold text-blue-600 text-lg mt-4">2. Verluste, Mismatch & Schatten</h3>
+                <h3 class="font-bold text-blue-600 text-lg mt-6">2. Verluste, Mismatch & Schatten</h3>
                 <ul>
                     <li><strong>Schatten:</strong> Reduziert die erzeugte DC-Leistung pauschal um den eingestellten prozentualen Wert.</li>
                     <li><strong>Mismatch (Neigungs-Konflikt):</strong> Wenn du Module mit unterschiedlichen Neigungen (z.B. 30° und 90°) an denselben Tracker (MPPT) hängst, drosselt das flachere Modul das steilere. Die Engine erkennt das automatisch und zieht bis zu 15 % Mismatch-Verlust ab.</li>
                     <li><strong>Systemverluste:</strong> Bei der Wandlung von DC in AC gehen grundsätzlich ca. 5 % durch Wärme am Wechselrichter verloren.</li>
                 </ul>
 
-                <h3 class="font-bold text-blue-600 text-lg mt-4">3. Lastprofile & Verbrauch (VDI 4655)</h3>
+                <h3 class="font-bold text-blue-600 text-lg mt-6">3. Lastprofile & Verbrauch (VDI 4655)</h3>
                 <p>Um die Autarkie berechnen zu können, nutzt die Simulation stundengenaue Standardlastprofile (SLP). So berücksichtigt die Engine realistisch, dass du im Winter morgens mehr Licht brauchst, oder simuliert die massiven Peaks einer Wärmepumpe exakt dann, wenn sie wirklich anfallen (Oktober bis April).</p>
 
-                <h3 class="font-bold text-blue-600 text-lg mt-4">4. Batterie-Logik & Prioritäten-Weiche (v4.2+)</h3>
+                <h3 class="font-bold text-blue-600 text-lg mt-6">4. Batterie-Logik & Prioritäten-Weiche</h3>
                 <p>Die Batterie-Simulation arbeitet als intelligentes System, das sowohl klassische Hochvolt-Systeme (Fronius) als auch Niedervolt-Balkonkraftwerke (Anker SOLIX) realistisch abbildet:</p>
                 <ol>
                     <li><strong>Priorität 1 (Hauslast):</strong> Der DC-Strom vom Dach deckt zuerst deinen stundengenauen Hausverbrauch. Hierbei greift als Flaschenhals das <em>AC Max</em> Limit des Wechselrichters.</li>
@@ -396,25 +441,14 @@
                 </ol>
                 <p>Beim <strong>Entladen</strong> der Batterie wird der spezifische System-Wirkungsgrad (z.B. 80 % bei Anker, 92 % bei Fronius) als Umwandlungsverlust direkt von der entnommenen Energie abgezogen.</p>
 
-                <h3 class="font-bold text-blue-600 text-lg mt-4">5. Kennzahlen im Dashboard erklärt</h3>
-                <ul>
-                    <li><strong>Netto-Ertrag (AC):</strong> Der echte nutzbare Wechselstrom, der nach allen Abzügen, Verlusten und dem Hardware-Clipping aus dem Wechselrichter ins Hausnetz fließt.</li>
-                    <li><strong>Bat. Rettung:</strong> Die gesamte Menge an PV-Energie, die erfolgreich in die Batterie geladen wurde, um sie vor dem Verlust durch das Einspeiselimit zu retten.</li>
-                    <li><strong>AC-Clipping:</strong> Strom, der auf dem Dach produziert wurde, aber endgültig verloren ging, weil sowohl das AC-Limit des Wechselrichters erreicht als auch die Batterie voll war.</li>
-                    <li><strong>Autarkiegrad:</strong> Wie viel Prozent deines jährlichen Hausstromverbrauchs konntest du durch die PV-Anlage und die Batterie selbst abdecken? (Ziel: Möglichst nahe an 100 %).</li>
-                    <li><strong>Eigenverbrauch:</strong> Wie viel Prozent der produzierten PV-Energie hast du im eigenen Haus genutzt, anstatt sie billig ins Netz einzuspeisen?</li>
-                </ul>
+                <hr class="my-10 border-slate-200">
 
-                <hr class="my-8 border-slate-200">
-
-                <h2 class="text-xl font-bold border-b pb-2 mb-4">Versionshistorie (Changelog)</h2>
-                <ul class="space-y-2 text-slate-600">
-                    <li><strong class="text-slate-800">v4.4:</strong> Umfassendes FAQ & Glossar. Fix der Entlade-Effizienzberechnung. Erläuterung zur Kommutativität der Strang-Berechnung.</li>
-                    <li><strong class="text-slate-800">v4.3:</strong> Sicherheits-Vorbelegung aller Wechselrichter auf "Keine Batterie", um ungewollte Speichersimulationen zu verhindern.</li>
-                    <li><strong class="text-slate-800">v4.2:</strong> Neue Prioritätenweiche für Niedervolt-Batterien (Prio 1 Haus, Prio 2 Batterie). Integration spezifischer Wirkungsgrade. Fehlende Jolywood-Modelle ergänzt.</li>
-                    <li><strong class="text-slate-800">v4.1:</strong> Modulare Batterie-Datenbank (BYD HVS/HVM, Fronius Reserva, Anker). Reparierte Batterie-Zuweisung. Blockade des Pull-to-Refresh.</li>
-                    <li><strong class="text-slate-800">v4.0:</strong> Einführung des Autarkie-Dashboards im Dark-Mode. Wählbare Haushalts-Verbrauchsprofile und Großverbraucher (SLP).</li>
-                    <li><strong class="text-slate-800">v3.9:</strong> Hierarchische Dropdowns. Fortschrittsbalken für MPPT-Sweetspots.</li>
+                <h2 class="text-xl font-bold border-b pb-2 mb-4 text-slate-800">Versionshistorie (Changelog)</h2>
+                <ul class="space-y-3 text-slate-600">
+                    <li><strong class="text-slate-800 bg-slate-100 px-2 py-1 rounded">v5.0:</strong> Major UI/UX App Update. Read-Only Formulare (Wischgesten flüssig). Interaktive, tagesgenaue Detail-Charts (Drill-Down). Chart-Split in Dash 2 (Woher / Wohin). Dynamischer Rechen-Button.</li>
+                    <li><strong class="text-slate-800 bg-slate-50 px-2 py-1 rounded">v4.4:</strong> Umfassendes FAQ & Glossar. Fix der Entlade-Effizienzberechnung. Erläuterung zur Kommutativität.</li>
+                    <li><strong class="text-slate-800 bg-slate-50 px-2 py-1 rounded">v4.3:</strong> Sicherheits-Vorbelegung aller Wechselrichter auf "Keine Batterie".</li>
+                    <li><strong class="text-slate-800 bg-slate-50 px-2 py-1 rounded">v4.2:</strong> Neue Prioritätenweiche für Niedervolt-Batterien. Integration spezifischer Wirkungsgrade. Fehlende Jolywood-Modelle ergänzt.</li>
                 </ul>
             </div>
         </div>
@@ -434,7 +468,9 @@
             { id: 2, name: "Süd 2", group: "Hauptdach", shading: 5, azimuth: 180, inverterId: 16, mpptId: 2, color: colors[0], fields: [{ id: 102, panelId: 104, count: 8, tilt: 35 }] }
         ];
 
-        let chartYield = null; let chartAutarky = null;
+        let chartYield = null; let chartAutarkyCons = null; let chartAutarkyGen = null; 
+        let detailConsChart = null; let detailGenChart = null;
+        let currentDetailMonth = 0;
 
         function initDatabase() {
             if (typeof MasterDB !== 'undefined') {
@@ -472,24 +508,33 @@
             saveConsumptionSettings(); alert("Konfiguration gespeichert!"); 
         }
 
-        let touchStartX = 0; let touchStartY = 0; const tabOrder = ['dashboard', 'dashboard2', 'verbrauch', 'system', 'database', 'faq'];
-        document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; }, { passive: true });
-        document.addEventListener('touchend', e => {
-            const t = e.target.tagName; if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'CANVAS', 'TABLE', 'TH', 'TD'].includes(t) || e.target.closest('table') || e.target.type === 'range') return;
-            let diffX = e.changedTouches[0].screenX - touchStartX; let diffY = e.changedTouches[0].screenY - touchStartY;
-            if (Math.abs(diffX) > 70 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
-                let currentActive = document.querySelector('.tab-content.active').id.replace('tab-', ''); let cIdx = tabOrder.indexOf(currentActive);
-                if (diffX < 0 && cIdx < tabOrder.length - 1) switchTab(tabOrder[cIdx + 1], 'slide-left'); else if (diffX > 0 && cIdx > 0) switchTab(tabOrder[cIdx - 1], 'slide-right');
-            }
-        }, { passive: true });
-
-        function switchTab(tabId, anim = 'slide-left') {
-            const current = document.querySelector('.tab-content.active'); const next = document.getElementById('tab-' + tabId);
-            if(current && current !== next) { current.classList.remove('active', 'slide-left', 'slide-right'); next.classList.remove('slide-left', 'slide-right'); next.classList.add('active', anim); }
+        const tabOrder = ['start', 'system', 'verbrauch', 'dashboard', 'dashboard2', 'database', 'faq'];
+        function switchTab(tabId) {
+            const current = document.querySelector('.tab-content.active'); 
+            const next = document.getElementById('tab-' + tabId);
+            if(current && current !== next) { current.classList.remove('active'); next.classList.add('active'); }
             else if (!current) next.classList.add('active');
-            tabOrder.forEach(id => { document.getElementById('btn-' + id).className = id === tabId ? "shrink-0 px-4 py-2 text-sm font-medium rounded-md bg-blue-600 text-white shadow-sm" : "shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700"; });
+            
+            // UI Button states
+            tabOrder.forEach(id => { 
+                let btn = document.getElementById('btn-' + id);
+                if(btn) btn.className = id === tabId ? "snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-bold rounded-md bg-blue-600 text-white shadow-sm flex items-center gap-1.5 transition-colors" : "snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors flex items-center gap-1.5"; 
+            });
+
+            // Scroll Sync
+            let activeBtn = document.getElementById('btn-' + tabId);
+            if(activeBtn) activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         }
-        function toggleAccordion(event, idStr) { if(event) event.stopPropagation(); const content = document.getElementById('acc-' + idStr); const icon = document.getElementById('icon-' + idStr); if(content && icon) { content.classList.toggle('open'); icon.style.transform = content.classList.contains('open') ? "rotate(180deg)" : "rotate(0deg)"; } }
+
+        function toggleEditMode(strId) {
+            const el = document.getElementById('edit-' + strId);
+            const view = document.getElementById('view-' + strId);
+            if(el.classList.contains('hidden')) {
+                el.classList.remove('hidden'); view.classList.add('hidden');
+            } else {
+                el.classList.add('hidden'); view.classList.remove('hidden');
+            }
+        }
 
         function toggleConsGroup(id) { const isChecked = document.getElementById(`cons_${id}_active`).checked; document.getElementById(`grp_${id}`).classList.toggle('hidden', !isChecked); updateConsumptionEstimate(); }
 
@@ -539,20 +584,25 @@
         }
 
         function build8760ConsumptionArray() {
-            let c = getConsumptionConfig(); let arr = new Float32Array(8760);
+            let c = getConsumptionConfig(); 
+            let out = { total: new Float32Array(8760), base: new Float32Array(8760), it: new Float32Array(8760), ac: new Float32Array(8760), wp: new Float32Array(8760), bw: new Float32Array(8760), ev: new Float32Array(8760) };
+
             for(let h=0; h<8760; h++) {
                 let dayOfYear = Math.floor(h / 24); let hourOfDay = h % 24; let isWeekend = (dayOfYear % 7 === 5 || dayOfYear % 7 === 6);
                 let seasonalFactor = 1 + 0.3 * Math.cos((dayOfYear - 15) * 2 * Math.PI / 365);
                 let hourFactor = 0.5; if(hourOfDay >= 7 && hourOfDay <= 9) hourFactor = 1.2; if(hourOfDay >= 10 && hourOfDay <= 17) hourFactor = 0.8; if(hourOfDay >= 18 && hourOfDay <= 22) hourFactor = 1.5;
                 
-                let load = ((c.baseKwh * 1000 / 8760) * seasonalFactor * hourFactor) + c.it;
-                if (c.ac > 0 && dayOfYear >= 120 && dayOfYear <= 270) { if (hourOfDay >= 12 && hourOfDay <= 18) load += (c.ac * 1000) / (150 * 7); }
-                if (c.wp > 0 && (dayOfYear < 120 || dayOfYear > 270)) { load += (c.wp * 1000 / (215 * 24)) * (1 + 0.5 * Math.cos((dayOfYear - 15) * 2 * Math.PI / 365)); }
-                if (c.bw > 0) { let bwDailyW = (c.bw * 1000) / 365; if (c.bwSmart && hourOfDay >= 11 && hourOfDay <= 14) { load += bwDailyW / 4; } else if (!c.bwSmart && hourOfDay >= 18 && hourOfDay <= 21) { load += bwDailyW / 4; } }
-                if (c.ev > 0) { let evDailyW = (c.ev * 1000) / 365; if (c.evSmart && isWeekend && hourOfDay >= 10 && hourOfDay <= 16) { load += (evDailyW * 7) / 14; } else if (!c.evSmart && hourOfDay >= 18 && hourOfDay <= 23) { load += evDailyW / 6; } }
-                arr[h] = load;
+                out.base[h] = (c.baseKwh * 1000 / 8760) * seasonalFactor * hourFactor;
+                out.it[h] = c.it;
+                
+                if (c.ac > 0 && dayOfYear >= 120 && dayOfYear <= 270) { if (hourOfDay >= 12 && hourOfDay <= 18) out.ac[h] = (c.ac * 1000) / (150 * 7); }
+                if (c.wp > 0 && (dayOfYear < 120 || dayOfYear > 270)) { out.wp[h] = (c.wp * 1000 / (215 * 24)) * (1 + 0.5 * Math.cos((dayOfYear - 15) * 2 * Math.PI / 365)); }
+                if (c.bw > 0) { let bwDailyW = (c.bw * 1000) / 365; if (c.bwSmart && hourOfDay >= 11 && hourOfDay <= 14) { out.bw[h] = bwDailyW / 4; } else if (!c.bwSmart && hourOfDay >= 18 && hourOfDay <= 21) { out.bw[h] = bwDailyW / 4; } }
+                if (c.ev > 0) { let evDailyW = (c.ev * 1000) / 365; if (c.evSmart && isWeekend && hourOfDay >= 10 && hourOfDay <= 16) { out.ev[h] = (evDailyW * 7) / 14; } else if (!c.evSmart && hourOfDay >= 18 && hourOfDay <= 23) { out.ev[h] = evDailyW / 6; } }
+                
+                out.total[h] = out.base[h] + out.it[h] + out.ac[h] + out.wp[h] + out.bw[h] + out.ev[h];
             }
-            ConsumptionCache = arr; return arr;
+            ConsumptionCache = out; return out;
         }
 
         async function searchLocation() { 
@@ -599,14 +649,19 @@
             
             const badge = document.getElementById('globalStatusBadge');
             badge.className = sysError ? "hidden md:inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-500 border border-rose-500/30" : "hidden md:inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
-            badge.innerText = sysError ? "Physik: WR Limits prüfen!" : "Physik OK";
+            badge.innerText = sysError ? "Physik Warnung" : "Physik OK";
             renderStringsUI(); renderDatabaseUI();
+        }
+
+        function requireRecalculation() { 
+            document.getElementById('btnCalcHeader').classList.remove('hidden');
+            updatePhysicsOnly(); 
         }
 
         async function calculateYieldAPI() {
             const btn = document.getElementById('btnCalculate'); const origTxt = btn.innerHTML;
             btn.innerHTML = '<svg class="w-5 h-5 spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-width="4" stroke-dasharray="30 30"></circle></svg><span>Lade Daten...</span>';
-            btn.disabled = true; document.getElementById('calcWarning').classList.add('hidden');
+            btn.disabled = true; document.getElementById('btnCalcHeader').classList.add('hidden');
 
             try {
                 let proms = [];
@@ -644,13 +699,18 @@
                 let consH = build8760ConsumptionArray();
                 const systemLossFactor = 0.95; 
                 
-                let flow = { direct: 0, toBat: 0, fromBat: 0, toGrid: 0, fromGrid: 0, moCons: new Array(12).fill(0), moGen: new Array(12).fill(0), moBat: new Array(12).fill(0) };
+                let flow = { 
+                    direct: 0, toBat: 0, fromBat: 0, toGrid: 0, fromGrid: 0, clip: 0, batLoss: 0,
+                    moCons: new Array(12).fill(0), moGen: new Array(12).fill(0), moBat: new Array(12).fill(0),
+                    hr: { pvTotal: new Float32Array(8760), direct: new Float32Array(8760), fromBat: new Float32Array(8760), toGrid: new Float32Array(8760), toBat: new Float32Array(8760), fromGrid: new Float32Array(8760), clip: new Float32Array(8760), batLoss: new Float32Array(8760) }
+                };
                 let batCharges = {}; activeInvs.forEach(inv => batCharges[inv.id] = 0);
 
                 for(let h=0; h<8760; h++) {
                     let sysAcAvailableW = 0;
                     let sysBatChargeW = 0;
-                    let loadW = consH[h] || 0;
+                    let sysClipW = 0;
+                    let loadW = consH.total[h] || 0;
                     let remainingLoad = loadW;
 
                     activeInvs.forEach(inv => {
@@ -689,6 +749,7 @@
                         }
 
                         if (excessDc > 0) {
+                            sysClipW += excessDc;
                             let iStrs = sRes.filter(sr => strings.find(s=>s.id===sr.id)?.inverterId == inv.id);
                             iStrs.forEach(sr => { if(invH[inv.id][h]>0) sr.clip += (excessDc * (sr.hr[h]/invH[inv.id][h])) / 1000; });
                         }
@@ -697,15 +758,22 @@
                     let m = 0; for(let i=11; i>=0; i--) { if(h >= mStart[i]) { m = i; break; } }
                     flow.moCons[m] += loadW / 1000;
                     flow.moGen[m] += sysAcAvailableW / 1000;
+                    flow.hr.pvTotal[h] = sysAcAvailableW;
+                    flow.hr.toBat[h] = sysBatChargeW;
+                    flow.hr.clip[h] = sysClipW;
 
                     if (sysAcAvailableW >= loadW) {
                         flow.direct += loadW;
                         flow.toGrid += (sysAcAvailableW - loadW);
+                        flow.hr.direct[h] = loadW;
+                        flow.hr.toGrid[h] = sysAcAvailableW - loadW;
                     } else {
                         let deficit = loadW - sysAcAvailableW;
                         flow.direct += sysAcAvailableW;
+                        flow.hr.direct[h] = sysAcAvailableW;
                         
                         let dischargedEffW = 0;
+                        let actualDischargeLossW = 0;
                         activeInvs.forEach(inv => {
                             if (deficit <= 0) return;
                             let bat = flatBatteries.find(b => b.id == inv.batteryId);
@@ -717,12 +785,18 @@
                                 deficit -= drawW;
                                 let eff = bat.eff || 0.90;
                                 dischargedEffW += (drawW * eff);
+                                actualDischargeLossW += (drawW * (1 - eff));
                             }
                         });
                         
                         flow.fromBat += dischargedEffW; 
+                        flow.batLoss += actualDischargeLossW;
+                        flow.hr.batLoss[h] = actualDischargeLossW;
                         flow.moBat[m] += dischargedEffW / 1000;
+                        flow.hr.fromBat[h] = dischargedEffW;
+                        
                         flow.fromGrid += deficit;
+                        flow.hr.fromGrid[h] = deficit;
                     }
                     flow.toBat += sysBatChargeW;
                 }
@@ -747,13 +821,15 @@
                     for(let m=0; m<12; m++) g.mo[m] += sr.mo[m];
                 });
 
-                flow.direct /= 1000; flow.fromBat /= 1000; flow.toGrid /= 1000; flow.fromGrid /= 1000; flow.toBat /= 1000;
-                YieldDataCache = groupedResults; FlowCache = flow; activeGroupIndex = null; renderDashboard();
+                // Convert globals
+                ['direct','fromBat','toGrid','fromGrid','toBat','clip','batLoss'].forEach(k => flow[k]/=1000);
+                
+                YieldDataCache = groupedResults; FlowCache = flow; activeGroupIndex = null; 
+                switchTab('dashboard');
+                renderDashboard();
             } catch(e) { console.error(e); alert("API Fehler: " + e.message); }
             btn.innerHTML = origTxt; btn.disabled = false;
         }
-
-        function requireRecalculation() { document.getElementById('calcWarning').classList.remove('hidden'); updatePhysicsOnly(); }
 
         function setFocus(idx) { activeGroupIndex = activeGroupIndex === idx ? null : idx; renderDashboard(); }
         function clearFocus() { activeGroupIndex = null; renderDashboard(); }
@@ -772,39 +848,41 @@
                 document.getElementById('kpiBoxYield').style.borderColor = ''; document.getElementById('kpiBoxYield').style.backgroundColor = '';
             }
 
-            document.getElementById('dashTotalKwp').innerHTML = `${dK.toFixed(2)} <span class="text-sm font-normal text-slate-500">kWp</span>`;
-            document.getElementById('dashTotalYield').innerHTML = `${Math.round(dY).toLocaleString()} <span class="text-sm font-normal text-slate-500">kWh</span>`;
-            document.getElementById('dashBatteryYield').innerHTML = `${Math.round(dB).toLocaleString()} <span class="text-sm font-normal text-slate-500">kWh</span>`;
-            document.getElementById('dashSpecYield').innerHTML = `${dK>0 ? Math.round(dY/dK) : 0} <span class="text-sm font-normal text-slate-500">kWh/kWp</span>`;
-            document.getElementById('dashClipping').innerHTML = `${Math.round(dC)} <span class="text-sm font-normal text-slate-500">kWh</span>`;
+            document.getElementById('dashTotalKwp').innerHTML = `${dK.toFixed(2)} <span class="text-sm font-bold text-slate-400">kWp</span>`;
+            document.getElementById('dashTotalYield').innerHTML = `${Math.round(dY).toLocaleString()} <span class="text-sm font-bold text-slate-400">kWh</span>`;
+            document.getElementById('dashBatteryYield').innerHTML = `${Math.round(dB).toLocaleString()} <span class="text-sm font-bold text-slate-400">kWh</span>`;
+            document.getElementById('dashSpecYield').innerHTML = `${dK>0 ? Math.round(dY/dK) : 0} <span class="text-sm font-bold text-slate-400">kWh/kWp</span>`;
+            document.getElementById('dashClipping').innerHTML = `${Math.round(dC)} <span class="text-sm font-bold text-slate-400">kWh</span>`;
 
             let sysY = grpRes.reduce((sum, g) => sum + g.yield, 0);
             document.getElementById('stringBreakdown').innerHTML = grpRes.map((g, idx) => {
                 const pct = sysY>0 ? ((g.yield / sysY)*100).toFixed(1) : 0;
                 const foc = activeGroupIndex === idx;
-                const cardCls = foc ? `bg-blue-50/50 ring-1 shadow-md scale-[1.02]` : `bg-white border-slate-200 hover:border-slate-300 shadow-sm`;
+                const cardCls = foc ? `bg-blue-50 ring-2 ring-blue-400 shadow-md scale-[1.02]` : `bg-white border-slate-200 hover:border-slate-300 shadow-sm hover:shadow`;
 
                 return `
-                <div class="p-3.5 md:p-4 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${cardCls}"
-                     onclick="setFocus(${idx})" style="${foc ? 'border-color: ' + g.color : ''}">
+                <div class="p-4 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${cardCls}" onclick="setFocus(${idx})">
                     <div class="flex items-center gap-3">
-                        <div class="w-3.5 h-3.5 rounded-full shrink-0" style="background-color: ${g.color}"></div>
+                        <div class="w-4 h-4 rounded-full shrink-0 shadow-sm" style="background-color: ${g.color}"></div>
                         <div>
-                            <p class="text-xs md:text-sm font-bold text-slate-800">${g.name}</p>
-                            <p class="text-[10px] md:text-xs text-slate-500 font-medium mt-0.5">${g.panels} Module (${g.kwp.toFixed(2)} kWp) • ${g.inverters.join(', ') || 'Kein WR'}</p>
+                            <p class="text-sm font-bold text-slate-800">${g.name}</p>
+                            <p class="text-[10px] text-slate-500 font-medium mt-0.5">${g.panels} Module (${g.kwp.toFixed(2)} kWp) • ${g.inverters.join(', ') || 'Kein WR'}</p>
                             <p class="text-[10px] text-slate-400 mt-0.5">${Math.round(g.yield).toLocaleString()} kWh/a • ${g.kwp>0?Math.round(g.yield/g.kwp):0} kWh/kWp</p>
                         </div>
                     </div>
-                    <div class="text-right pl-2 shrink-0"><p class="text-sm md:text-base font-bold text-slate-800">${pct}%</p></div>
+                    <div class="text-right pl-2 shrink-0"><p class="text-base font-black text-slate-800">${pct}%</p></div>
                 </div>`;
             }).join('');
 
             const ctxYield = document.getElementById('yieldChart').getContext('2d');
-            const datasetsYield = grpRes.map((g, idx) => ({ label: g.name, data: g.mo.map(v => Math.round(v)), backgroundColor: (activeGroupIndex !== null && activeGroupIndex !== idx) ? g.color+'20' : g.color, borderRadius: 2 }));
+            const datasetsYield = grpRes.map((g, idx) => ({ label: g.name, data: g.mo.map(v => Math.round(v)), backgroundColor: (activeGroupIndex !== null && activeGroupIndex !== idx) ? g.color+'20' : g.color, borderRadius: 3 }));
 
             if(chartYield) { chartYield.data.datasets = datasetsYield; chartYield.update(); } 
             else {
-                chartYield = new Chart(ctxYield, { type: 'bar', data: { labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"], datasets: datasetsYield }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, grid: { color: '#f1f5f9' }, min: 0 } }, plugins: { legend: { position: 'bottom' }, tooltip: { enabled: true, mode: 'index', intersect: false } }, onClick: (e, els) => { if(els.length > 0) setFocus(els[0].datasetIndex); } } });
+                chartYield = new Chart(ctxYield, { 
+                    type: 'bar', data: { labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"], datasets: datasetsYield }, 
+                    options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, grid: { color: '#f1f5f9' }, min: 0 } }, plugins: { legend: { position: 'bottom' }, tooltip: { enabled: true, mode: 'index', intersect: false } }, onClick: (e, els) => { if(els.length > 0) openDetailView(els[0].index); } } 
+                });
             }
 
             // DASH 2
@@ -826,12 +904,95 @@
             document.getElementById('gauge-autarky').style.strokeDasharray = `${autarkyPct}, 100`;
             document.getElementById('gauge-eigen').style.strokeDasharray = `${eigenPct}, 100`;
 
-            const ctxAutarky = document.getElementById('autarkyChart').getContext('2d');
-            if(chartAutarky) {
-                chartAutarky.data.datasets[0].data = FlowCache.moGen; chartAutarky.data.datasets[1].data = FlowCache.moBat; chartAutarky.data.datasets[2].data = FlowCache.moCons; chartAutarky.update();
-            } else {
-                chartAutarky = new Chart(ctxAutarky, { type: 'bar', data: { labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"], datasets: [ { label: 'Erzeugung direkt', data: FlowCache.moGen, backgroundColor: '#3b82f6', borderRadius: 2, stack: 'Stack 0' }, { label: 'Aus Batterie', data: FlowCache.moBat, backgroundColor: '#a855f7', borderRadius: 2, stack: 'Stack 0' }, { label: 'Verbrauch (Last)', data: FlowCache.moCons, borderColor: '#f43f5e', backgroundColor: 'transparent', type: 'line', borderWidth: 2, pointRadius: 3, tension: 0.3 } ] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, grid: { color: 'rgba(255,255,255,0.1)' }, min: 0, ticks: {color: '#94a3b8'} } }, plugins: { legend: { position: 'bottom', labels: {color: '#cbd5e1'} } } } });
+            // Data for Dash 2 Charts (Monthly Aggregations based on 8760 breakdowns)
+            let mStart = [0, 744, 1416, 2160, 2880, 3624, 4344, 5088, 5832, 6552, 7296, 8016];
+            let moBreakdown = { base: [], it: [], ac: [], wp: [], bw: [], ev: [], toGrid: [], pvTotal: [], clip: [], toBat: [] };
+            
+            for(let m=0; m<12; m++) {
+                let sumB=0, sumI=0, sumA=0, sumW=0, sumBw=0, sumE=0, sumTG=0, sumPV=0, sumC=0, sumTB=0;
+                for(let h=mStart[m]; h<(m===11?8760:mStart[m+1]); h++) {
+                    sumB += ConsumptionCache.base[h]; sumI += ConsumptionCache.it[h]; sumA += ConsumptionCache.ac[h];
+                    sumW += ConsumptionCache.wp[h]; sumBw += ConsumptionCache.bw[h]; sumE += ConsumptionCache.ev[h];
+                    sumTG += FlowCache.hr.toGrid[h]; sumPV += FlowCache.hr.pvTotal[h]; sumC += FlowCache.hr.clip[h]; sumTB += FlowCache.hr.toBat[h];
+                }
+                moBreakdown.base.push(sumB/1000); moBreakdown.it.push(sumI/1000); moBreakdown.ac.push(sumA/1000);
+                moBreakdown.wp.push(sumW/1000); moBreakdown.bw.push(sumBw/1000); moBreakdown.ev.push(sumE/1000);
+                moBreakdown.toGrid.push(sumTG/1000); moBreakdown.pvTotal.push(sumPV/1000); moBreakdown.clip.push(sumC/1000); moBreakdown.toBat.push(sumTB/1000);
             }
+
+            const cOpts = { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, grid: { color: 'rgba(255,255,255,0.05)' }, min: 0, ticks: {color: '#94a3b8'} } }, plugins: { legend: { position: 'bottom', labels: {color: '#cbd5e1', font: {size: 10}, usePointStyle: true, boxWidth: 6} } }, onClick: (e, els) => { if(els.length > 0) openDetailView(els[0].index); } };
+
+            const ctxCons = document.getElementById('autarkyConsChart').getContext('2d');
+            if(chartAutarkyCons) { chartAutarkyCons.destroy(); }
+            chartAutarkyCons = new Chart(ctxCons, {
+                type: 'bar',
+                data: { labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],
+                datasets: [
+                    { label: 'Einspeisung', data: moBreakdown.toGrid, backgroundColor: '#f59e0b', stack: '0' },
+                    { label: 'Bat-Ladung', data: moBreakdown.toBat, backgroundColor: '#10b981', stack: '0' },
+                    { label: 'E-Auto', data: moBreakdown.ev, backgroundColor: '#84cc16', stack: '0' },
+                    { label: 'Klima', data: moBreakdown.ac, backgroundColor: '#0ea5e9', stack: '0' },
+                    { label: 'Wärmepumpe', data: moBreakdown.wp, backgroundColor: '#ef4444', stack: '0' },
+                    { label: 'BWWP', data: moBreakdown.bw, backgroundColor: '#f43f5e', stack: '0' },
+                    { label: 'IT/Server', data: moBreakdown.it, backgroundColor: '#3b82f6', stack: '0' },
+                    { label: 'Grundlast', data: moBreakdown.base, backgroundColor: '#94a3b8', stack: '0' }
+                ]}, options: cOpts
+            });
+
+            const ctxGen = document.getElementById('autarkyGenChart').getContext('2d');
+            if(chartAutarkyGen) { chartAutarkyGen.destroy(); }
+            chartAutarkyGen = new Chart(ctxGen, {
+                type: 'bar',
+                data: { labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],
+                datasets: [
+                    { label: 'PV Erzeugung (Gesamt)', data: moBreakdown.pvTotal, borderColor: '#3b82f6', backgroundColor: 'transparent', type: 'line', borderWidth: 2, pointRadius: 2, tension: 0.3 },
+                    { label: 'PV Direkt', data: FlowCache.moGen, backgroundColor: '#3b82f6', stack: '0' }, // direct roughly moGen - toGrid
+                    { label: 'Aus Batterie', data: FlowCache.moBat, backgroundColor: '#a855f7', stack: '0' },
+                    { label: 'Netzbezug', data: moBreakdown.base.map((_,i) => FlowCache.moCons[i] - FlowCache.moGen[i] + moBreakdown.toGrid[i] - FlowCache.moBat[i]), backgroundColor: '#f43f5e', stack: '0' } // simplified for chart visual
+                ]}, options: cOpts
+            });
+        }
+
+        function openDetailView(monthIdx) {
+            currentDetailMonth = monthIdx;
+            switchTab('detail');
+            const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+            document.getElementById('detailMonthName').innerText = monthNames[monthIdx];
+
+            const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+            let startDay = 0; for(let i=0; i<monthIdx; i++) startDay += daysInMonth[i];
+
+            let dailyLabels = [];
+            let dBase = [], dIt = [], dAc = [], dWp = [], dBw = [], dEv = [], dToGrid = [], dToBat = [];
+            let dPvTotal = [], dDirect = [], dFromBat = [], dFromGrid = [];
+
+            for(let d=0; d<daysInMonth[monthIdx]; d++) {
+                dailyLabels.push((d+1)+".");
+                let sB=0, sI=0, sA=0, sW=0, sBw=0, sE=0, sTG=0, sTB=0, sPV=0, sDir=0, sFB=0, sFG=0;
+                for(let h=0; h<24; h++) {
+                    let absH = (startDay + d)*24 + h;
+                    sB+=ConsumptionCache.base[absH]; sI+=ConsumptionCache.it[absH]; sA+=ConsumptionCache.ac[absH];
+                    sW+=ConsumptionCache.wp[absH]; sBw+=ConsumptionCache.bw[absH]; sE+=ConsumptionCache.ev[absH];
+                    sTG+=FlowCache.hr.toGrid[absH]; sTB+=FlowCache.hr.toBat[absH]; sPV+=FlowCache.hr.pvTotal[absH];
+                    sDir+=FlowCache.hr.direct[absH]; sFB+=FlowCache.hr.fromBat[absH]; sFG+=FlowCache.hr.fromGrid[absH];
+                }
+                dBase.push(sB/1000); dIt.push(sI/1000); dAc.push(sA/1000); dWp.push(sW/1000); dBw.push(sBw/1000); dEv.push(sE/1000);
+                dToGrid.push(sTG/1000); dToBat.push(sTB/1000); dPvTotal.push(sPV/1000); dDirect.push(sDir/1000); dFromBat.push(sFB/1000); dFromGrid.push(sFG/1000);
+            }
+
+            const cOpts = { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, grid: { color: '#f1f5f9' }, min: 0 } }, plugins: { legend: { position: 'bottom', labels: {usePointStyle: true, boxWidth: 8} } } };
+
+            const ctx1 = document.getElementById('detailConsChart').getContext('2d');
+            if(detailConsChart) detailConsChart.destroy();
+            detailConsChart = new Chart(ctx1, { type: 'bar', data: { labels: dailyLabels, datasets: [
+                { label: 'Einspeisung', data: dToGrid, backgroundColor: '#f59e0b', stack: '0' }, { label: 'Bat-Ladung', data: dToBat, backgroundColor: '#10b981', stack: '0' }, { label: 'E-Auto', data: dEv, backgroundColor: '#84cc16', stack: '0' }, { label: 'Klima', data: dAc, backgroundColor: '#0ea5e9', stack: '0' }, { label: 'WP', data: dWp, backgroundColor: '#ef4444', stack: '0' }, { label: 'BWWP', data: dBw, backgroundColor: '#f43f5e', stack: '0' }, { label: 'IT', data: dIt, backgroundColor: '#3b82f6', stack: '0' }, { label: 'Grundlast', data: dBase, backgroundColor: '#94a3b8', stack: '0' }
+            ]}, options: cOpts });
+
+            const ctx2 = document.getElementById('detailGenChart').getContext('2d');
+            if(detailGenChart) detailGenChart.destroy();
+            detailGenChart = new Chart(ctx2, { type: 'bar', data: { labels: dailyLabels, datasets: [
+                { label: 'PV Erzeugung (Gesamt)', data: dPvTotal, borderColor: '#3b82f6', backgroundColor: 'transparent', type: 'line', borderWidth: 2, pointRadius: 1, tension: 0.2 }, { label: 'PV Direkt', data: dDirect, backgroundColor: '#3b82f6', stack: '0' }, { label: 'Aus Batterie', data: dFromBat, backgroundColor: '#a855f7', stack: '0' }, { label: 'Netzbezug', data: dFromGrid, backgroundColor: '#f43f5e', stack: '0' }
+            ]}, options: cOpts });
         }
 
         function updateInverterBattery(invId, batId) {
@@ -848,14 +1009,35 @@
         function renderDatabaseUI() {
             let batOptions = DB.batteries.map(s => `<optgroup label="${s.series}">${s.models.map(m => `<option value="${m.id}">${m.name}</option>`).join('')}</optgroup>`).join('');
             
-            document.getElementById('wrTableBody').innerHTML = flatInverters.map(w => {
+            document.getElementById('wrCardGrid').innerHTML = flatInverters.map(w => {
                 let currentBatOpt = batOptions.replace(`value="${w.batteryId}"`, `value="${w.batteryId}" selected`);
-                return `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-medium">${w.name}</td><td class="px-3 py-2">${w.acMax}</td><td class="px-3 py-2">${w.startV}</td><td class="px-3 py-2 text-[10px] leading-tight">${w.mppts.map(m => `<span class="bg-slate-200 px-1 rounded mr-1 mb-1 inline-block">${m.maxIsc}A Isc</span>`).join('')}</td><td class="px-3 py-2"><select onchange="updateInverterBattery(${w.id}, this.value)" class="w-full text-xs border border-blue-300 rounded px-1 py-1 bg-white cursor-pointer focus:ring-2 focus:ring-blue-500 outline-none">${currentBatOpt}</select></td></tr>`;
+                return `
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-sm">${w.name}</h4>
+                        <div class="flex gap-2 text-[10px] text-slate-500 mt-1 mb-3">
+                            <span class="bg-slate-100 px-1.5 py-0.5 rounded">AC Max: ${w.acMax}W</span>
+                            <span class="bg-slate-100 px-1.5 py-0.5 rounded">Start: ${w.startV}V</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Zugewiesene Batterie</label>
+                        <select onchange="updateInverterBattery(${w.id}, this.value)" class="w-full text-xs font-medium border-2 border-slate-200 rounded-lg px-2 py-1.5 bg-white cursor-pointer focus:border-blue-500 outline-none">${currentBatOpt}</select>
+                    </div>
+                </div>`;
             }).join('');
+
+            document.getElementById('panelCardGrid').innerHTML = flatPanels.map(p => `
+                <div class="bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center shadow-sm">
+                    <div><h4 class="font-bold text-xs text-slate-800">${p.name}</h4><p class="text-[9px] text-slate-500">Voc: ${p.voc}V | Vmp: ${p.vmp.toFixed(1)}V | Isc: ${p.isc}A</p></div>
+                    <div class="text-right"><span class="text-xs font-black text-blue-600">${p.pmax} W</span></div>
+                </div>`).join('');
             
-            document.getElementById('panelTableBody').innerHTML = flatPanels.map(p => `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-medium">${p.name}</td><td class="px-3 py-2">${p.pmax}</td><td class="px-3 py-2">${p.voc}</td><td class="px-3 py-2">${p.vmp.toFixed(1)}</td><td class="px-3 py-2">${p.isc}</td><td class="px-3 py-2 font-mono text-[10px]">${p.tempVoc}</td></tr>`).join('');
-            
-            document.getElementById('batTableBody').innerHTML = flatBatteries.map(b => `<tr class="hover:bg-slate-50"><td class="px-3 py-2 font-medium">${b.name}</td><td class="px-3 py-2">${b.cap.toFixed(2)}</td><td class="px-3 py-2">${b.power}</td><td class="px-3 py-2">${Math.round(b.eff * 100)} %</td></tr>`).join('');
+            document.getElementById('batCardGrid').innerHTML = flatBatteries.map(b => `
+                <div class="bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center shadow-sm">
+                    <div><h4 class="font-bold text-xs text-slate-800">${b.name}</h4><p class="text-[9px] text-slate-500">Max. P: ${b.power}W | Eff: ${Math.round(b.eff * 100)}%</p></div>
+                    <div class="text-right"><span class="text-xs font-black text-emerald-600">${b.cap.toFixed(2)} kWh</span></div>
+                </div>`).join('');
         }
 
         function addString() { strings.push({ id: Date.now(), name: "Neuer String", group: "Neue Anlage", shading: 0, azimuth: 180, inverterId: flatInverters[0].id, mpptId: 1, color: colors[strings.length % colors.length], fields: [{ id: Date.now()+1, panelId: flatPanels[0].id, count: 5, tilt: 30 }] }); requireRecalculation(); }
@@ -868,89 +1050,114 @@
 
         function renderStringsUI() {
             const container = document.getElementById('stringsList');
-            let openAccs = []; document.querySelectorAll('.accordion-content.open').forEach(el => openAccs.push(el.id));
-
             let panelOptions = DB.panels.map(s => `<optgroup label="${s.series}">${s.models.map(m => `<option value="${m.id}">${m.name}</option>`).join('')}</optgroup>`).join('');
             let invOptions = DB.inverters.map(s => `<optgroup label="${s.series}">${s.models.map(m => `<option value="${m.id}">${m.name}</option>`).join('')}</optgroup>`).join('');
 
             container.innerHTML = strings.map(str => {
                 const p = str._phys || { isVocSafe: true, isIscSafe: true, isVmpSafe: true, vocCold: 0, vmpHot: 0, isc: 0, limitMaxV: 1000, limitMaxI: 20, minMppV: 0, maxMppV: 0, invStartV: 0, mismatchPct: 0 };
                 const inv = flatInverters.find(i => i.id === parseInt(str.inverterId)) || flatInverters[0];
-                
                 let wOpt = invOptions.replace(`value="${str.inverterId}"`, `value="${str.inverterId}" selected`);
                 let mOpt = inv.mppts.map(m => `<option value="${m.id}" ${str.mpptId == m.id ? 'selected':''}>${m.name}</option>`).join('');
                 
                 const safe = p.isVocSafe && p.isIscSafe;
-                let vmpColor = 'bg-amber-400'; let vmpText = 'text-amber-400'; let vmpWidth = Math.max((p.vmpHot/p.invStartV)*100, 10);
-                if (p.vmpHot >= p.minMppV && p.vmpHot <= p.maxMppV) { vmpColor = 'bg-emerald-500'; vmpText = 'text-emerald-400'; vmpWidth = 100; }
-                else if (p.vmpHot >= p.invStartV) { vmpColor = 'bg-blue-400'; vmpText = 'text-blue-400'; vmpWidth = 70; }
+                let vmpColor = 'bg-amber-400'; let vmpText = 'text-amber-500'; let vmpWidth = Math.max((p.vmpHot/p.invStartV)*100, 10);
+                if (p.vmpHot >= p.minMppV && p.vmpHot <= p.maxMppV) { vmpColor = 'bg-emerald-500'; vmpText = 'text-emerald-500'; vmpWidth = 100; }
+                else if (p.vmpHot >= p.invStartV) { vmpColor = 'bg-blue-400'; vmpText = 'text-blue-500'; vmpWidth = 70; }
                 
-                return `
-                <div class="bg-white border ${safe ? 'border-slate-200' : 'border-rose-400'} rounded-xl shadow-sm overflow-hidden mb-3">
-                    <div class="p-3 md:p-4 border-b border-slate-100 flex justify-between items-center cursor-pointer hover:bg-slate-50" onclick="toggleAccordion(event, '${str.id}')">
-                        <div class="flex items-center gap-3">
-                            <input type="color" value="${str.color}" onchange="updateStringData(${str.id}, 'color', this.value)" onclick="event.stopPropagation()" class="shrink-0">
-                            <div><h4 class="font-bold text-sm md:text-base text-slate-800">${str.name} <span class="text-xs font-normal text-slate-400 ml-1">(${str.group})</span></h4><p class="text-[10px] md:text-xs text-slate-500">${inv.name}</p></div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            ${p.mismatchPct > 0 ? `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-bold">-${p.mismatchPct.toFixed(1)}% Mismatch</span>` : ''}
-                            <svg id="icon-${str.id}" class="w-4 h-4 text-slate-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                    </div>
-                    <div id="acc-${str.id}" class="accordion-content bg-slate-50/50 p-4 space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
-                            <div><label class="block text-[10px] text-slate-500 mb-1">String Name</label><input type="text" value="${str.name}" onchange="updateStringData(${str.id}, 'name', this.value)" class="w-full border rounded px-2 py-1 text-sm"></div>
-                            <div><label class="block text-[10px] text-slate-500 mb-1">Anzeigegruppe</label><input type="text" value="${str.group || ''}" onchange="updateStringData(${str.id}, 'group', this.value)" placeholder="Z.B. BKW" class="w-full border rounded px-2 py-1 text-sm"></div>
-                            <div><label class="block text-[10px] text-slate-500 mb-1">Azimut (°)</label><input type="number" value="${str.azimuth}" onchange="updateStringData(${str.id}, 'azimuth', this.value)" class="w-full border rounded px-2 py-1 text-sm"></div>
-                            <div><label class="block text-[10px] text-slate-500 mb-1">WR Zuweisung</label><select onchange="updateStringData(${str.id}, 'inverterId', this.value)" class="w-full border rounded px-2 py-1 text-sm">${wOpt}</select></div>
-                            <div><label class="block text-[10px] text-slate-500 mb-1">MPPT</label><select onchange="updateStringData(${str.id}, 'mpptId', this.value)" class="w-full border rounded px-2 py-1 text-sm">${mOpt}</select></div>
-                        </div>
-                        
-                        <div class="mt-2">
-                            <div class="flex justify-between items-center mb-1">
-                                <label class="block text-[10px] text-slate-500 font-bold">Verschattung (Pauschaler Verlust)</label>
-                                <span class="text-xs font-bold text-slate-700">${str.shading || 0}%</span>
-                            </div>
-                            <input type="range" min="0" max="80" step="1" value="${str.shading || 0}" onchange="updateStringData(${str.id}, 'shading', this.value)" oninput="this.previousElementSibling.querySelector('span').innerText = this.value + '%'">
-                        </div>
+                let modTotal = str.fields.reduce((sum, f) => sum + f.count, 0);
 
-                        <div class="border border-slate-200 rounded-lg overflow-hidden bg-white mt-2">
-                            <div class="bg-slate-100 px-3 py-2 border-b flex justify-between"><span class="text-[10px] font-bold text-slate-700">Modulfelder</span><button onclick="addField(${str.id})" class="text-blue-600 text-xs">+ Feld</button></div>
-                            <div class="p-3 space-y-2">
-                                ${str.fields.map(f => {
-                                    let pOpt = panelOptions.replace(`value="${f.panelId}"`, `value="${f.panelId}" selected`);
-                                    return `
-                                    <div class="flex flex-col md:flex-row items-center gap-2 bg-slate-50 p-2 rounded border border-slate-200 text-sm">
-                                        <select onchange="updateFieldData(${str.id}, ${f.id}, 'panelId', this.value)" class="w-full md:flex-1 border rounded px-1">${pOpt}</select>
-                                        <div class="flex w-full md:w-auto justify-between gap-2">
-                                            <div class="flex"><input type="number" value="${f.count}" onchange="updateFieldData(${str.id}, ${f.id}, 'count', this.value)" class="w-12 border rounded-l px-1"><span class="bg-slate-200 border-y border-r rounded-r px-1 text-[10px] flex items-center">Stk</span></div>
-                                            <div class="flex"><input type="number" value="${f.tilt}" onchange="updateFieldData(${str.id}, ${f.id}, 'tilt', this.value)" class="w-12 border rounded-l px-1"><span class="bg-slate-200 border-y border-r rounded-r px-1 text-[10px] flex items-center">° Neig</span></div>
-                                            <button onclick="removeField(${str.id}, ${f.id})" class="text-rose-400 p-1 text-xs">Del</button>
-                                        </div>
-                                    </div>`
-                                }).join('')}
+                return `
+                <div class="bg-white border-2 ${safe ? 'border-slate-100' : 'border-rose-400'} rounded-2xl shadow-sm mb-4">
+                    <!-- READ ONLY VIEW -->
+                    <div id="view-${str.id}" class="p-4 md:p-5 flex justify-between items-center cursor-pointer group" onclick="toggleEditMode(${str.id})">
+                        <div class="flex items-center gap-4">
+                            <div class="w-4 h-12 rounded-full shrink-0 shadow-sm" style="background-color: ${str.color}"></div>
+                            <div>
+                                <h4 class="font-black text-base md:text-lg text-slate-800">${str.name} <span class="text-xs font-bold text-slate-400 ml-1 uppercase tracking-wider">${str.group}</span></h4>
+                                <p class="text-xs text-slate-500 font-medium mt-0.5">${modTotal} Module am ${inv.name} (${inv.mppts.find(m=>m.id==str.mpptId)?.name})</p>
+                                <div class="flex gap-2 mt-1.5">
+                                    ${p.mismatchPct > 0 ? `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[9px] font-bold">-${p.mismatchPct.toFixed(1)}% Mismatch</span>` : ''}
+                                    ${str.shading > 0 ? `<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[9px] font-bold">Schatten: ${str.shading}%</span>` : ''}
+                                </div>
                             </div>
                         </div>
-                        
-                        <div class="bg-slate-800 rounded-lg p-4 text-white grid grid-cols-1 md:grid-cols-4 gap-4 text-sm mt-3">
-                            <div class="ttip"><p class="text-[10px] text-slate-400 border-b border-dashed border-slate-600 w-fit mb-1">Uoc (-20°C)</p>
-                                <p class="${p.isVocSafe?'text-emerald-400':'text-rose-400 font-bold'}">${p.vocCold.toFixed(1)}V <span class="text-[10px] text-slate-500">/ max ${p.limitMaxV}V</span></p>
-                                <div class="w-full bg-slate-700 h-1.5 mt-1.5 rounded"><div class="h-1.5 rounded ${p.isVocSafe?'bg-emerald-500':'bg-rose-500'}" style="width: ${Math.min((p.vocCold/p.limitMaxV)*100, 100)}%"></div></div>
+                        <button class="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 text-slate-400 flex items-center justify-center group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-200 transition-colors shadow-sm shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                        </button>
+                    </div>
+
+                    <!-- EDIT VIEW (Hidden) -->
+                    <div id="edit-${str.id}" class="hidden">
+                        <div class="p-4 md:p-5 bg-slate-50/50 rounded-t-2xl border-b border-slate-100 flex justify-between items-center">
+                            <h4 class="font-bold text-slate-700">String Bearbeiten</h4>
+                            <button onclick="toggleEditMode(${str.id})" class="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">Fertig</button>
+                        </div>
+                        <div class="p-4 md:p-5 space-y-5">
+                            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">String Name</label><input type="text" value="${str.name}" onchange="updateStringData(${str.id}, 'name', this.value)" class="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-blue-500 outline-none"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Anzeigegruppe</label><input type="text" value="${str.group || ''}" onchange="updateStringData(${str.id}, 'group', this.value)" class="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-blue-500 outline-none"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Azimut (°)</label><input type="number" value="${str.azimuth}" onchange="updateStringData(${str.id}, 'azimuth', this.value)" class="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-blue-500 outline-none"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">WR Zuweisung</label><select onchange="updateStringData(${str.id}, 'inverterId', this.value)" class="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-blue-500 outline-none">${wOpt}</select></div>
+                                <div><label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">MPPT</label><select onchange="updateStringData(${str.id}, 'mpptId', this.value)" class="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-blue-500 outline-none">${mOpt}</select></div>
                             </div>
-                            <div class="ttip"><p class="text-[10px] text-slate-400 border-b border-dashed border-slate-600 w-fit mb-1">Umpp (+70°C)</p>
-                                <p class="${vmpText} font-bold">${p.vmpHot.toFixed(1)}V <span class="text-[10px] text-slate-500">/ ideal ${p.minMppV}V</span></p>
-                                <div class="w-full bg-slate-700 h-1.5 mt-1.5 rounded"><div class="h-1.5 rounded ${vmpColor}" style="width: ${vmpWidth}%"></div></div>
+                            
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="block text-[10px] text-slate-500 font-bold uppercase tracking-widest">Verschattung (Pauschaler Verlust)</label>
+                                    <span class="text-sm font-black text-slate-700 bg-slate-100 px-2 py-0.5 rounded">${str.shading || 0}%</span>
+                                </div>
+                                <input type="range" min="0" max="80" step="1" value="${str.shading || 0}" onchange="updateStringData(${str.id}, 'shading', this.value)" oninput="this.previousElementSibling.querySelector('span').innerText = this.value + '%'" class="w-full">
                             </div>
-                            <div class="ttip"><p class="text-[10px] text-slate-400 border-b border-dashed border-slate-600 w-fit mb-1">Isc Strom</p>
-                                <p class="${p.isIscSafe?'text-emerald-400':'text-rose-400 font-bold'}">${p.isc.toFixed(2)}A <span class="text-[10px] text-slate-500">/ max ${p.limitMaxI}A</span></p>
-                                <div class="w-full bg-slate-700 h-1.5 mt-1.5 rounded"><div class="h-1.5 rounded ${p.isIscSafe?'bg-emerald-500':'bg-rose-500'}" style="width: ${Math.min((p.isc/p.limitMaxI)*100, 100)}%"></div></div>
+
+                            <div class="border-2 border-slate-100 rounded-xl overflow-hidden bg-white">
+                                <div class="bg-slate-50 px-4 py-3 border-b border-slate-100 flex justify-between items-center">
+                                    <span class="text-xs font-bold text-slate-700 uppercase tracking-widest">Modulfelder</span>
+                                    <button onclick="addField(${str.id})" class="text-blue-600 bg-blue-50 font-bold text-xs px-3 py-1.5 rounded-lg">+ Feld Hinzufügen</button>
+                                </div>
+                                <div class="p-4 space-y-3">
+                                    ${str.fields.map(f => {
+                                        let pOpt = panelOptions.replace(`value="${f.panelId}"`, `value="${f.panelId}" selected`);
+                                        return `
+                                        <div class="flex flex-col md:flex-row items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200 text-sm">
+                                            <select onchange="updateFieldData(${str.id}, ${f.id}, 'panelId', this.value)" class="w-full md:flex-1 border-2 border-slate-200 rounded-lg px-2 py-2 focus:border-blue-500 outline-none font-medium">${pOpt}</select>
+                                            <div class="flex w-full md:w-auto justify-between gap-3">
+                                                <div class="flex items-center"><input type="number" value="${f.count}" onchange="updateFieldData(${str.id}, ${f.id}, 'count', this.value)" class="w-16 border-2 border-slate-200 rounded-lg px-2 py-2 focus:border-blue-500 outline-none font-bold text-center"><span class="text-[10px] font-bold text-slate-500 uppercase ml-2">Stk</span></div>
+                                                <div class="flex items-center"><input type="number" value="${f.tilt}" onchange="updateFieldData(${str.id}, ${f.id}, 'tilt', this.value)" class="w-16 border-2 border-slate-200 rounded-lg px-2 py-2 focus:border-blue-500 outline-none font-bold text-center"><span class="text-[10px] font-bold text-slate-500 uppercase ml-2">° Neig</span></div>
+                                                <button onclick="removeField(${str.id}, ${f.id})" class="text-rose-500 hover:text-rose-600 bg-rose-50 hover:bg-rose-100 p-2 rounded-lg transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                            </div>
+                                        </div>`
+                                    }).join('')}
+                                </div>
                             </div>
-                            <div class="flex flex-col justify-end"><button onclick="removeString(${str.id})" class="text-[10px] text-rose-500 uppercase mt-2 text-right md:text-left hover:text-rose-400 transition-colors">String löschen</button></div>
+                            
+                            <div class="bg-slate-800 rounded-xl p-5 text-white grid grid-cols-1 md:grid-cols-4 gap-6 text-sm relative overflow-hidden shadow-inner">
+                                <div class="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-slate-900/50 to-transparent pointer-events-none"></div>
+                                <div class="z-10">
+                                    <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 rounded-full bg-slate-500"></div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Uoc (-20°C)</p></div>
+                                    <p class="${p.isVocSafe?'text-emerald-400':'text-rose-400'} font-black text-lg">${p.vocCold.toFixed(1)} V <span class="text-[10px] text-slate-500 font-medium ml-1">/ max ${p.limitMaxV}V</span></p>
+                                    <div class="w-full bg-slate-700 h-1.5 mt-2 rounded"><div class="h-1.5 rounded ${p.isVocSafe?'bg-emerald-500':'bg-rose-500'}" style="width: ${Math.min((p.vocCold/p.limitMaxV)*100, 100)}%"></div></div>
+                                </div>
+                                <div class="z-10">
+                                    <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 rounded-full ${vmpColor}"></div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Umpp (+70°C)</p></div>
+                                    <p class="${vmpText} font-black text-lg">${p.vmpHot.toFixed(1)} V <span class="text-[10px] text-slate-500 font-medium ml-1">/ ideal ${p.minMppV}V</span></p>
+                                    <div class="w-full bg-slate-700 h-1.5 mt-2 rounded"><div class="h-1.5 rounded ${vmpColor}" style="width: ${vmpWidth}%"></div></div>
+                                </div>
+                                <div class="z-10">
+                                    <div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 rounded-full bg-slate-500"></div><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Isc Strom</p></div>
+                                    <p class="${p.isIscSafe?'text-emerald-400':'text-rose-400'} font-black text-lg">${p.isc.toFixed(2)} A <span class="text-[10px] text-slate-500 font-medium ml-1">/ max ${p.limitMaxI}A</span></p>
+                                    <div class="w-full bg-slate-700 h-1.5 mt-2 rounded"><div class="h-1.5 rounded ${p.isIscSafe?'bg-emerald-500':'bg-rose-500'}" style="width: ${Math.min((p.isc/p.limitMaxI)*100, 100)}%"></div></div>
+                                </div>
+                                <div class="flex flex-col justify-center items-end z-10 border-t border-slate-700 pt-4 md:pt-0 md:border-t-0 md:border-l pl-4 mt-2 md:mt-0">
+                                    <div class="flex items-center gap-3 w-full justify-between">
+                                        <input type="color" value="${str.color}" onchange="updateStringData(${str.id}, 'color', this.value)" class="shrink-0 border-none rounded-full shadow-inner">
+                                        <button onclick="removeString(${str.id})" class="text-xs font-bold text-rose-500 bg-rose-500/10 px-3 py-1.5 rounded-lg hover:bg-rose-500/20 transition-colors w-full md:w-auto">Löschen</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>`;
             }).join('');
-            openAccs.forEach(id => { const acc = document.getElementById(id); if(acc) { acc.classList.add('open'); document.getElementById(id.replace('acc-', 'icon-')).style.transform = "rotate(180deg)"; } });
         }
 
         window.onload = () => { initDatabase(); };
