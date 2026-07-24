@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PV-Planung Pro 5.0.1 (App Edition Patch)</title>
+    <title>PV-Planung Pro 5.1 (True Smart Charging)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="database.js"></script>
@@ -38,8 +38,8 @@
         <div class="max-w-7xl mx-auto px-4 py-3 md:py-4">
             <div class="flex justify-between items-center mb-3">
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">PV-Planung <span class="text-blue-400">Pro 5.0.1</span></h1>
-                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Deep-Dive Analytics & App UI</p>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">PV-Planung <span class="text-blue-400">Pro 5.1</span></h1>
+                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">True Smart Charging KI & Bugfixes</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <button id="btnCalcHeader" onclick="calculateYieldAPI()" class="hidden animate-pulse bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs font-bold px-3 py-1.5 rounded-lg shadow-md transition-all flex items-center gap-1">
@@ -67,7 +67,7 @@
 
     <main class="flex-1 overflow-y-auto p-4 md:p-6 pb-24 w-full relative">
         
-        <!-- TAB 0: START (Standort & Berechnen) -->
+        <!-- TAB 0: START -->
         <div id="tab-start" class="tab-content active max-w-2xl mx-auto space-y-6 mt-4">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden text-center p-8">
                 <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -91,7 +91,7 @@
             </button>
         </div>
 
-        <!-- TAB 1: SYSTEM SETUP (STRINGS) -->
+        <!-- TAB 1: STRINGS -->
         <div id="tab-system" class="tab-content max-w-4xl mx-auto space-y-6">
             <div class="flex justify-between items-end mb-2">
                 <div>
@@ -150,7 +150,7 @@
                             <label for="cons_it_active" class="block text-sm font-bold text-slate-800 cursor-pointer">24/7 Dauerlast (IT / Server / Smarthome)</label>
                             <div id="grp_it" class="hidden flex items-center gap-2 mt-2">
                                 <input type="number" id="cons_it_w" value="100" class="w-24 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 outline-none" onchange="updateConsumptionEstimate()">
-                                <span class="text-xs font-bold text-slate-600">Watt</span>
+                                <span class="text-xs font-bold text-slate-600">Watt (konstant)</span>
                             </div>
                         </div>
                     </div>
@@ -160,7 +160,7 @@
                             <label for="cons_ac_active" class="block text-sm font-bold text-slate-800 cursor-pointer">Klimaanlage(n)</label>
                             <div id="grp_ac" class="hidden flex items-center gap-2 mt-2">
                                 <input type="number" id="cons_ac_kwh" value="400" class="w-24 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 outline-none" onchange="updateConsumptionEstimate()">
-                                <span class="text-xs font-bold text-slate-600">kWh/a</span>
+                                <span class="text-xs font-bold text-slate-600">kWh pro Jahr</span>
                             </div>
                         </div>
                     </div>
@@ -170,7 +170,7 @@
                             <label for="cons_wp_active" class="block text-sm font-bold text-slate-800 cursor-pointer">Heizungs-Wärmepumpe</label>
                             <div id="grp_wp" class="hidden flex items-center gap-2 mt-2">
                                 <input type="number" id="cons_wp_kwh" value="3500" class="w-24 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 outline-none" onchange="updateConsumptionEstimate()">
-                                <span class="text-xs font-bold text-slate-600">kWh/a</span>
+                                <span class="text-xs font-bold text-slate-600">kWh pro Jahr</span>
                             </div>
                         </div>
                     </div>
@@ -181,10 +181,10 @@
                             <div id="grp_bw" class="hidden flex flex-col gap-2 mt-2">
                                 <div class="flex items-center gap-2">
                                     <input type="number" id="cons_bw_kwh" value="800" class="w-24 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 outline-none" onchange="updateConsumptionEstimate()">
-                                    <span class="text-xs font-bold text-slate-600">kWh/a</span>
+                                    <span class="text-xs font-bold text-slate-600">kWh pro Jahr</span>
                                 </div>
-                                <label class="flex items-center gap-2 text-xs text-emerald-600 font-bold bg-emerald-50 w-fit px-2 py-1 rounded cursor-pointer mt-1">
-                                    <input type="checkbox" id="cons_bw_smart" class="rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" checked onchange="requireRecalculation()"> Smart-Routing
+                                <label class="flex items-center gap-2 text-xs text-emerald-600 font-bold bg-emerald-50 w-fit px-2 py-1 rounded cursor-pointer mt-1 border border-emerald-200">
+                                    <input type="checkbox" id="cons_bw_smart" class="rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" checked onchange="requireRecalculation()"> Wetter-KI: Lädt an sonnigsten Stunden
                                 </label>
                             </div>
                         </div>
@@ -198,8 +198,8 @@
                                     <div><span class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Jahresfahrleistung</span><div class="flex items-center"><input type="number" id="cons_ev_km" value="12000" class="w-24 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600 ml-2">km</span></div></div>
                                     <div><span class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Verbrauch</span><div class="flex items-center"><input type="number" id="cons_ev_kwh100" value="18" class="w-20 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600 ml-2">kWh/100km</span></div></div>
                                 </div>
-                                <label class="flex items-center gap-2 text-xs text-emerald-600 font-bold bg-emerald-50 w-fit px-2 py-1 rounded cursor-pointer mt-1">
-                                    <input type="checkbox" id="cons_ev_smart" class="rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" onchange="requireRecalculation()"> PV-Überschussladen
+                                <label class="flex items-center gap-2 text-xs text-emerald-600 font-bold bg-emerald-50 w-fit px-2 py-1 rounded cursor-pointer mt-1 border border-emerald-200">
+                                    <input type="checkbox" id="cons_ev_smart" class="rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" onchange="requireRecalculation()"> Wetter-KI: Lädt am PV-Optimum der Woche
                                 </label>
                             </div>
                         </div>
@@ -216,7 +216,7 @@
         <div id="tab-dashboard" class="tab-content max-w-7xl mx-auto space-y-6">
             <div id="focusBanner" class="hidden bg-blue-100 border border-blue-300 text-blue-800 px-4 py-3 rounded-xl flex justify-between items-center text-sm font-bold shadow-sm transition-all">
                 <span id="focusBannerText">Fokus: Gruppe</span>
-                <button onclick="clearFocus()" class="bg-white/80 hover:bg-white text-blue-700 px-3 py-1.5 rounded-lg text-xs border border-blue-200 shadow-sm transition-colors">Gesamtansicht wiederherstellen</button>
+                <button onclick="clearFocus()" class="bg-white/80 hover:bg-white text-blue-700 px-3 py-1.5 rounded-lg text-xs border border-blue-200 shadow-sm transition-colors">Gesamtansicht</button>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
@@ -268,7 +268,7 @@
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4 border-b border-slate-700/50 pb-6">
                         <div>
                             <h2 class="text-3xl font-extrabold text-transparent text-gradient bg-gradient-to-r from-blue-400 to-emerald-400">Energiefluss & Autarkie</h2>
-                            <p class="text-slate-400 text-sm mt-1 font-medium">Stundengenaue Bilanzierung & Routing-Prio</p>
+                            <p class="text-slate-400 text-sm mt-1 font-medium">Stundengenaue Bilanzierung & Wetter-KI Routing</p>
                         </div>
                         <div class="bg-slate-800/80 rounded-xl p-3 border border-slate-700 flex items-center gap-6 shadow-inner">
                             <div>
@@ -355,14 +355,22 @@
             </div>
         </div>
 
-        <!-- TAB 5: TAGES-DETAILANSICHT (Versteckt, nur per Klick aufrufbar) -->
+        <!-- TAB 5: TAGES-DETAILANSICHT -->
         <div id="tab-detail" class="tab-content max-w-7xl mx-auto space-y-6 mt-2">
-            <div class="flex items-center gap-4 mb-4">
+            <div class="flex items-center justify-between mb-4">
                 <button onclick="switchTab('dashboard2')" class="bg-white hover:bg-slate-100 text-slate-700 font-bold px-4 py-2 rounded-xl shadow-sm border border-slate-200 flex items-center gap-2 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-                    Zurück
+                    <span class="hidden md:inline">Zurück</span>
                 </button>
-                <h2 class="text-2xl font-black text-slate-800">Tagesdetails: <span id="detailMonthName" class="text-blue-600">Januar</span></h2>
+                <div class="flex items-center gap-2 md:gap-6 bg-white px-2 py-1.5 rounded-2xl shadow-sm border border-slate-200">
+                    <button onclick="changeDetailMonth(-1)" class="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center hover:bg-blue-50 text-slate-600 hover:text-blue-600 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <h2 class="text-xl md:text-2xl font-black text-slate-800 w-32 text-center"><span id="detailMonthName" class="text-blue-600">Januar</span></h2>
+                    <button onclick="changeDetailMonth(1)" class="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center hover:bg-blue-50 text-slate-600 hover:text-blue-600 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                </div>
             </div>
             
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 md:p-6 mb-6">
@@ -387,11 +395,11 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div>
                     <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-3">2. Modul-Referenz</h4>
-                    <div id="panelCardGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2 rounded-xl border border-slate-200 bg-slate-50 p-2"></div>
+                    <div id="panelCardGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[32rem] overflow-y-auto pr-2 rounded-xl border border-slate-200 bg-slate-50 p-2"></div>
                 </div>
                 <div>
                     <h4 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-3">3. Batterie-Referenz</h4>
-                    <div id="batCardGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2 rounded-xl border border-slate-200 bg-slate-50 p-2"></div>
+                    <div id="batCardGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[32rem] overflow-y-auto pr-2 rounded-xl border border-slate-200 bg-slate-50 p-2"></div>
                 </div>
             </div>
         </div>
@@ -412,27 +420,29 @@
                     <li><strong>Systemverluste:</strong> Bei der Wandlung von DC in AC gehen grundsätzlich ca. 5 % durch Wärme am Wechselrichter verloren.</li>
                 </ul>
 
-                <h3 class="font-bold text-blue-600 text-lg mt-6">3. Lastprofile & Verbrauch (VDI 4655)</h3>
-                <p>Um die Autarkie berechnen zu können, nutzt die Simulation stundengenaue Standardlastprofile (SLP). So berücksichtigt die Engine realistisch, dass du im Winter morgens mehr Licht brauchst, oder simuliert die massiven Peaks einer Wärmepumpe exakt dann, wenn sie wirklich anfallen (Oktober bis April).</p>
+                <h3 class="font-bold text-blue-600 text-lg mt-6">3. True Smart Charging & Wetter-KI (Neu in v5.1)</h3>
+                <p>Das System nutzt keine starren Uhrzeiten mehr für "schlaue" Verbraucher, sondern eine Wetter-Routing-KI:</p>
+                <ul>
+                    <li><strong>E-Auto:</strong> Die KI sucht für jede der 52 Kalenderwochen im Vorfeld die 14 sonnenreichsten Tagesstunden. Dein Ladebedarf wird dynamisch und exakt auf diese Sonnen-Peaks verteilt. Wenn es am Wochenende regnet, das Auto aber laden muss, schiebt die Engine die Ladung auf die sonnigen Werktage dieser Woche um.</li>
+                    <li><strong>Wärmepumpe (BWWP):</strong> Die KI sucht sich für jeden der 365 Tage exakt die 4 Stunden mit der absolut höchsten Sonneneinstrahlung und schaltet die Wassererwärmung genau dann an.</li>
+                </ul>
 
                 <h3 class="font-bold text-blue-600 text-lg mt-6">4. Batterie-Logik & Prioritäten-Weiche</h3>
-                <p>Die Batterie-Simulation arbeitet als intelligentes System, das sowohl klassische Hochvolt-Systeme (Fronius) als auch Niedervolt-Balkonkraftwerke (Anker SOLIX) realistisch abbildet:</p>
                 <ol>
                     <li><strong>Priorität 1 (Hauslast):</strong> Der DC-Strom vom Dach deckt zuerst deinen stundengenauen Hausverbrauch. Hierbei greift als Flaschenhals das <em>AC Max</em> Limit des Wechselrichters.</li>
-                    <li><strong>Priorität 2 (Batterie laden):</strong> Jedes Watt, das vom Haus nicht abgerufen wird oder nicht durch den AC-Flaschenhals passt, wird direkt in die Batterie geschoben (bis zu deren Lade-Limit). Dies verhindert AC-Clipping.</li>
+                    <li><strong>Priorität 2 (Batterie laden):</strong> Jedes Watt, das vom Haus nicht abgerufen wird oder nicht durch den AC-Flaschenhals passt, wird direkt in die Batterie geschoben (bis zu deren Lade-Limit).</li>
                     <li><strong>Priorität 3 (Netzeinspeisung):</strong> Ist das Haus versorgt und die Batterie voll, geht der restliche AC-Strom ins Stromnetz.</li>
                 </ol>
-                <p>Beim <strong>Entladen</strong> der Batterie wird der spezifische System-Wirkungsgrad (z.B. 80 % bei Anker, 92 % bei Fronius) als Umwandlungsverlust direkt von der entnommenen Energie abgezogen.</p>
 
                 <hr class="my-10 border-slate-200">
 
                 <h2 class="text-xl font-bold border-b pb-2 mb-4 text-slate-800">Versionshistorie (Changelog)</h2>
                 <ul class="space-y-3 text-slate-600">
-                    <li><strong class="text-slate-800 bg-slate-100 px-2 py-1 rounded">v5.0.1:</strong> Wischgesten-Patch & Crash-Protection für Legacy-Geräte (JS Array Safeties).</li>
-                    <li><strong class="text-slate-800 bg-slate-100 px-2 py-1 rounded">v5.0:</strong> Major UI/UX App Update. Read-Only Formulare (Wischgesten flüssig). Interaktive, tagesgenaue Detail-Charts (Drill-Down). Chart-Split in Dash 2. Dynamischer Rechen-Button.</li>
+                    <li><strong class="text-slate-800 bg-slate-100 px-2 py-1 rounded shadow-sm border border-slate-200">v5.1:</strong> Einführung True Smart Charging KI (dynamisches Wetter-Routing für EV & BWWP). Fix Wischgesten. Crash-Protection für Legacy-Daten. Navigations-Pfeile im Monats-Detail.</li>
+                    <li><strong class="text-slate-800 bg-slate-50 px-2 py-1 rounded">v5.0:</strong> Major UI/UX App Update. Read-Only Formulare (Wischgesten flüssig). Interaktive, tagesgenaue Detail-Charts (Drill-Down). Chart-Split in Dash 2.</li>
                     <li><strong class="text-slate-800 bg-slate-50 px-2 py-1 rounded">v4.4:</strong> Umfassendes FAQ & Glossar. Fix der Entlade-Effizienzberechnung.</li>
                     <li><strong class="text-slate-800 bg-slate-50 px-2 py-1 rounded">v4.3:</strong> Sicherheits-Vorbelegung aller Wechselrichter auf "Keine Batterie".</li>
-                    <li><strong class="text-slate-800 bg-slate-50 px-2 py-1 rounded">v4.2:</strong> Neue Prioritätenweiche für Niedervolt-Batterien. Integration spezifischer Wirkungsgrade. Fehlende Jolywood-Modelle ergänzt.</li>
+                    <li><strong class="text-slate-800 bg-slate-50 px-2 py-1 rounded">v4.2:</strong> Neue Prioritätenweiche für Niedervolt-Batterien. Integration spezifischer Wirkungsgrade.</li>
                 </ul>
             </div>
         </div>
@@ -465,10 +475,12 @@
             flatInverters = DB.inverters.flatMap(s => s.models || []);
             flatBatteries = DB.batteries.flatMap(s => s.models || []);
 
-            const userDB = JSON.parse(localStorage.getItem('pvpro_user_db')) || { panels: [], batteries: [], inverters: [] };
-            if (userDB.panels && userDB.panels.length > 0) { DB.panels.push({ series: "Eigene Module", models: userDB.panels }); flatPanels.push(...userDB.panels); }
-            if (userDB.inverters && userDB.inverters.length > 0) { DB.inverters.push({ series: "Eigene WR", models: userDB.inverters }); flatInverters.push(...userDB.inverters); }
-            if (userDB.batteries && userDB.batteries.length > 0) { DB.batteries.push({ series: "Eigene Batterien", models: userDB.batteries }); flatBatteries.push(...userDB.batteries); }
+            try {
+                const userDB = JSON.parse(localStorage.getItem('pvpro_user_db')) || { panels: [], batteries: [], inverters: [] };
+                if (userDB.panels && userDB.panels.length > 0) { DB.panels.push({ series: "Eigene Module", models: userDB.panels }); flatPanels.push(...userDB.panels); }
+                if (userDB.inverters && userDB.inverters.length > 0) { DB.inverters.push({ series: "Eigene WR", models: userDB.inverters }); flatInverters.push(...userDB.inverters); }
+                if (userDB.batteries && userDB.batteries.length > 0) { DB.batteries.push({ series: "Eigene Batterien", models: userDB.batteries }); flatBatteries.push(...userDB.batteries); }
+            } catch(e) { console.warn("Legacy DB ignored."); }
 
             let batMap = JSON.parse(localStorage.getItem('pvpro_batmap') || '{}');
             flatInverters.forEach(inv => {
@@ -492,7 +504,7 @@
             saveConsumptionSettings(); alert("Konfiguration gespeichert!"); 
         }
 
-        // TOUCH & WIPE LOGIC (V5.0.1 PATCH)
+        // TOUCH LOGIC V5.1 (Fixed Swipe Interception)
         let touchStartX = 0; let touchStartY = 0; 
         const tabOrder = ['start', 'system', 'verbrauch', 'dashboard', 'dashboard2', 'database', 'faq'];
         
@@ -503,18 +515,17 @@
 
         document.addEventListener('touchend', e => {
             const t = e.target.tagName; 
-            if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'CANVAS'].includes(t) || e.target.type === 'range') return;
+            if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'CANVAS'].includes(t) || e.target.type === 'range' || e.target.closest('canvas') || e.target.closest('button') || e.target.closest('select')) return;
             
             let diffX = e.changedTouches[0].screenX - touchStartX; 
             let diffY = e.changedTouches[0].screenY - touchStartY;
             
-            if (Math.abs(diffX) > 70 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+            if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
                 let currentActive = document.querySelector('.tab-content.active');
                 if(!currentActive) return;
                 let activeId = currentActive.id.replace('tab-', ''); 
                 let cIdx = tabOrder.indexOf(activeId);
                 
-                // Allow swiping only if we are in the main tabOrder (not detail view)
                 if(cIdx !== -1) {
                     if (diffX < 0 && cIdx < tabOrder.length - 1) switchTab(tabOrder[cIdx + 1]); 
                     else if (diffX > 0 && cIdx > 0) switchTab(tabOrder[cIdx - 1]);
@@ -530,21 +541,22 @@
             
             tabOrder.forEach(id => { 
                 let btn = document.getElementById('btn-' + id);
-                if(btn) btn.className = id === tabId ? "snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-bold rounded-md bg-blue-600 text-white shadow-sm flex items-center gap-1.5 transition-colors" : "snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors flex items-center gap-1.5"; 
+                if(btn) btn.className = id === tabId ? "snap-start shrink-0 px-4 py-2 text-sm font-bold rounded-xl bg-blue-600 text-white shadow-md flex items-center gap-1.5 transition-colors" : "snap-start shrink-0 px-4 py-2 text-sm font-medium rounded-xl text-slate-300 hover:bg-slate-700 transition-colors flex items-center gap-1.5"; 
             });
 
             let activeBtn = document.getElementById('btn-' + tabId);
-            if(activeBtn) activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            if(activeBtn) {
+                const scroller = document.getElementById('navScroller');
+                const scrollLeft = activeBtn.offsetLeft - (scroller.offsetWidth / 2) + (activeBtn.offsetWidth / 2);
+                scroller.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+            }
         }
 
         function toggleEditMode(strId) {
             const el = document.getElementById('edit-' + strId);
             const view = document.getElementById('view-' + strId);
-            if(el.classList.contains('hidden')) {
-                el.classList.remove('hidden'); view.classList.add('hidden');
-            } else {
-                el.classList.add('hidden'); view.classList.remove('hidden');
-            }
+            if(el.classList.contains('hidden')) { el.classList.remove('hidden'); view.classList.add('hidden'); } 
+            else { el.classList.add('hidden'); view.classList.remove('hidden'); }
         }
 
         function toggleConsGroup(id) { const isChecked = document.getElementById(`cons_${id}_active`).checked; document.getElementById(`grp_${id}`).classList.toggle('hidden', !isChecked); updateConsumptionEstimate(); }
@@ -594,9 +606,47 @@
             }
         }
 
-        function build8760ConsumptionArray() {
+        function build8760ConsumptionArray(pvProfile = null) {
             let c = getConsumptionConfig(); 
             let out = { total: new Float32Array(8760), base: new Float32Array(8760), it: new Float32Array(8760), ac: new Float32Array(8760), wp: new Float32Array(8760), bw: new Float32Array(8760), ev: new Float32Array(8760) };
+
+            let evWeeklyWh = (c.ev * 1000) / 52; 
+            let bwDailyWh = (c.bw * 1000) / 365;
+
+            // SMART EV ROUTING (V5.1)
+            let smartEvHours = new Set();
+            if (c.ev > 0 && c.evSmart && pvProfile) {
+                for(let w=0; w<52; w++) {
+                    let startH = w * 168; let endH = startH + 168;
+                    let hours = [];
+                    for(let h=startH; h<endH; h++) {
+                        let hrOfDay = h % 24;
+                        if(hrOfDay >= 8 && hrOfDay <= 18) hours.push({ h: h, pv: pvProfile[h] });
+                    }
+                    hours.sort((a,b) => b.pv - a.pv);
+                    let topHours = hours.slice(0, 14); // Distribute over 14 best hours
+                    topHours.forEach(th => smartEvHours.add(th.h));
+                }
+                let remStart = 52 * 168; let hours = [];
+                for(let h=remStart; h<8760; h++) { let hrOfDay = h % 24; if(hrOfDay >= 8 && hrOfDay <= 18) hours.push({ h: h, pv: pvProfile[h] }); }
+                hours.sort((a,b) => b.pv - a.pv);
+                hours.slice(0, 2).forEach(th => smartEvHours.add(th.h));
+            }
+
+            // SMART BWWP ROUTING (V5.1)
+            let smartBwHours = new Set();
+            if (c.bw > 0 && c.bwSmart && pvProfile) {
+                for(let d=0; d<365; d++) {
+                    let startH = d * 24; let endH = Math.min(startH + 24, 8760);
+                    let hours = [];
+                    for(let h=startH; h<endH; h++) {
+                        let hrOfDay = h % 24;
+                        if(hrOfDay >= 9 && hrOfDay <= 16) hours.push({ h: h, pv: pvProfile[h] });
+                    }
+                    hours.sort((a,b) => b.pv - a.pv);
+                    hours.slice(0, 4).forEach(th => smartBwHours.add(th.h)); // Distribute over 4 best hours
+                }
+            }
 
             for(let h=0; h<8760; h++) {
                 let dayOfYear = Math.floor(h / 24); let hourOfDay = h % 24; let isWeekend = (dayOfYear % 7 === 5 || dayOfYear % 7 === 6);
@@ -608,8 +658,16 @@
                 
                 if (c.ac > 0 && dayOfYear >= 120 && dayOfYear <= 270) { if (hourOfDay >= 12 && hourOfDay <= 18) out.ac[h] = (c.ac * 1000) / (150 * 7); }
                 if (c.wp > 0 && (dayOfYear < 120 || dayOfYear > 270)) { out.wp[h] = (c.wp * 1000 / (215 * 24)) * (1 + 0.5 * Math.cos((dayOfYear - 15) * 2 * Math.PI / 365)); }
-                if (c.bw > 0) { let bwDailyW = (c.bw * 1000) / 365; if (c.bwSmart && hourOfDay >= 11 && hourOfDay <= 14) { out.bw[h] = bwDailyW / 4; } else if (!c.bwSmart && hourOfDay >= 18 && hourOfDay <= 21) { out.bw[h] = bwDailyW / 4; } }
-                if (c.ev > 0) { let evDailyW = (c.ev * 1000) / 365; if (c.evSmart && isWeekend && hourOfDay >= 10 && hourOfDay <= 16) { out.ev[h] = (evDailyW * 7) / 14; } else if (!c.evSmart && hourOfDay >= 18 && hourOfDay <= 23) { out.ev[h] = evDailyW / 6; } }
+                
+                if (c.bw > 0) {
+                    if (c.bwSmart && pvProfile) { if (smartBwHours.has(h)) out.bw[h] = bwDailyWh / 4; } 
+                    else { if (hourOfDay >= 18 && hourOfDay <= 21) out.bw[h] = bwDailyWh / 4; }
+                }
+                
+                if (c.ev > 0) {
+                    if (c.evSmart && pvProfile) { if (smartEvHours.has(h)) out.ev[h] = evWeeklyWh / 14; } 
+                    else { if (hourOfDay >= 18 && hourOfDay <= 23) out.ev[h] = (c.ev * 1000 / 365) / 6; }
+                }
                 
                 out.total[h] = out.base[h] + out.it[h] + out.ac[h] + out.wp[h] + out.bw[h] + out.ev[h];
             }
@@ -703,15 +761,17 @@
                 let sRes = strings.map(s => ({ id: s.id, name: s.name, color: s.color, kwp: 0, yield: 0, clip: 0, batYield: 0, mo: new Array(12).fill(0), hr: new Float32Array(8760) }));
                 const mStart = [0, 744, 1416, 2160, 2880, 3624, 4344, 5088, 5832, 6552, 7296, 8016];
 
+                let pvProfileRaw = new Float32Array(8760);
                 res.forEach(r => {
                     let sr = sRes.find(s=>s.id===r.sId); let so = strings.find(s=>s.id===r.sId);
                     for(let h=0; h<8760; h++){ 
                         let w = r.d[h].P * r.mF * r.sF; 
-                        sr.hr[h]+=w; if(so && invH[so.inverterId]) invH[so.inverterId][h]+=w; 
+                        sr.hr[h]+=w; if(so && invH[so.inverterId]) { invH[so.inverterId][h]+=w; pvProfileRaw[h]+=w; }
                     }
                 });
 
-                let consH = build8760ConsumptionArray();
+                // V5.1 Smart Charging Integration
+                let consH = build8760ConsumptionArray(pvProfileRaw);
                 const systemLossFactor = 0.95; 
                 
                 let flow = { 
@@ -965,6 +1025,13 @@
             });
         }
 
+        function changeDetailMonth(dir) {
+            let newMonth = currentDetailMonth + dir;
+            if(newMonth < 0) newMonth = 11;
+            if(newMonth > 11) newMonth = 0;
+            openDetailView(newMonth);
+        }
+
         function openDetailView(monthIdx) {
             currentDetailMonth = monthIdx;
             switchTab('detail');
@@ -1003,7 +1070,7 @@
             const ctx2 = document.getElementById('detailGenChart').getContext('2d');
             if(detailGenChart) detailGenChart.destroy();
             detailGenChart = new Chart(ctx2, { type: 'bar', data: { labels: dailyLabels, datasets: [
-                { label: 'PV Erzeugung (Gesamt)', data: dPvTotal, borderColor: '#3b82f6', backgroundColor: 'transparent', type: 'line', borderWidth: 2, pointRadius: 1, tension: 0.2 }, { label: 'PV Direkt', data: dDirect, backgroundColor: '#3b82f6', stack: '0' }, { label: 'Aus Batterie', data: dFromBat, backgroundColor: '#a855f7', stack: '0' }, { label: 'Netzbezug', data: dFromGrid, backgroundColor: '#f43f5e', stack: '0' }
+                { label: 'PV Erzeugung', data: dPvTotal, borderColor: '#3b82f6', backgroundColor: 'transparent', type: 'line', borderWidth: 2, pointRadius: 1, tension: 0.2 }, { label: 'PV Direkt', data: dDirect, backgroundColor: '#3b82f6', stack: '0' }, { label: 'Aus Batterie', data: dFromBat, backgroundColor: '#a855f7', stack: '0' }, { label: 'Netzbezug', data: dFromGrid, backgroundColor: '#f43f5e', stack: '0' }
             ]}, options: cOpts });
         }
 
@@ -1019,7 +1086,7 @@
         }
 
         function renderDatabaseUI() {
-            let batOptions = DB.batteries.map(s => `<optgroup label="${s.series}">${s.models.map(m => `<option value="${m.id}">${m.name}</option>`).join('')}</optgroup>`).join('');
+            let batOptions = DB.batteries.map(s => `<optgroup label="${s.series}">${(s.models||[]).map(m => `<option value="${m.id}">${m.name}</option>`).join('')}</optgroup>`).join('');
             
             document.getElementById('wrCardGrid').innerHTML = flatInverters.map(w => {
                 let currentBatOpt = batOptions.replace(`value="${w.batteryId}"`, `value="${w.batteryId}" selected`);
@@ -1052,9 +1119,9 @@
                 </div>`).join('');
         }
 
-        function addString() { strings.push({ id: Date.now(), name: "Neuer String", group: "Neue Anlage", shading: 0, azimuth: 180, inverterId: flatInverters[0].id, mpptId: 1, color: colors[strings.length % colors.length], fields: [{ id: Date.now()+1, panelId: flatPanels[0].id, count: 5, tilt: 30 }] }); requireRecalculation(); }
+        function addString() { strings.push({ id: Date.now(), name: "Neuer String", group: "Neue Anlage", shading: 0, azimuth: 180, inverterId: flatInverters[0]?.id || 1, mpptId: 1, color: colors[strings.length % colors.length], fields: [{ id: Date.now()+1, panelId: flatPanels[0]?.id || 1, count: 5, tilt: 30 }] }); requireRecalculation(); }
         function removeString(id) { strings = strings.filter(s => s.id !== id); requireRecalculation(); }
-        function addField(id) { strings.find(s => s.id === id)?.fields.push({ id: Date.now(), panelId: flatPanels[0].id, count: 1, tilt: 30 }); requireRecalculation(); }
+        function addField(id) { strings.find(s => s.id === id)?.fields.push({ id: Date.now(), panelId: flatPanels[0]?.id || 1, count: 1, tilt: 30 }); requireRecalculation(); }
         function removeField(sId, fId) { const str = strings.find(s => s.id === sId); if(str) str.fields = str.fields.filter(f => f.id !== fId); requireRecalculation(); }
         
         function updateStringData(id, key, val) { const str = strings.find(s => s.id === id); if(str) { str[key] = isNaN(val) && key !== 'mpptId' && key !== 'color' && key !== 'group' && key !== 'name' ? val : (key === 'mpptId' || key === 'color' || key === 'group' || key === 'name' ? val : Number(val)); if(key === 'inverterId') str.mpptId = 1; requireRecalculation(); } }
@@ -1062,12 +1129,12 @@
 
         function renderStringsUI() {
             const container = document.getElementById('stringsList');
-            let panelOptions = DB.panels.map(s => `<optgroup label="${s.series}">${s.models.map(m => `<option value="${m.id}">${m.name}</option>`).join('')}</optgroup>`).join('');
-            let invOptions = DB.inverters.map(s => `<optgroup label="${s.series}">${s.models.map(m => `<option value="${m.id}">${m.name}</option>`).join('')}</optgroup>`).join('');
+            let panelOptions = DB.panels.map(s => `<optgroup label="${s.series}">${(s.models||[]).map(m => `<option value="${m.id}">${m.name}</option>`).join('')}</optgroup>`).join('');
+            let invOptions = DB.inverters.map(s => `<optgroup label="${s.series}">${(s.models||[]).map(m => `<option value="${m.id}">${m.name}</option>`).join('')}</optgroup>`).join('');
 
             container.innerHTML = strings.map(str => {
                 const p = str._phys || { isVocSafe: true, isIscSafe: true, isVmpSafe: true, vocCold: 0, vmpHot: 0, isc: 0, limitMaxV: 1000, limitMaxI: 20, minMppV: 0, maxMppV: 0, invStartV: 0, mismatchPct: 0 };
-                const inv = flatInverters.find(i => i.id === parseInt(str.inverterId)) || flatInverters[0];
+                const inv = flatInverters.find(i => i.id === parseInt(str.inverterId)) || flatInverters[0] || {name: 'Kein WR', mppts: []};
                 let wOpt = invOptions.replace(`value="${str.inverterId}"`, `value="${str.inverterId}" selected`);
                 
                 const mpptsSafe = inv.mppts || [];
@@ -1076,23 +1143,22 @@
                 const safe = p.isVocSafe && p.isIscSafe;
                 
                 let vmpColor = 'bg-amber-400'; let vmpText = 'text-amber-500'; 
-                let safeInvStartV = p.invStartV || 1; // Div by 0 fix
+                let safeInvStartV = p.invStartV || 1; 
                 let vmpWidth = Math.max((p.vmpHot/safeInvStartV)*100, 10);
                 
                 if (p.vmpHot >= p.minMppV && p.vmpHot <= p.maxMppV) { vmpColor = 'bg-emerald-500'; vmpText = 'text-emerald-500'; vmpWidth = 100; }
                 else if (p.vmpHot >= p.invStartV) { vmpColor = 'bg-blue-400'; vmpText = 'text-blue-500'; vmpWidth = 70; }
                 
-                let modTotal = str.fields.reduce((sum, f) => sum + f.count, 0);
-                let currentMpptName = mpptsSafe.find(m=>m.id==str.mpptId)?.name || 'Unbekannter MPPT';
+                let modTotal = str.fields.reduce((sum, f) => sum + Number(f.count), 0);
+                let currentMpptName = mpptsSafe.find(m=>m.id==str.mpptId)?.name || 'MPPT';
 
                 return `
                 <div class="bg-white border-2 ${safe ? 'border-slate-100' : 'border-rose-400'} rounded-2xl shadow-sm mb-4">
-                    <!-- READ ONLY VIEW -->
                     <div id="view-${str.id}" class="p-4 md:p-5 flex justify-between items-center cursor-pointer group" onclick="toggleEditMode(${str.id})">
                         <div class="flex items-center gap-4">
                             <div class="w-4 h-12 rounded-full shrink-0 shadow-sm" style="background-color: ${str.color}"></div>
                             <div>
-                                <h4 class="font-black text-base md:text-lg text-slate-800">${str.name} <span class="text-xs font-bold text-slate-400 ml-1 uppercase tracking-wider">${str.group}</span></h4>
+                                <h4 class="font-black text-base md:text-lg text-slate-800">${str.name} <span class="text-xs font-bold text-slate-400 ml-1 uppercase tracking-wider">${str.group || ''}</span></h4>
                                 <p class="text-xs text-slate-500 font-medium mt-0.5">${modTotal} Module am ${inv.name} (${currentMpptName})</p>
                                 <div class="flex gap-2 mt-1.5">
                                     ${p.mismatchPct > 0 ? `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[9px] font-bold">-${p.mismatchPct.toFixed(1)}% Mismatch</span>` : ''}
@@ -1105,7 +1171,6 @@
                         </button>
                     </div>
 
-                    <!-- EDIT VIEW (Hidden) -->
                     <div id="edit-${str.id}" class="hidden">
                         <div class="p-4 md:p-5 bg-slate-50/50 rounded-t-2xl border-b border-slate-100 flex justify-between items-center">
                             <h4 class="font-bold text-slate-700">String Bearbeiten</h4>
