@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PV-Planung Pro 5.1 (True Smart Charging)</title>
+    <title>PV-Planung Pro 5.1.2 (Smart Routing & Migration)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="database.js"></script>
@@ -38,8 +38,8 @@
         <div class="max-w-7xl mx-auto px-4 py-3 md:py-4">
             <div class="flex justify-between items-center mb-3">
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">PV-Planung <span class="text-blue-400">Pro 5.1</span></h1>
-                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">True Smart Charging KI & Bugfixes</p>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">PV-Planung <span class="text-blue-400">Pro 5.1.2</span></h1>
+                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Smart Routing & Data Migration</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <button id="btnCalcHeader" onclick="calculateYieldAPI()" class="hidden animate-pulse bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs font-bold px-3 py-1.5 rounded-lg shadow-md transition-all flex items-center gap-1">
@@ -438,11 +438,9 @@
 
                 <h2 class="text-xl font-bold border-b pb-2 mb-4 text-slate-800">Versionshistorie (Changelog)</h2>
                 <ul class="space-y-3 text-slate-600">
-                    <li><strong class="text-slate-800 bg-slate-100 px-2 py-1 rounded shadow-sm border border-slate-200">v5.1:</strong> Einführung True Smart Charging KI (dynamisches Wetter-Routing für EV & BWWP). Fix Wischgesten. Crash-Protection für Legacy-Daten. Navigations-Pfeile im Monats-Detail.</li>
-                    <li><strong class="text-slate-800 bg-slate-50 px-2 py-1 rounded">v5.0:</strong> Major UI/UX App Update. Read-Only Formulare (Wischgesten flüssig). Interaktive, tagesgenaue Detail-Charts (Drill-Down). Chart-Split in Dash 2.</li>
-                    <li><strong class="text-slate-800 bg-slate-50 px-2 py-1 rounded">v4.4:</strong> Umfassendes FAQ & Glossar. Fix der Entlade-Effizienzberechnung.</li>
-                    <li><strong class="text-slate-800 bg-slate-50 px-2 py-1 rounded">v4.3:</strong> Sicherheits-Vorbelegung aller Wechselrichter auf "Keine Batterie".</li>
-                    <li><strong class="text-slate-800 bg-slate-50 px-2 py-1 rounded">v4.2:</strong> Neue Prioritätenweiche für Niedervolt-Batterien. Integration spezifischer Wirkungsgrade.</li>
+                    <li><strong class="text-slate-800 bg-slate-100 px-2 py-1 rounded shadow-sm border border-slate-200">v5.1.2:</strong> Best Practice Data Migration. Alte String-Strukturen werden nun geräuschlos konvertiert (verhindert UI-Crashes). Monats-Navigation im Detail-Tab hinzugefügt.</li>
+                    <li><strong class="text-slate-800 bg-slate-50 px-2 py-1 rounded">v5.1:</strong> Einführung True Smart Charging KI (dynamisches Wetter-Routing für EV & BWWP). Fix Wischgesten. Crash-Protection für Legacy-Daten.</li>
+                    <li><strong class="text-slate-800 bg-slate-50 px-2 py-1 rounded">v5.0:</strong> Major UI/UX App Update. Read-Only Formulare. Interaktive Detail-Charts. Chart-Split in Dash 2.</li>
                 </ul>
             </div>
         </div>
@@ -487,7 +485,20 @@
                 if(batMap[inv.id] !== undefined) { inv.batteryId = parseInt(batMap[inv.id]); }
             });
 
-            if(localStorage.getItem('pvpro_strings')) strings = JSON.parse(localStorage.getItem('pvpro_strings'));
+            // DATA MIGRATION: Best Practice Schema Check
+            if(localStorage.getItem('pvpro_strings')) {
+                try {
+                    let loaded = JSON.parse(localStorage.getItem('pvpro_strings'));
+                    strings = loaded.map(s => {
+                        // Migration: If string lacks the new v5 'fields' array, upgrade it seamlessly
+                        if(!s.fields || !Array.isArray(s.fields)) {
+                            s.fields = [{ id: Date.now() + Math.random(), panelId: flatPanels[0]?.id || 1, count: s.panels || 1, tilt: 30 }];
+                        }
+                        return s;
+                    });
+                } catch(e) { console.error("Cache Reset due to invalid string data."); }
+            }
+            
             if(localStorage.getItem('pvpro_loc')) LocationData = JSON.parse(localStorage.getItem('pvpro_loc'));
             
             document.getElementById('locSearchInput').value = LocationData.name;
@@ -504,7 +515,6 @@
             saveConsumptionSettings(); alert("Konfiguration gespeichert!"); 
         }
 
-        // TOUCH LOGIC V5.1 (Fixed Swipe Interception)
         let touchStartX = 0; let touchStartY = 0; 
         const tabOrder = ['start', 'system', 'verbrauch', 'dashboard', 'dashboard2', 'database', 'faq'];
         
@@ -613,7 +623,6 @@
             let evWeeklyWh = (c.ev * 1000) / 52; 
             let bwDailyWh = (c.bw * 1000) / 365;
 
-            // SMART EV ROUTING (V5.1)
             let smartEvHours = new Set();
             if (c.ev > 0 && c.evSmart && pvProfile) {
                 for(let w=0; w<52; w++) {
@@ -624,7 +633,7 @@
                         if(hrOfDay >= 8 && hrOfDay <= 18) hours.push({ h: h, pv: pvProfile[h] });
                     }
                     hours.sort((a,b) => b.pv - a.pv);
-                    let topHours = hours.slice(0, 14); // Distribute over 14 best hours
+                    let topHours = hours.slice(0, 14); 
                     topHours.forEach(th => smartEvHours.add(th.h));
                 }
                 let remStart = 52 * 168; let hours = [];
@@ -633,7 +642,6 @@
                 hours.slice(0, 2).forEach(th => smartEvHours.add(th.h));
             }
 
-            // SMART BWWP ROUTING (V5.1)
             let smartBwHours = new Set();
             if (c.bw > 0 && c.bwSmart && pvProfile) {
                 for(let d=0; d<365; d++) {
@@ -644,7 +652,7 @@
                         if(hrOfDay >= 9 && hrOfDay <= 16) hours.push({ h: h, pv: pvProfile[h] });
                     }
                     hours.sort((a,b) => b.pv - a.pv);
-                    hours.slice(0, 4).forEach(th => smartBwHours.add(th.h)); // Distribute over 4 best hours
+                    hours.slice(0, 4).forEach(th => smartBwHours.add(th.h)); 
                 }
             }
 
@@ -690,15 +698,15 @@
 
             strings.forEach(str => {
                 let vocStc = 0; let vmpStc = 0; let isc = 0; let tk = -0.25; let minT = 999; let maxT = 0;
-                if(str.fields.length > 0) { const p = flatPanels.find(p => p.id === parseInt(str.fields[0].panelId)); if(p) tk = p.tempVoc; }
+                if(str.fields && str.fields.length > 0) { const p = flatPanels.find(p => p.id === parseInt(str.fields[0].panelId)); if(p) tk = p.tempVoc; }
                 
-                str.fields.forEach(f => {
+                (str.fields || []).forEach(f => {
                     const p = flatPanels.find(x => x.id === parseInt(f.panelId));
                     if(p) { vocStc += (p.voc * f.count); vmpStc += (p.vmp * f.count); isc = Math.max(isc, p.isc); }
                     if(f.tilt < minT) minT = f.tilt; if(f.tilt > maxT) maxT = f.tilt;
                 });
 
-                let misPct = (str.fields.length > 1 && maxT - minT > 5) ? Math.min((maxT - minT) * 0.3, 15) : 0;
+                let misPct = ((str.fields || []).length > 1 && maxT - minT > 5) ? Math.min((maxT - minT) * 0.3, 15) : 0;
                 const inv = flatInverters.find(i => i.id === parseInt(str.inverterId));
                 
                 const vCold = vocStc * (1 + (-45) * (tk / 100)); const vHot = vmpStc * (1 + (45) * (tk / 100));   
@@ -742,7 +750,7 @@
                     let misFac = 1 - ((str._phys.mismatchPct || 0) / 100);
                     let shadingFactor = 1 - ((str.shading || 0) / 100);
 
-                    str.fields.forEach(f => {
+                    (str.fields || []).forEach(f => {
                         const p = flatPanels.find(x=>x.id===parseInt(f.panelId));
                         if(p && f.count>0) {
                             let asp = str.azimuth - 180; if (asp>180) asp-=360; if (asp<-180) asp+=360;
@@ -770,7 +778,6 @@
                     }
                 });
 
-                // V5.1 Smart Charging Integration
                 let consH = build8760ConsumptionArray(pvProfileRaw);
                 const systemLossFactor = 0.95; 
                 
@@ -879,7 +886,7 @@
                 sRes.forEach(sr => {
                     sr.yield = (sr.hr.reduce((a,b)=>a+b,0)/1000) * systemLossFactor - sr.clip; 
                     for(let m=0; m<12; m++){ let mSum=0; for(let h=mStart[m]; h<(m===11?8760:mStart[m+1]); h++) mSum+=sr.hr[h]; sr.mo[m]=(mSum/1000)*systemLossFactor; }
-                    strings.find(s=>s.id===sr.id)?.fields.forEach(f=>{ const p=flatPanels.find(x=>x.id===parseInt(f.panelId)); if(p) sr.kwp += (p.pmax*f.count)/1000; });
+                    (strings.find(s=>s.id===sr.id)?.fields || []).forEach(f=>{ const p=flatPanels.find(x=>x.id===parseInt(f.panelId)); if(p) sr.kwp += (p.pmax*f.count)/1000; });
                 });
 
                 let groupedResults = [];
@@ -889,7 +896,7 @@
                     let g = groupedResults.find(x => x.name === gName);
                     if(!g) { g = { name: gName, color: sr.color, kwp: 0, yield: 0, clip: 0, batYield: 0, mo: new Array(12).fill(0), panels: 0, inverters: [] }; groupedResults.push(g); }
                     g.kwp += sr.kwp; g.yield += sr.yield; g.clip += sr.clip; g.batYield += sr.batYield;
-                    const pCnt = strObj.fields.reduce((sum, f) => sum + Number(f.count), 0);
+                    const pCnt = (strObj.fields || []).reduce((sum, f) => sum + Number(f.count), 0);
                     g.panels += pCnt;
                     const inv = flatInverters.find(i=>i.id===parseInt(strObj.inverterId));
                     if(inv && !g.inverters.includes(inv.name)) g.inverters.push(inv.name);
@@ -1017,7 +1024,7 @@
                 type: 'bar',
                 data: { labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],
                 datasets: [
-                    { label: 'PV Erzeugung (Gesamt)', data: moBreakdown.pvTotal, borderColor: '#3b82f6', backgroundColor: 'transparent', type: 'line', borderWidth: 2, pointRadius: 2, tension: 0.3 },
+                    { label: 'PV Erzeugung', data: moBreakdown.pvTotal, borderColor: '#3b82f6', backgroundColor: 'transparent', type: 'line', borderWidth: 2, pointRadius: 2, tension: 0.3 },
                     { label: 'PV Direkt', data: FlowCache.moGen, backgroundColor: '#3b82f6', stack: '0' },
                     { label: 'Aus Batterie', data: FlowCache.moBat, backgroundColor: '#a855f7', stack: '0' },
                     { label: 'Netzbezug', data: moBreakdown.base.map((_,i) => FlowCache.moCons[i] - FlowCache.moGen[i] + moBreakdown.toGrid[i] - FlowCache.moBat[i]), backgroundColor: '#f43f5e', stack: '0' }
@@ -1149,7 +1156,7 @@
                 if (p.vmpHot >= p.minMppV && p.vmpHot <= p.maxMppV) { vmpColor = 'bg-emerald-500'; vmpText = 'text-emerald-500'; vmpWidth = 100; }
                 else if (p.vmpHot >= p.invStartV) { vmpColor = 'bg-blue-400'; vmpText = 'text-blue-500'; vmpWidth = 70; }
                 
-                let modTotal = str.fields.reduce((sum, f) => sum + Number(f.count), 0);
+                let modTotal = (str.fields || []).reduce((sum, f) => sum + Number(f.count), 0);
                 let currentMpptName = mpptsSafe.find(m=>m.id==str.mpptId)?.name || 'MPPT';
 
                 return `
@@ -1199,7 +1206,7 @@
                                     <button onclick="addField(${str.id})" class="text-blue-600 bg-blue-50 font-bold text-xs px-3 py-1.5 rounded-lg">+ Feld Hinzufügen</button>
                                 </div>
                                 <div class="p-4 space-y-3">
-                                    ${str.fields.map(f => {
+                                    ${(str.fields || []).map(f => {
                                         let pOpt = panelOptions.replace(`value="${f.panelId}"`, `value="${f.panelId}" selected`);
                                         return `
                                         <div class="flex flex-col md:flex-row items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200 text-sm">
