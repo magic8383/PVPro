@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PV-Planung Pro 5.0 (App Edition)</title>
+    <title>PV-Planung Pro 5.0.1 (App Edition Patch)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="database.js"></script>
     <style>
-        /* Anti Pull-to-Refresh & weiches Scrollen */
         body { overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -16,14 +15,10 @@
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Tab Transitions */
         .tab-content { display: none; opacity: 0; } 
         .tab-content.active { display: block; animation: fadeIn 0.3s ease forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .accordion-content { display: none; } .accordion-content.open { display: block; }
-        
-        /* Styling Details */
         input[type="color"] { -webkit-appearance: none; border: none; width: 24px; height: 24px; border-radius: 50%; padding: 0; cursor: pointer; overflow: hidden; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: 2px solid #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
@@ -43,7 +38,7 @@
         <div class="max-w-7xl mx-auto px-4 py-3 md:py-4">
             <div class="flex justify-between items-center mb-3">
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">PV-Planung <span class="text-blue-400">Pro 5.0</span></h1>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">PV-Planung <span class="text-blue-400">Pro 5.0.1</span></h1>
                     <p class="text-slate-400 text-[10px] md:text-xs mt-1">Deep-Dive Analytics & App UI</p>
                 </div>
                 <div class="flex items-center gap-2">
@@ -149,72 +144,62 @@
                     </h3>
                 </div>
                 <div class="p-5 md:p-6 space-y-4">
-                    <!-- IT -->
                     <div class="flex items-start gap-4 p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors shadow-sm">
                         <div class="mt-0.5"><input type="checkbox" id="cons_it_active" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" onchange="toggleConsGroup('it')"></div>
                         <div class="flex-1">
                             <label for="cons_it_active" class="block text-sm font-bold text-slate-800 cursor-pointer">24/7 Dauerlast (IT / Server / Smarthome)</label>
-                            <p class="text-[10px] text-slate-500 mb-2">Konstante, ganzjährige Grundlast.</p>
                             <div id="grp_it" class="hidden flex items-center gap-2 mt-2">
                                 <input type="number" id="cons_it_w" value="100" class="w-24 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 outline-none" onchange="updateConsumptionEstimate()">
                                 <span class="text-xs font-bold text-slate-600">Watt</span>
                             </div>
                         </div>
                     </div>
-                    <!-- Klima -->
                     <div class="flex items-start gap-4 p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors shadow-sm">
                         <div class="mt-0.5"><input type="checkbox" id="cons_ac_active" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" onchange="toggleConsGroup('ac')"></div>
                         <div class="flex-1">
                             <label for="cons_ac_active" class="block text-sm font-bold text-slate-800 cursor-pointer">Klimaanlage(n)</label>
-                            <p class="text-[10px] text-slate-500 mb-2">Zieht primär an heißen Sommertagen (Mai-Sept).</p>
                             <div id="grp_ac" class="hidden flex items-center gap-2 mt-2">
                                 <input type="number" id="cons_ac_kwh" value="400" class="w-24 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 outline-none" onchange="updateConsumptionEstimate()">
                                 <span class="text-xs font-bold text-slate-600">kWh/a</span>
                             </div>
                         </div>
                     </div>
-                    <!-- WP -->
                     <div class="flex items-start gap-4 p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors shadow-sm">
                         <div class="mt-0.5"><input type="checkbox" id="cons_wp_active" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" onchange="toggleConsGroup('wp')"></div>
                         <div class="flex-1">
                             <label for="cons_wp_active" class="block text-sm font-bold text-slate-800 cursor-pointer">Heizungs-Wärmepumpe</label>
-                            <p class="text-[10px] text-slate-500 mb-2">Zieht massiv in der kalten Jahreszeit (Okt-April).</p>
                             <div id="grp_wp" class="hidden flex items-center gap-2 mt-2">
                                 <input type="number" id="cons_wp_kwh" value="3500" class="w-24 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 outline-none" onchange="updateConsumptionEstimate()">
                                 <span class="text-xs font-bold text-slate-600">kWh/a</span>
                             </div>
                         </div>
                     </div>
-                    <!-- BWWP -->
                     <div class="flex items-start gap-4 p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors shadow-sm">
                         <div class="mt-0.5"><input type="checkbox" id="cons_bw_active" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" onchange="toggleConsGroup('bw')"></div>
                         <div class="flex-1">
                             <label for="cons_bw_active" class="block text-sm font-bold text-slate-800 cursor-pointer">Brauchwasser-Wärmepumpe (BWWP)</label>
-                            <p class="text-[10px] text-slate-500 mb-2">Konstante Nutzung über das ganze Jahr.</p>
                             <div id="grp_bw" class="hidden flex flex-col gap-2 mt-2">
                                 <div class="flex items-center gap-2">
                                     <input type="number" id="cons_bw_kwh" value="800" class="w-24 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 outline-none" onchange="updateConsumptionEstimate()">
                                     <span class="text-xs font-bold text-slate-600">kWh/a</span>
                                 </div>
                                 <label class="flex items-center gap-2 text-xs text-emerald-600 font-bold bg-emerald-50 w-fit px-2 py-1 rounded cursor-pointer mt-1">
-                                    <input type="checkbox" id="cons_bw_smart" class="rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" checked onchange="requireRecalculation()"> Smart-Routing (Mittagsstunden)
+                                    <input type="checkbox" id="cons_bw_smart" class="rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" checked onchange="requireRecalculation()"> Smart-Routing
                                 </label>
                             </div>
                         </div>
                     </div>
-                    <!-- E-Auto -->
                     <div class="flex items-start gap-4 p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors shadow-sm">
                         <div class="mt-0.5"><input type="checkbox" id="cons_ev_active" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer" onchange="toggleConsGroup('ev')"></div>
                         <div class="flex-1">
                             <label for="cons_ev_active" class="block text-sm font-bold text-slate-800 cursor-pointer">E-Auto (Wallbox)</label>
-                            <p class="text-[10px] text-slate-500 mb-2">Ladevorgänge primär abends/nachts.</p>
                             <div id="grp_ev" class="hidden flex flex-col gap-3 mt-2">
                                 <div class="flex gap-4">
                                     <div><span class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Jahresfahrleistung</span><div class="flex items-center"><input type="number" id="cons_ev_km" value="12000" class="w-24 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600 ml-2">km</span></div></div>
                                     <div><span class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Verbrauch</span><div class="flex items-center"><input type="number" id="cons_ev_kwh100" value="18" class="w-20 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:border-blue-500 outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600 ml-2">kWh/100km</span></div></div>
                                 </div>
                                 <label class="flex items-center gap-2 text-xs text-emerald-600 font-bold bg-emerald-50 w-fit px-2 py-1 rounded cursor-pointer mt-1">
-                                    <input type="checkbox" id="cons_ev_smart" class="rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" onchange="requireRecalculation()"> PV-Überschussladen (Wochenende)
+                                    <input type="checkbox" id="cons_ev_smart" class="rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer" onchange="requireRecalculation()"> PV-Überschussladen
                                 </label>
                             </div>
                         </div>
@@ -267,7 +252,7 @@
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 md:p-6">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-base md:text-lg font-bold text-slate-800">Monatlicher Netto-Ertrag</h3>
-                    <span class="text-[10px] text-blue-500 font-bold bg-blue-50 px-2 py-1 rounded">Klick auf Balken öffnet Tagesdetails!</span>
+                    <span class="text-[10px] text-blue-500 font-bold bg-blue-50 px-2 py-1 rounded">Klick auf Balken öffnet Details!</span>
                 </div>
                 <div class="relative h-64 md:h-96 w-full"><canvas id="yieldChart"></canvas></div>
             </div>
@@ -350,7 +335,6 @@
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <!-- Chart 1: Wohin floss der Strom? -->
                         <div class="glass-card rounded-2xl p-5">
                             <div class="flex justify-between items-center mb-4">
                                 <h3 class="text-sm font-bold text-white">1. Verbrauchsanalyse (Wohin?)</h3>
@@ -359,7 +343,6 @@
                             <div class="relative h-64 w-full"><canvas id="autarkyConsChart"></canvas></div>
                         </div>
                         
-                        <!-- Chart 2: Woher kam der Strom? -->
                         <div class="glass-card rounded-2xl p-5">
                             <div class="flex justify-between items-center mb-4">
                                 <h3 class="text-sm font-bold text-white">2. Deckungsanalyse (Woher?)</h3>
@@ -445,8 +428,9 @@
 
                 <h2 class="text-xl font-bold border-b pb-2 mb-4 text-slate-800">Versionshistorie (Changelog)</h2>
                 <ul class="space-y-3 text-slate-600">
-                    <li><strong class="text-slate-800 bg-slate-100 px-2 py-1 rounded">v5.0:</strong> Major UI/UX App Update. Read-Only Formulare (Wischgesten flüssig). Interaktive, tagesgenaue Detail-Charts (Drill-Down). Chart-Split in Dash 2 (Woher / Wohin). Dynamischer Rechen-Button.</li>
-                    <li><strong class="text-slate-800 bg-slate-50 px-2 py-1 rounded">v4.4:</strong> Umfassendes FAQ & Glossar. Fix der Entlade-Effizienzberechnung. Erläuterung zur Kommutativität.</li>
+                    <li><strong class="text-slate-800 bg-slate-100 px-2 py-1 rounded">v5.0.1:</strong> Wischgesten-Patch & Crash-Protection für Legacy-Geräte (JS Array Safeties).</li>
+                    <li><strong class="text-slate-800 bg-slate-100 px-2 py-1 rounded">v5.0:</strong> Major UI/UX App Update. Read-Only Formulare (Wischgesten flüssig). Interaktive, tagesgenaue Detail-Charts (Drill-Down). Chart-Split in Dash 2. Dynamischer Rechen-Button.</li>
+                    <li><strong class="text-slate-800 bg-slate-50 px-2 py-1 rounded">v4.4:</strong> Umfassendes FAQ & Glossar. Fix der Entlade-Effizienzberechnung.</li>
                     <li><strong class="text-slate-800 bg-slate-50 px-2 py-1 rounded">v4.3:</strong> Sicherheits-Vorbelegung aller Wechselrichter auf "Keine Batterie".</li>
                     <li><strong class="text-slate-800 bg-slate-50 px-2 py-1 rounded">v4.2:</strong> Neue Prioritätenweiche für Niedervolt-Batterien. Integration spezifischer Wirkungsgrade. Fehlende Jolywood-Modelle ergänzt.</li>
                 </ul>
@@ -482,9 +466,9 @@
             flatBatteries = DB.batteries.flatMap(s => s.models || []);
 
             const userDB = JSON.parse(localStorage.getItem('pvpro_user_db')) || { panels: [], batteries: [], inverters: [] };
-            if (userDB.panels.length > 0) { DB.panels.push({ series: "Eigene Module", models: userDB.panels }); flatPanels.push(...userDB.panels); }
-            if (userDB.inverters.length > 0) { DB.inverters.push({ series: "Eigene WR", models: userDB.inverters }); flatInverters.push(...userDB.inverters); }
-            if (userDB.batteries.length > 0) { DB.batteries.push({ series: "Eigene Batterien", models: userDB.batteries }); flatBatteries.push(...userDB.batteries); }
+            if (userDB.panels && userDB.panels.length > 0) { DB.panels.push({ series: "Eigene Module", models: userDB.panels }); flatPanels.push(...userDB.panels); }
+            if (userDB.inverters && userDB.inverters.length > 0) { DB.inverters.push({ series: "Eigene WR", models: userDB.inverters }); flatInverters.push(...userDB.inverters); }
+            if (userDB.batteries && userDB.batteries.length > 0) { DB.batteries.push({ series: "Eigene Batterien", models: userDB.batteries }); flatBatteries.push(...userDB.batteries); }
 
             let batMap = JSON.parse(localStorage.getItem('pvpro_batmap') || '{}');
             flatInverters.forEach(inv => {
@@ -508,20 +492,47 @@
             saveConsumptionSettings(); alert("Konfiguration gespeichert!"); 
         }
 
+        // TOUCH & WIPE LOGIC (V5.0.1 PATCH)
+        let touchStartX = 0; let touchStartY = 0; 
         const tabOrder = ['start', 'system', 'verbrauch', 'dashboard', 'dashboard2', 'database', 'faq'];
+        
+        document.addEventListener('touchstart', e => { 
+            touchStartX = e.changedTouches[0].screenX; 
+            touchStartY = e.changedTouches[0].screenY; 
+        }, { passive: true });
+
+        document.addEventListener('touchend', e => {
+            const t = e.target.tagName; 
+            if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'CANVAS'].includes(t) || e.target.type === 'range') return;
+            
+            let diffX = e.changedTouches[0].screenX - touchStartX; 
+            let diffY = e.changedTouches[0].screenY - touchStartY;
+            
+            if (Math.abs(diffX) > 70 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+                let currentActive = document.querySelector('.tab-content.active');
+                if(!currentActive) return;
+                let activeId = currentActive.id.replace('tab-', ''); 
+                let cIdx = tabOrder.indexOf(activeId);
+                
+                // Allow swiping only if we are in the main tabOrder (not detail view)
+                if(cIdx !== -1) {
+                    if (diffX < 0 && cIdx < tabOrder.length - 1) switchTab(tabOrder[cIdx + 1]); 
+                    else if (diffX > 0 && cIdx > 0) switchTab(tabOrder[cIdx - 1]);
+                }
+            }
+        }, { passive: true });
+
         function switchTab(tabId) {
             const current = document.querySelector('.tab-content.active'); 
             const next = document.getElementById('tab-' + tabId);
             if(current && current !== next) { current.classList.remove('active'); next.classList.add('active'); }
             else if (!current) next.classList.add('active');
             
-            // UI Button states
             tabOrder.forEach(id => { 
                 let btn = document.getElementById('btn-' + id);
                 if(btn) btn.className = id === tabId ? "snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-bold rounded-md bg-blue-600 text-white shadow-sm flex items-center gap-1.5 transition-colors" : "snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors flex items-center gap-1.5"; 
             });
 
-            // Scroll Sync
             let activeBtn = document.getElementById('btn-' + tabId);
             if(activeBtn) activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         }
@@ -614,7 +625,10 @@
 
         function updatePhysicsOnly() {
             let sysError = false; let invTotals = {};
-            flatInverters.forEach(inv => { invTotals[inv.id] = { mpptIscSums: {} }; inv.mppts.forEach(m => invTotals[inv.id].mpptIscSums[m.id] = 0); });
+            flatInverters.forEach(inv => { 
+                invTotals[inv.id] = { mpptIscSums: {} }; 
+                (inv.mppts || []).forEach(m => invTotals[inv.id].mpptIscSums[m.id] = 0); 
+            });
 
             strings.forEach(str => {
                 let vocStc = 0; let vmpStc = 0; let isc = 0; let tk = -0.25; let minT = 999; let maxT = 0;
@@ -633,7 +647,7 @@
                 str._phys = { vocCold: vCold, vmpHot: vHot, isc: isc, isVocSafe: true, isIscSafe: true, isVmpSafe: true, invStartV: inv?.startV || 0, minMppV: inv?.minMppV || 0, maxMppV: inv?.maxMppV || 0, limitMaxV: 1000, limitMaxI: 20, mismatchPct: misPct };
 
                 if(inv) {
-                    let limits = inv.mppts.find(m => m.id === parseInt(str.mpptId)) || inv.mppts[0];
+                    let limits = (inv.mppts || []).find(m => m.id === parseInt(str.mpptId)) || (inv.mppts || [])[0];
                     if(limits) {
                         invTotals[inv.id].mpptIscSums[limits.id] += isc;
                         str._phys.limitMaxV = inv.maxV || 1000;
@@ -645,7 +659,7 @@
                 }
                 if(!str._phys.isVocSafe || !str._phys.isIscSafe) sysError = true;
             });
-            flatInverters.forEach(inv => { inv.mppts.forEach(m => { if(invTotals[inv.id].mpptIscSums[m.id] > m.maxIsc) sysError = true; }); });
+            flatInverters.forEach(inv => { (inv.mppts || []).forEach(m => { if(invTotals[inv.id].mpptIscSums[m.id] > m.maxIsc) sysError = true; }); });
             
             const badge = document.getElementById('globalStatusBadge');
             badge.className = sysError ? "hidden md:inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-500 border border-rose-500/30" : "hidden md:inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
@@ -659,9 +673,10 @@
         }
 
         async function calculateYieldAPI() {
-            const btn = document.getElementById('btnCalculate'); const origTxt = btn.innerHTML;
-            btn.innerHTML = '<svg class="w-5 h-5 spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-width="4" stroke-dasharray="30 30"></circle></svg><span>Lade Daten...</span>';
-            btn.disabled = true; document.getElementById('btnCalcHeader').classList.add('hidden');
+            const btn = document.getElementById('btnCalculateMain'); 
+            const origTxt = btn ? btn.innerHTML : '';
+            if(btn) { btn.innerHTML = '<svg class="w-6 h-6 spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-width="4" stroke-dasharray="30 30"></circle></svg><span>Lade Daten...</span>'; btn.disabled = true; }
+            document.getElementById('btnCalcHeader').classList.add('hidden');
 
             try {
                 let proms = [];
@@ -821,14 +836,13 @@
                     for(let m=0; m<12; m++) g.mo[m] += sr.mo[m];
                 });
 
-                // Convert globals
                 ['direct','fromBat','toGrid','fromGrid','toBat','clip','batLoss'].forEach(k => flow[k]/=1000);
                 
                 YieldDataCache = groupedResults; FlowCache = flow; activeGroupIndex = null; 
                 switchTab('dashboard');
                 renderDashboard();
             } catch(e) { console.error(e); alert("API Fehler: " + e.message); }
-            btn.innerHTML = origTxt; btn.disabled = false;
+            if(btn) { btn.innerHTML = origTxt; btn.disabled = false; }
         }
 
         function setFocus(idx) { activeGroupIndex = activeGroupIndex === idx ? null : idx; renderDashboard(); }
@@ -885,7 +899,6 @@
                 });
             }
 
-            // DASH 2
             let totalCons = FlowCache.direct + FlowCache.fromBat + FlowCache.fromGrid;
             
             document.getElementById('d2-total-cons').innerText = Math.round(totalCons).toLocaleString() + " kWh";
@@ -904,7 +917,6 @@
             document.getElementById('gauge-autarky').style.strokeDasharray = `${autarkyPct}, 100`;
             document.getElementById('gauge-eigen').style.strokeDasharray = `${eigenPct}, 100`;
 
-            // Data for Dash 2 Charts (Monthly Aggregations based on 8760 breakdowns)
             let mStart = [0, 744, 1416, 2160, 2880, 3624, 4344, 5088, 5832, 6552, 7296, 8016];
             let moBreakdown = { base: [], it: [], ac: [], wp: [], bw: [], ev: [], toGrid: [], pvTotal: [], clip: [], toBat: [] };
             
@@ -946,9 +958,9 @@
                 data: { labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],
                 datasets: [
                     { label: 'PV Erzeugung (Gesamt)', data: moBreakdown.pvTotal, borderColor: '#3b82f6', backgroundColor: 'transparent', type: 'line', borderWidth: 2, pointRadius: 2, tension: 0.3 },
-                    { label: 'PV Direkt', data: FlowCache.moGen, backgroundColor: '#3b82f6', stack: '0' }, // direct roughly moGen - toGrid
+                    { label: 'PV Direkt', data: FlowCache.moGen, backgroundColor: '#3b82f6', stack: '0' },
                     { label: 'Aus Batterie', data: FlowCache.moBat, backgroundColor: '#a855f7', stack: '0' },
-                    { label: 'Netzbezug', data: moBreakdown.base.map((_,i) => FlowCache.moCons[i] - FlowCache.moGen[i] + moBreakdown.toGrid[i] - FlowCache.moBat[i]), backgroundColor: '#f43f5e', stack: '0' } // simplified for chart visual
+                    { label: 'Netzbezug', data: moBreakdown.base.map((_,i) => FlowCache.moCons[i] - FlowCache.moGen[i] + moBreakdown.toGrid[i] - FlowCache.moBat[i]), backgroundColor: '#f43f5e', stack: '0' }
                 ]}, options: cOpts
             });
         }
@@ -1035,7 +1047,7 @@
             
             document.getElementById('batCardGrid').innerHTML = flatBatteries.map(b => `
                 <div class="bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center shadow-sm">
-                    <div><h4 class="font-bold text-xs text-slate-800">${b.name}</h4><p class="text-[9px] text-slate-500">Max. P: ${b.power}W | Eff: ${Math.round(b.eff * 100)}%</p></div>
+                    <div><h4 class="font-bold text-xs text-slate-800">${b.name}</h4><p class="text-[9px] text-slate-500">Max. P: ${b.power}W | Eff: ${Math.round((b.eff || 1) * 100)}%</p></div>
                     <div class="text-right"><span class="text-xs font-black text-emerald-600">${b.cap.toFixed(2)} kWh</span></div>
                 </div>`).join('');
         }
@@ -1057,14 +1069,21 @@
                 const p = str._phys || { isVocSafe: true, isIscSafe: true, isVmpSafe: true, vocCold: 0, vmpHot: 0, isc: 0, limitMaxV: 1000, limitMaxI: 20, minMppV: 0, maxMppV: 0, invStartV: 0, mismatchPct: 0 };
                 const inv = flatInverters.find(i => i.id === parseInt(str.inverterId)) || flatInverters[0];
                 let wOpt = invOptions.replace(`value="${str.inverterId}"`, `value="${str.inverterId}" selected`);
-                let mOpt = inv.mppts.map(m => `<option value="${m.id}" ${str.mpptId == m.id ? 'selected':''}>${m.name}</option>`).join('');
+                
+                const mpptsSafe = inv.mppts || [];
+                let mOpt = mpptsSafe.map(m => `<option value="${m.id}" ${str.mpptId == m.id ? 'selected':''}>${m.name}</option>`).join('');
                 
                 const safe = p.isVocSafe && p.isIscSafe;
-                let vmpColor = 'bg-amber-400'; let vmpText = 'text-amber-500'; let vmpWidth = Math.max((p.vmpHot/p.invStartV)*100, 10);
+                
+                let vmpColor = 'bg-amber-400'; let vmpText = 'text-amber-500'; 
+                let safeInvStartV = p.invStartV || 1; // Div by 0 fix
+                let vmpWidth = Math.max((p.vmpHot/safeInvStartV)*100, 10);
+                
                 if (p.vmpHot >= p.minMppV && p.vmpHot <= p.maxMppV) { vmpColor = 'bg-emerald-500'; vmpText = 'text-emerald-500'; vmpWidth = 100; }
                 else if (p.vmpHot >= p.invStartV) { vmpColor = 'bg-blue-400'; vmpText = 'text-blue-500'; vmpWidth = 70; }
                 
                 let modTotal = str.fields.reduce((sum, f) => sum + f.count, 0);
+                let currentMpptName = mpptsSafe.find(m=>m.id==str.mpptId)?.name || 'Unbekannter MPPT';
 
                 return `
                 <div class="bg-white border-2 ${safe ? 'border-slate-100' : 'border-rose-400'} rounded-2xl shadow-sm mb-4">
@@ -1074,7 +1093,7 @@
                             <div class="w-4 h-12 rounded-full shrink-0 shadow-sm" style="background-color: ${str.color}"></div>
                             <div>
                                 <h4 class="font-black text-base md:text-lg text-slate-800">${str.name} <span class="text-xs font-bold text-slate-400 ml-1 uppercase tracking-wider">${str.group}</span></h4>
-                                <p class="text-xs text-slate-500 font-medium mt-0.5">${modTotal} Module am ${inv.name} (${inv.mppts.find(m=>m.id==str.mpptId)?.name})</p>
+                                <p class="text-xs text-slate-500 font-medium mt-0.5">${modTotal} Module am ${inv.name} (${currentMpptName})</p>
                                 <div class="flex gap-2 mt-1.5">
                                     ${p.mismatchPct > 0 ? `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[9px] font-bold">-${p.mismatchPct.toFixed(1)}% Mismatch</span>` : ''}
                                     ${str.shading > 0 ? `<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[9px] font-bold">Schatten: ${str.shading}%</span>` : ''}
