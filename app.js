@@ -13,17 +13,21 @@ let chartYield = null, chartAutarkyCons = null, chartAutarkyGen = null, detailCo
 // ==========================================
 function initDatabase() {
     try {
-        // MasterDB kommt aus database.js
+        DB = { panels: [], batteries: [], inverters: [] };
+        DB.panels = [...MasterDB.panels]; 
+        DB.batteries = [...MasterDB.batteries]; 
+        DB.inverters = [...MasterDB.inverters];
+        
         try {
             const userDB = JSON.parse(localStorage.getItem('pvpro_user_db')) || { panels: [], batteries: [], inverters: [] };
-            if (userDB.panels.length > 0) MasterDB.panels.push({ series: "Eigene Module", models: userDB.panels });
-            if (userDB.inverters.length > 0) MasterDB.inverters.push({ series: "Eigene WR", models: userDB.inverters });
-            if (userDB.batteries.length > 0) MasterDB.batteries.push({ series: "Eigene Batterien", models: userDB.batteries });
+            if (userDB.panels.length > 0) DB.panels.push({ series: "Eigene Module", models: userDB.panels });
+            if (userDB.inverters.length > 0) DB.inverters.push({ series: "Eigene WR", models: userDB.inverters });
+            if (userDB.batteries.length > 0) DB.batteries.push({ series: "Eigene Batterien", models: userDB.batteries });
         } catch(e) {}
 
-        flatPanels = MasterDB.panels.flatMap(s => s.models || []); 
-        flatInverters = MasterDB.inverters.flatMap(s => s.models || []); 
-        flatBatteries = MasterDB.batteries.flatMap(s => s.models || []);
+        flatPanels = DB.panels.flatMap(s => s.models || []); 
+        flatInverters = DB.inverters.flatMap(s => s.models || []); 
+        flatBatteries = DB.batteries.flatMap(s => s.models || []);
 
         let batMap = JSON.parse(localStorage.getItem('pvpro_batmap') || '{}');
         flatInverters.forEach(inv => { if(batMap[inv.id] !== undefined) inv.batteryId = parseInt(batMap[inv.id]); });
@@ -40,7 +44,6 @@ function initDatabase() {
         let locInp = document.getElementById('locSearchInput'); if(locInp) locInp.value = LocationData.name;
         let locTxt = document.getElementById('locNameText'); if(locTxt) locTxt.innerText = LocationData.name;
         
-        // Handbuch laden (aus content.js)
         let faqTab = document.getElementById('tab-faq');
         if(faqTab && typeof HandbuchHTML !== 'undefined') faqTab.innerHTML = HandbuchHTML;
 
@@ -212,8 +215,8 @@ function renderStringsUI() {
     }
     if(emptyMsg) emptyMsg.classList.add('hidden');
 
-    let panelOptions = MasterDB.panels.map(s => `<optgroup label="${s.series}">${(s.models||[]).map(m => `<option value="${m.id}">${m.name}</option>`).join('')}</optgroup>`).join('');
-    let invOptions = MasterDB.inverters.map(s => `<optgroup label="${s.series}">${(s.models||[]).map(m => `<option value="${m.id}">${m.name}</option>`).join('')}</optgroup>`).join('');
+    let panelOptions = DB.panels.map(s => `<optgroup label="${s.series}">${(s.models||[]).map(m => `<option value="${m.id}">${m.name}</option>`).join('')}</optgroup>`).join('');
+    let invOptions = DB.inverters.map(s => `<optgroup label="${s.series}">${(s.models||[]).map(m => `<option value="${m.id}">${m.name}</option>`).join('')}</optgroup>`).join('');
 
     container.innerHTML = strings.map(str => {
         const p = str._phys || { isVocSafe: true, isIscSafe: true, vocCold: 0, vmpHot: 0, isc: 0, limitMaxV: 1000, limitMaxI: 20, minMppV: 0, maxMppV: 0, invStartV: 0, mismatchPct: 0 };
@@ -236,7 +239,6 @@ function renderStringsUI() {
 
         return `
         <div class="bg-white border-2 ${safe ? 'border-slate-100' : 'border-rose-400'} rounded-xl shadow-sm mb-3">
-            <!-- Übersichtskarte (Kompakt) -->
             <div class="p-3 bg-white rounded-xl">
                 <div class="flex justify-between items-center mb-2">
                     <div class="flex items-center gap-3">
@@ -257,7 +259,6 @@ function renderStringsUI() {
                 </div>
             </div>
 
-            <!-- Edit Bereich -->
             <div id="edit-${str.id}" class="hidden p-4 bg-slate-50 border-t border-slate-200 rounded-b-xl space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
                     <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Name</label><input type="text" value="${str.name}" onchange="updateStringData(${str.id}, 'name', this.value)" class="w-full border-2 rounded-lg px-2 py-1.5 text-sm outline-none"></div>
@@ -310,7 +311,7 @@ function renderStringsUI() {
 }
 
 // ==========================================
-// 4. VERBRAUCHS-LOGIK
+// 5. VERBRAUCHS-LOGIK
 // ==========================================
 function updateHouseHint() {
     let val = parseInt(document.getElementById('cons_base_kwh').value) || 0;
@@ -390,7 +391,7 @@ function build8760ConsumptionArray(pvProfile = null) {
 }
 
 // ==========================================
-// 5. FINANZEN & BERECHNUNG (ROI)
+// 6. FINANZEN & BERECHNUNG (ROI)
 // ==========================================
 function loadFinanceSettings() {
     let s = JSON.parse(localStorage.getItem('pvpro_finance') || '{}');
@@ -477,7 +478,7 @@ function calculateFinances() {
 }
 
 // ==========================================
-// 6. PVGIS API & ENGINE (5.2 Restore)
+// 7. PVGIS API & ENGINE (5.2 RESTORE + MISMATCH)
 // ==========================================
 async function searchLocation() { 
     const q = document.getElementById('locSearchInput').value; if(!q) return;
@@ -499,10 +500,12 @@ async function calculateYieldAPI() {
         let proms = [];
         strings.forEach(str => {
             let shadingFactor = 1 - ((str.shading || 0) / 100);
+
             (str.fields || []).forEach(f => {
                 const p = flatPanels.find(x=>x.id===parseInt(f.panelId));
                 if(p && f.count>0) {
                     let asp = str.azimuth - 180; if (asp>180) asp-=360; if (asp<-180) asp+=360;
+                    // Exakt 5.2 API Call (corsproxy.io, Promise.all)
                     const u = `https://corsproxy.io/?${encodeURIComponent(`https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?lat=${LocationData.lat}&lon=${LocationData.lon}&usehorizon=1&pvcalculation=1&startyear=2019&endyear=2019&outputformat=json&angle=${f.tilt}&aspect=${asp}&peakpower=${((p.pmax*f.count)/1000).toFixed(3)}&loss=14`)}`;
                     proms.push(fetch(u).then(async r=>{if(!r.ok) throw new Error(await r.text()); return r.json();}).then(d=>({sId:str.id, fId:f.id, d:d.outputs.hourly, sF:shadingFactor, panel: p, count: f.count})));
                 }
@@ -521,6 +524,7 @@ async function calculateYieldAPI() {
 
         let pvProfileRaw = new Float32Array(8760);
 
+        // Echte stundengenaue Mismatch Berechnung
         let stringGroups = {};
         res.forEach(r => {
             if(!stringGroups[r.sId]) stringGroups[r.sId] = [];
@@ -650,13 +654,13 @@ async function calculateYieldAPI() {
         YieldDataCache = groupedResults; FlowCache = flow; activeGroupIndex = null; 
         renderStringsUI(); 
         renderDashboard();
-        switchTab('uebersicht');
+        switchTab('uebersicht'); 
     } catch(e) { console.error(e); alert("Berechnungsfehler: " + e.message); }
     if(btn) { btn.innerHTML = origTxt; btn.disabled = false; }
 }
 
 // ==========================================
-// 7. DASHBOARDS & CHARTS (AUSWERTUNG)
+// 8. DASHBOARDS & CHARTS
 // ==========================================
 function setFocus(idx) { activeGroupIndex = activeGroupIndex === idx ? null : idx; renderDashboard(); }
 
@@ -713,7 +717,7 @@ function renderDashboard() {
     let aCCtx = document.getElementById('autarkyConsChart');
     if(aCCtx) {
         if(chartAutarkyCons) chartAutarkyCons.destroy();
-        chartAutarkyCons = new Chart(aCCtx.getContext('2d'), { type: 'bar', data: { labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"], datasets: [ { label: 'Einspeisung', data: moBreakdown.toGrid, backgroundColor: '#f59e0b', stack: '0' }, { label: 'Bat-Ladung', data: moBreakdown.toBat, backgroundColor: '#10b981', stack: '0' }, { label: 'E-Auto', data: moBreakdown.ev, backgroundColor: '#84cc16', stack: '0' }, { label: 'Klima', data: moBreakdown.ac, backgroundColor: '#0ea5e9', stack: '0' }, { label: 'Wärmepumpe', data: moBreakdown.wp, backgroundColor: '#ef4444', stack: '0' }, { label: 'BWWP', data: moBreakdown.bw, backgroundColor: '#f43f5e', stack: '0' }, { label: 'IT/Server', data: moBreakdown.it, backgroundColor: '#3b82f6', stack: '0' }, { label: 'Grundlast', data: moBreakdown.base, backgroundColor: '#94a3b8', stack: '0' } ]}, options: cOpts });
+        chartAutarkyCons = new Chart(aCCtx.getContext('2d'), { type: 'bar', data: { labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"], datasets: [ { label: 'Einspeisung', data: moBreakdown.toGrid, backgroundColor: '#f59e0b', stack: '0' }, { label: 'Bat-Ladung', data: moBreakdown.toBat, backgroundColor: '#10b981', stack: '0' }, { label: 'E-Auto', data: moBreakdown.ev, backgroundColor: '#84cc16', stack: '0' }, { label: 'Klima', data: moBreakdown.ac, backgroundColor: '#0ea5e9', stack: '0' }, { label: 'Wärmepumpe', data: moBreakdown.wp, backgroundColor: '#ef4444', stack: '0' }, { label: 'BWWP', data: moBreakdown.bw, backgroundColor: '#f43f5e', stack: '0' }, { label: 'IT', data: dIt, backgroundColor: '#3b82f6', stack: '0' }, { label: 'Grundlast', data: moBreakdown.base, backgroundColor: '#94a3b8', stack: '0' } ]}, options: cOpts });
     }
 
     let aGCtx = document.getElementById('autarkyGenChart');
@@ -727,7 +731,7 @@ function renderDashboard() {
 }
 
 // ==========================================
-// 8. EINZELTAGE (DETAIL)
+// 9. EINZELTAGE (DETAIL)
 // ==========================================
 function changeDetailMonth(dir) { let newMonth = currentDetailMonth + dir; if(newMonth < 0) newMonth = 11; if(newMonth > 11) newMonth = 0; updateDetailCharts(newMonth); }
 
@@ -764,7 +768,7 @@ function updateDetailCharts(monthIdx) {
 }
 
 // ==========================================
-// 9. EIGENE HARDWARE (CUSTOM DB)
+// 10. EIGENE HARDWARE (CUSTOM DB)
 // ==========================================
 function toggleCustomDbForm() { 
     let f = document.getElementById('customDbForm'); 
