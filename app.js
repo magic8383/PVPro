@@ -9,7 +9,7 @@ let strings = [], currentDetailMonth = null;
 let chartYield = null, chartAutarkyCons = null, chartAutarkyGen = null, detailConsChart = null, detailGenChart = null;
 
 // ==========================================
-// 1. INITIALISIERUNG
+// 1. INITIALISIERUNG & CACHE CHECK
 // ==========================================
 function initDatabase() {
     try {
@@ -39,7 +39,15 @@ function initDatabase() {
             } catch(e) { strings = []; }
         }
         
-        if(localStorage.getItem('pvpro_loc')) LocationData = JSON.parse(localStorage.getItem('pvpro_loc'));
+        // SICHERHEITS-CHECK: Lade nur, wenn lat und lon wirklich existieren!
+        if(localStorage.getItem('pvpro_loc')) {
+            try {
+                let parsedLoc = JSON.parse(localStorage.getItem('pvpro_loc'));
+                if(parsedLoc && parsedLoc.lat && parsedLoc.lon) {
+                    LocationData = parsedLoc;
+                }
+            } catch(e) {}
+        }
         
         let locInp = document.getElementById('locSearchInput'); if(locInp) locInp.value = LocationData.name;
         let locTxt = document.getElementById('locNameText'); if(locTxt) locTxt.innerText = LocationData.name;
@@ -311,7 +319,7 @@ function renderStringsUI() {
 }
 
 // ==========================================
-// 5. VERBRAUCHS-LOGIK
+// 4. VERBRAUCHS-LOGIK
 // ==========================================
 function updateHouseHint() {
     let val = parseInt(document.getElementById('cons_base_kwh').value) || 0;
@@ -391,7 +399,7 @@ function build8760ConsumptionArray(pvProfile = null) {
 }
 
 // ==========================================
-// 6. FINANZEN & BERECHNUNG (ROI)
+// 5. FINANZEN & BERECHNUNG (ROI)
 // ==========================================
 function loadFinanceSettings() {
     let s = JSON.parse(localStorage.getItem('pvpro_finance') || '{}');
@@ -478,7 +486,7 @@ function calculateFinances() {
 }
 
 // ==========================================
-// 7. PVGIS API & ENGINE (5.2 RESTORE + MISMATCH)
+// 6. PVGIS API & ENGINE (5.2 RESTORE + SAFE LAT/LON)
 // ==========================================
 async function searchLocation() { 
     const q = document.getElementById('locSearchInput').value; if(!q) return;
@@ -498,6 +506,10 @@ async function calculateYieldAPI() {
     
     try {
         let proms = [];
+        // Panzer-Schutz: Fallback auf Standardkoordinaten, falls localStorage beschädigt war!
+        const safeLat = (LocationData && LocationData.lat) ? LocationData.lat : 48.06;
+        const safeLon = (LocationData && LocationData.lon) ? LocationData.lon : 8.46;
+
         strings.forEach(str => {
             let shadingFactor = 1 - ((str.shading || 0) / 100);
 
@@ -505,8 +517,7 @@ async function calculateYieldAPI() {
                 const p = flatPanels.find(x=>x.id===parseInt(f.panelId));
                 if(p && f.count>0) {
                     let asp = str.azimuth - 180; if (asp>180) asp-=360; if (asp<-180) asp+=360;
-                    // Exakt 5.2 API Call (corsproxy.io, Promise.all)
-                    const u = `https://corsproxy.io/?${encodeURIComponent(`https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?lat=${LocationData.lat}&lon=${LocationData.lon}&usehorizon=1&pvcalculation=1&startyear=2019&endyear=2019&outputformat=json&angle=${f.tilt}&aspect=${asp}&peakpower=${((p.pmax*f.count)/1000).toFixed(3)}&loss=14`)}`;
+                    const u = `https://corsproxy.io/?${encodeURIComponent(`https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?lat=${safeLat}&lon=${safeLon}&usehorizon=1&pvcalculation=1&startyear=2019&endyear=2019&outputformat=json&angle=${f.tilt}&aspect=${asp}&peakpower=${((p.pmax*f.count)/1000).toFixed(3)}&loss=14`)}`;
                     proms.push(fetch(u).then(async r=>{if(!r.ok) throw new Error(await r.text()); return r.json();}).then(d=>({sId:str.id, fId:f.id, d:d.outputs.hourly, sF:shadingFactor, panel: p, count: f.count})));
                 }
             });
@@ -524,7 +535,6 @@ async function calculateYieldAPI() {
 
         let pvProfileRaw = new Float32Array(8760);
 
-        // Echte stundengenaue Mismatch Berechnung
         let stringGroups = {};
         res.forEach(r => {
             if(!stringGroups[r.sId]) stringGroups[r.sId] = [];
@@ -660,7 +670,7 @@ async function calculateYieldAPI() {
 }
 
 // ==========================================
-// 8. DASHBOARDS & CHARTS
+// 8. DASHBOARDS & CHARTS (AUSWERTUNG)
 // ==========================================
 function setFocus(idx) { activeGroupIndex = activeGroupIndex === idx ? null : idx; renderDashboard(); }
 
@@ -717,7 +727,7 @@ function renderDashboard() {
     let aCCtx = document.getElementById('autarkyConsChart');
     if(aCCtx) {
         if(chartAutarkyCons) chartAutarkyCons.destroy();
-        chartAutarkyCons = new Chart(aCCtx.getContext('2d'), { type: 'bar', data: { labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"], datasets: [ { label: 'Einspeisung', data: moBreakdown.toGrid, backgroundColor: '#f59e0b', stack: '0' }, { label: 'Bat-Ladung', data: moBreakdown.toBat, backgroundColor: '#10b981', stack: '0' }, { label: 'E-Auto', data: moBreakdown.ev, backgroundColor: '#84cc16', stack: '0' }, { label: 'Klima', data: moBreakdown.ac, backgroundColor: '#0ea5e9', stack: '0' }, { label: 'Wärmepumpe', data: moBreakdown.wp, backgroundColor: '#ef4444', stack: '0' }, { label: 'BWWP', data: moBreakdown.bw, backgroundColor: '#f43f5e', stack: '0' }, { label: 'IT', data: dIt, backgroundColor: '#3b82f6', stack: '0' }, { label: 'Grundlast', data: moBreakdown.base, backgroundColor: '#94a3b8', stack: '0' } ]}, options: cOpts });
+        chartAutarkyCons = new Chart(aCCtx.getContext('2d'), { type: 'bar', data: { labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"], datasets: [ { label: 'Einspeisung', data: moBreakdown.toGrid, backgroundColor: '#f59e0b', stack: '0' }, { label: 'Bat-Ladung', data: moBreakdown.toBat, backgroundColor: '#10b981', stack: '0' }, { label: 'E-Auto', data: moBreakdown.ev, backgroundColor: '#84cc16', stack: '0' }, { label: 'Klima', data: moBreakdown.ac, backgroundColor: '#0ea5e9', stack: '0' }, { label: 'Wärmepumpe', data: moBreakdown.wp, backgroundColor: '#ef4444', stack: '0' }, { label: 'BWWP', data: moBreakdown.bw, backgroundColor: '#f43f5e', stack: '0' }, { label: 'IT/Server', data: moBreakdown.it, backgroundColor: '#3b82f6', stack: '0' }, { label: 'Grundlast', data: moBreakdown.base, backgroundColor: '#94a3b8', stack: '0' } ]}, options: cOpts });
     }
 
     let aGCtx = document.getElementById('autarkyGenChart');
