@@ -92,8 +92,7 @@ const HandbuchHTML = `
         <button onclick="toggleAcc('acc_bg4')" class="w-full p-5 text-left font-bold text-slate-800 flex justify-between bg-slate-50 hover:bg-slate-100 transition-colors"><span>Changelog</span><span class="text-slate-400">▼</span></button>
         <div id="acc_bg4" class="acc-content px-5 pb-5 text-sm text-slate-600 border-t border-slate-100">
             <ul class="space-y-3 mt-4">
-                <li><strong>v6.10 (Current):</strong> Separation of Concerns: Kompletter Code wurde in 4 Dateien ausgelagert (index.html, app.js, database.js, content.js). Stundengenaue Mismatch-Logik inkl. UI-Feedback aktiviert. Gas/Öl wird nun physikalisch korrekt in Volumen (Liter/m³) über die JAZ abgerechnet. 2027 EEG-Cutoff. Verbrauchs-Dropdown auf variables Number-Field mit intelligenten 100er-Schritten umgebaut.</li>
-                <li><strong>v6.9:</strong> Cache Restore Fix für die 8760-Array Graphen.</li>
+                <li><strong>v6.10 (Current):</strong> Separation of Concerns: Kompletter Code wurde in 4 Dateien ausgelagert (index.html, app.js, database.js, content.js). Stundengenaue Mismatch-Logik inkl. UI-Feedback aktiviert. Gas/Öl wird nun physikalisch korrekt in Volumen (Liter/m³) über die JAZ abgerechnet. 2027 EEG-Cutoff. Verbrauchs-Dropdown auf variables Number-Field mit intelligenten 100er-Schritten umgebaut. Cache Fix eingebaut.</li>
                 <li><strong>v6.8:</strong> Revert der API-Schnittstelle auf 100% v5.2 Architektur (direkter corsproxy.io ohne Delay). Erhalt der robusten Wischgesten-Logik.</li>
                 <li><strong>v6.0:</strong> Finance Engine (Sektorenkopplung Benzin/Gas), Dynamische EEG-Berechnung (Mischvergütung), Custom-DB Formular.</li>
                 <li><strong>v5.2:</strong> Clean Architecture.</li>
