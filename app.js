@@ -9,7 +9,7 @@ let strings = [], currentDetailMonth = null;
 let chartYield = null, chartAutarkyCons = null, chartAutarkyGen = null, detailConsChart = null, detailGenChart = null;
 
 // ==========================================
-// 1. INITIALISIERUNG & CACHE CHECK
+// 1. INITIALISIERUNG
 // ==========================================
 function initDatabase() {
     try {
@@ -39,15 +39,7 @@ function initDatabase() {
             } catch(e) { strings = []; }
         }
         
-        // SICHERHEITS-CHECK: Lade nur, wenn lat und lon wirklich existieren!
-        if(localStorage.getItem('pvpro_loc')) {
-            try {
-                let parsedLoc = JSON.parse(localStorage.getItem('pvpro_loc'));
-                if(parsedLoc && parsedLoc.lat && parsedLoc.lon) {
-                    LocationData = parsedLoc;
-                }
-            } catch(e) {}
-        }
+        if(localStorage.getItem('pvpro_loc')) LocationData = JSON.parse(localStorage.getItem('pvpro_loc'));
         
         let locInp = document.getElementById('locSearchInput'); if(locInp) locInp.value = LocationData.name;
         let locTxt = document.getElementById('locNameText'); if(locTxt) locTxt.innerText = LocationData.name;
@@ -319,7 +311,7 @@ function renderStringsUI() {
 }
 
 // ==========================================
-// 4. VERBRAUCHS-LOGIK
+// 5. VERBRAUCHS-LOGIK
 // ==========================================
 function updateHouseHint() {
     let val = parseInt(document.getElementById('cons_base_kwh').value) || 0;
@@ -399,7 +391,7 @@ function build8760ConsumptionArray(pvProfile = null) {
 }
 
 // ==========================================
-// 5. FINANZEN & BERECHNUNG (ROI)
+// 6. FINANZEN & BERECHNUNG (ROI)
 // ==========================================
 function loadFinanceSettings() {
     let s = JSON.parse(localStorage.getItem('pvpro_finance') || '{}');
@@ -486,7 +478,7 @@ function calculateFinances() {
 }
 
 // ==========================================
-// 6. PVGIS API & ENGINE (5.2 RESTORE + SAFE LAT/LON)
+// 7. PVGIS API & ENGINE (5.2 RESTORE)
 // ==========================================
 async function searchLocation() { 
     const q = document.getElementById('locSearchInput').value; if(!q) return;
@@ -506,10 +498,6 @@ async function calculateYieldAPI() {
     
     try {
         let proms = [];
-        // Panzer-Schutz: Fallback auf Standardkoordinaten, falls localStorage beschädigt war!
-        const safeLat = (LocationData && LocationData.lat) ? LocationData.lat : 48.06;
-        const safeLon = (LocationData && LocationData.lon) ? LocationData.lon : 8.46;
-
         strings.forEach(str => {
             let shadingFactor = 1 - ((str.shading || 0) / 100);
 
@@ -517,7 +505,7 @@ async function calculateYieldAPI() {
                 const p = flatPanels.find(x=>x.id===parseInt(f.panelId));
                 if(p && f.count>0) {
                     let asp = str.azimuth - 180; if (asp>180) asp-=360; if (asp<-180) asp+=360;
-                    const u = `https://corsproxy.io/?${encodeURIComponent(`https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?lat=${safeLat}&lon=${safeLon}&usehorizon=1&pvcalculation=1&startyear=2019&endyear=2019&outputformat=json&angle=${f.tilt}&aspect=${asp}&peakpower=${((p.pmax*f.count)/1000).toFixed(3)}&loss=14`)}`;
+                    const u = `https://corsproxy.io/?${encodeURIComponent(`https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?lat=${LocationData.lat}&lon=${LocationData.lon}&usehorizon=1&pvcalculation=1&startyear=2019&endyear=2019&outputformat=json&angle=${f.tilt}&aspect=${asp}&peakpower=${((p.pmax*f.count)/1000).toFixed(3)}&loss=14`)}`;
                     proms.push(fetch(u).then(async r=>{if(!r.ok) throw new Error(await r.text()); return r.json();}).then(d=>({sId:str.id, fId:f.id, d:d.outputs.hourly, sF:shadingFactor, panel: p, count: f.count})));
                 }
             });
@@ -753,13 +741,16 @@ function updateDetailCharts(monthIdx) {
     
     const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
     let startDay = 0; for(let i=0; i<monthIdx; i++) startDay += daysInMonth[i];
-    let dailyLabels = [], dBase = [], dIt = [], dAc = [], dWp = [], dBw = [], dEv = [], dToGrid = [], dToBat = [], dPvTotal = [], dDirect = [], dFromBat = [], dFromGrid = [];
+    let dailyLabels = [], dailyBase = [], dailyItLoad = [], dailyAc = [], dailyWp = [], dailyBw = [], dailyEv = [], dailyToGrid = [], dailyToBat = [], dailyPvTotal = [], dailyDirect = [], dailyFromBat = [], dailyFromGrid = [];
 
     for(let d=0; d<daysInMonth[monthIdx]; d++) {
         dailyLabels.push((d+1)+".");
         let sB=0, sI=0, sA=0, sW=0, sBw=0, sE=0, sTG=0, sTB=0, sPV=0, sDir=0, sFB=0, sFG=0;
-        for(let h=0; h<24; h++) { let absH = (startDay + d)*24 + h; sB+=ConsumptionCache.base[absH]; sI+=ConsumptionCache.it[absH]; sA+=ConsumptionCache.ac[absH]; sW+=ConsumptionCache.wp[absH]; sBw+=ConsumptionCache.bw[absH]; sE+=ConsumptionCache.ev[absH]; sTG+=FlowCache.hr.toGrid[absH]; sTB+=FlowCache.hr.toBat[absH]; sPV+=FlowCache.hr.pvTotal[absH]; sDir+=FlowCache.hr.direct[absH]; sFB+=FlowCache.hr.fromBat[absH]; sFG+=FlowCache.hr.fromGrid[absH]; }
-        dBase.push(sB/1000); dIt.push(sI/1000); dAc.push(sA/1000); dWp.push(sW/1000); dBw.push(sBw/1000); dEv.push(sE/1000); dToGrid.push(sTG/1000); dToBat.push(sTB/1000); dPvTotal.push(sPV/1000); dDirect.push(sDir/1000); dFromBat.push(sFB/1000); dFromGrid.push(sFG/1000);
+        for(let h=0; h<24; h++) { 
+            let absH = (startDay + d)*24 + h; 
+            sB+=ConsumptionCache.base[absH]; sI+=ConsumptionCache.it[absH]; sA+=ConsumptionCache.ac[absH]; sW+=ConsumptionCache.wp[absH]; sBw+=ConsumptionCache.bw[absH]; sE+=ConsumptionCache.ev[absH]; sTG+=FlowCache.hr.toGrid[absH]; sTB+=FlowCache.hr.toBat[absH]; sPV+=FlowCache.hr.pvTotal[absH]; sDir+=FlowCache.hr.direct[absH]; sFB+=FlowCache.hr.fromBat[absH]; sFG+=FlowCache.hr.fromGrid[absH]; 
+        }
+        dailyBase.push(sB/1000); dailyItLoad.push(sI/1000); dailyAc.push(sA/1000); dailyWp.push(sW/1000); dailyBw.push(sBw/1000); dailyEv.push(sE/1000); dailyToGrid.push(sTG/1000); dailyToBat.push(sTB/1000); dailyPvTotal.push(sPV/1000); dailyDirect.push(sDir/1000); dailyFromBat.push(sFB/1000); dailyFromGrid.push(sFG/1000);
     }
 
     const cOpts = { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, min: 0 } }, plugins: { legend: { position: 'bottom', labels: {usePointStyle: true, boxWidth: 8} } } };
@@ -767,13 +758,41 @@ function updateDetailCharts(monthIdx) {
     let dCCtx = document.getElementById('detailConsChart');
     if(dCCtx) {
         if(detailConsChart) detailConsChart.destroy();
-        detailConsChart = new Chart(dCCtx.getContext('2d'), { type: 'bar', data: { labels: dailyLabels, datasets: [ { label: 'Einspeisung', data: dToGrid, backgroundColor: '#f59e0b', stack: '0' }, { label: 'Bat-Ladung', data: dToBat, backgroundColor: '#10b981', stack: '0' }, { label: 'E-Auto', data: dEv, backgroundColor: '#84cc16', stack: '0' }, { label: 'Klima', data: dAc, backgroundColor: '#0ea5e9', stack: '0' }, { label: 'WP', data: dWp, backgroundColor: '#ef4444', stack: '0' }, { label: 'BWWP', data: dBw, backgroundColor: '#f43f5e', stack: '0' }, { label: 'IT', data: dIt, backgroundColor: '#3b82f6', stack: '0' }, { label: 'Grundlast', data: dBase, backgroundColor: '#94a3b8', stack: '0' } ]}, options: cOpts });
+        detailConsChart = new Chart(dCCtx.getContext('2d'), { 
+            type: 'bar', 
+            data: { 
+                labels: dailyLabels, 
+                datasets: [ 
+                    { label: 'Einspeisung', data: dailyToGrid, backgroundColor: '#f59e0b', stack: '0' }, 
+                    { label: 'Bat-Ladung', data: dailyToBat, backgroundColor: '#10b981', stack: '0' }, 
+                    { label: 'E-Auto', data: dailyEv, backgroundColor: '#84cc16', stack: '0' }, 
+                    { label: 'Klima', data: dailyAc, backgroundColor: '#0ea5e9', stack: '0' }, 
+                    { label: 'WP', data: dailyWp, backgroundColor: '#ef4444', stack: '0' }, 
+                    { label: 'BWWP', data: dailyBw, backgroundColor: '#f43f5e', stack: '0' }, 
+                    { label: 'IT', data: dailyItLoad, backgroundColor: '#3b82f6', stack: '0' }, 
+                    { label: 'Grundlast', data: dailyBase, backgroundColor: '#94a3b8', stack: '0' } 
+                ]
+            }, 
+            options: cOpts 
+        });
     }
     
     let dGCtx = document.getElementById('detailGenChart');
     if(dGCtx) {
         if(detailGenChart) detailGenChart.destroy();
-        detailGenChart = new Chart(dGCtx.getContext('2d'), { type: 'bar', data: { labels: dailyLabels, datasets: [ { label: 'PV Erzeugung', data: dPvTotal, borderColor: '#3b82f6', backgroundColor: 'transparent', type: 'line', borderWidth: 2, pointRadius: 1, tension: 0.2 }, { label: 'PV Direkt', data: dDirect, backgroundColor: '#3b82f6', stack: '0' }, { label: 'Aus Batterie', data: dFromBat, backgroundColor: '#a855f7', stack: '0' }, { label: 'Netzbezug', data: dFromGrid, backgroundColor: '#f43f5e', stack: '0' } ]}, options: cOpts });
+        detailGenChart = new Chart(dGCtx.getContext('2d'), { 
+            type: 'bar', 
+            data: { 
+                labels: dailyLabels, 
+                datasets: [ 
+                    { label: 'PV Erzeugung', data: dailyPvTotal, borderColor: '#3b82f6', backgroundColor: 'transparent', type: 'line', borderWidth: 2, pointRadius: 1, tension: 0.2 }, 
+                    { label: 'PV Direkt', data: dailyDirect, backgroundColor: '#3b82f6', stack: '0' }, 
+                    { label: 'Aus Batterie', data: dailyFromBat, backgroundColor: '#a855f7', stack: '0' }, 
+                    { label: 'Netzbezug', data: dailyFromGrid, backgroundColor: '#f43f5e', stack: '0' } 
+                ]
+            }, 
+            options: cOpts 
+        });
     }
 }
 
