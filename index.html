@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PV-Planung Pro 6.4 (Network Stable)</title>
+    <title>PV-Planung Pro 6.5 (Stable Fetch)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -42,8 +42,8 @@
         <div class="max-w-7xl mx-auto px-4 py-3 md:py-4">
             <div class="flex justify-between items-center mb-3">
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">PV-Planung <span class="text-blue-400">Pro 6.4</span></h1>
-                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Hybrid API & Stabile UX</p>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">PV-Planung <span class="text-blue-400">Pro 6.5</span></h1>
+                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Stable Corsproxy Engine</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <button id="btnHeaderSave" onclick="saveConfiguration()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition-colors flex items-center gap-1">
@@ -74,7 +74,6 @@
         <!-- TAB 1: STRINGS & ORT -->
         <div id="tab-system" class="tab-content active max-w-4xl mx-auto space-y-6 mt-2">
             
-            <!-- Standort Widget Schlank -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
                 <div class="flex gap-3 items-center justify-between">
                     <div class="flex gap-3 items-center">
@@ -87,7 +86,7 @@
                     <button onclick="document.getElementById('locEditBox').classList.toggle('hidden')" class="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-200 transition-colors">Ändern</button>
                 </div>
                 <div id="locEditBox" class="hidden mt-4 pt-4 border-t border-slate-100 flex gap-2">
-                    <input type="text" id="locSearchInput" class="flex-1 text-sm border-2 border-slate-200 focus:border-blue-500 rounded-lg px-3 py-2 outline-none" placeholder="Ort (z.B. Berlin)">
+                    <input type="text" id="locSearchInput" class="flex-1 text-sm border-2 border-slate-200 focus:border-blue-500 rounded-lg px-3 py-2 outline-none" placeholder="Ort (z.B. Villingen)">
                     <button onclick="searchLocation()" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-xs font-bold">Suchen</button>
                 </div>
             </div>
@@ -433,7 +432,7 @@
 
         <!-- TAB 7: GLOSSAR (AKKORDEONS) -->
         <div id="tab-faq" class="tab-content max-w-4xl mx-auto space-y-4 mt-2">
-            <h2 class="text-2xl font-black text-slate-800 mb-6">Glossar & Logik (v6.3)</h2>
+            <h2 class="text-2xl font-black text-slate-800 mb-6">Glossar & Logik (v6.5)</h2>
             
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <button onclick="toggleAcc('acc1')" class="w-full p-5 text-left font-bold text-slate-800 flex justify-between bg-slate-50 hover:bg-slate-100 transition-colors"><span>1. Die Farblogik der Strings (Spannungen)</span><span class="text-slate-400">▼</span></button>
@@ -475,7 +474,7 @@
                 <button onclick="toggleAcc('acc4')" class="w-full p-5 text-left font-bold text-slate-800 flex justify-between bg-slate-50 hover:bg-slate-100 transition-colors"><span>Changelog</span><span class="text-slate-400">▼</span></button>
                 <div id="acc4" class="acc-content px-5 pb-5 text-sm text-slate-600 border-t border-slate-100">
                     <ul class="space-y-3 mt-4">
-                        <li><strong>v6.3 (Current):</strong> Kritischer DOM-Exception Fix behoben (Die eingefrorenen Tabs). Hybrid-API Fallback eingeführt für robuste Netzwerk-Requests ohne Proxy-Rate-Limits. Fallback für iOS-ScrollTo-Bug integriert. `pathLength` für korrekte Autarkie-Ringe auf Mobilgeräten gesetzt. Standort-Suche ins String-Tab gewandert. "Steuererklärung" visualisiert.</li>
+                        <li><strong>v6.5 (Current):</strong> Revert des PVGIS Fetchers zur stabilen `corsproxy.io` Architektur aus v5.2, die den CORS-Block des mobilen Browsers zu 100 % umgeht. Re-Architektur UX (Tab Flow). Trennung von String-Ansicht und Edit-Modus in super-schlankes Design. SVG Autarkie-Ringe via `pathLength` abgesichert. Interaktives Glossar. "Steuererklärung" Line-by-Line Report eingebaut. Einzeltage repariert. Verbrauch UI onchange fixes.</li>
                         <li><strong>v6.0:</strong> Finance Engine (Sektorenkopplung Benzin/Gas), Dynamische EEG-Berechnung (Mischvergütung), Custom-DB Formular. Full MasterDB Restore.</li>
                         <li><strong>v5.2:</strong> Clean Architecture (Separation of Concerns, State Isolation).</li>
                         <li><strong>v5.1:</strong> Einführung Perfect Foresight Wetter-KI & Smart Charging (EV/BWWP).</li>
@@ -494,23 +493,6 @@
             const el = document.getElementById(id); 
             if(el.classList.contains('open')) el.classList.remove('open'); 
             else { document.querySelectorAll('.acc-content').forEach(e=>e.classList.remove('open')); el.classList.add('open'); }
-        }
-
-        const delay = ms => new Promise(res => setTimeout(res, ms));
-
-        // Network Fallback Wrapper (Behebt den "Failed to fetch" Fehler)
-        async function safeFetch(url) {
-            try {
-                const res = await fetch(url);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                return await res.json();
-            } catch (err) {
-                console.warn("Direct fetch blocked (CORS/Adblock). Trying fallback proxy...", err);
-                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-                const res2 = await fetch(proxyUrl);
-                if (!res2.ok) throw new Error(`Proxy fallback failed: ${res2.status}`);
-                return await res2.json();
-            }
         }
 
         // ==========================================
@@ -631,11 +613,8 @@
                 
                 if(localStorage.getItem('pvpro_loc')) LocationData = JSON.parse(localStorage.getItem('pvpro_loc'));
                 
-                // Crash-Safe DOM Manipulation
                 let locInp = document.getElementById('locSearchInput'); if(locInp) locInp.value = LocationData.name;
                 let locTxt = document.getElementById('locNameText'); if(locTxt) locTxt.innerText = LocationData.name;
-                let locLat = document.getElementById('locLatText'); if(locLat) locLat.innerText = LocationData.lat;
-                let locLon = document.getElementById('locLonText'); if(locLon) locLon.innerText = LocationData.lon;
 
                 loadConsumptionSettings(); 
                 loadFinanceSettings();
@@ -989,7 +968,7 @@
         }
 
         // ==========================================
-        // 7. PVGIS API & ENGINE (HYBRID FETCHER)
+        // 7. PVGIS API & ENGINE (CORSPROXY STABLE)
         // ==========================================
         async function searchLocation() { 
             const q = document.getElementById('locSearchInput').value; if(!q) return;
@@ -1009,22 +988,22 @@
             if(btn) { btn.innerHTML = '<svg class="w-6 h-6 spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-width="4" stroke-dasharray="30 30"></circle></svg><span>API Simulation läuft...</span>'; btn.disabled = true; }
 
             try {
-                let apiResults = [];
-                for(let str of strings) {
+                let proms = [];
+                strings.forEach(str => {
                     let shadingFactor = 1 - ((str.shading || 0) / 100);
-                    for(let f of (str.fields || [])) {
+                    (str.fields || []).forEach(f => {
                         const p = flatPanels.find(x=>x.id===parseInt(f.panelId));
                         if(p && f.count>0) {
                             let asp = str.azimuth - 180; if (asp>180) asp-=360; if (asp<-180) asp+=360;
-                            const u = `https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?lat=${LocationData.lat}&lon=${LocationData.lon}&usehorizon=1&pvcalculation=1&startyear=2019&endyear=2019&outputformat=json&angle=${f.tilt}&aspect=${asp}&peakpower=${((p.pmax*f.count)/1000).toFixed(3)}&loss=14`;
-                            
-                            // Nutze den robusten Hybrid-Fetcher
-                            const data = await safeFetch(u);
-                            apiResults.push({sId:str.id, d:data.outputs.hourly, sF:shadingFactor});
-                            await delay(300); // Throttling zum Schutz vor IP-Banns
+                            // RESTORED STABLE CORSPROXY FROM v5.2
+                            const baseUrl = `https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?lat=${LocationData.lat}&lon=${LocationData.lon}&usehorizon=1&pvcalculation=1&startyear=2019&endyear=2019&outputformat=json&angle=${f.tilt}&aspect=${asp}&peakpower=${((p.pmax*f.count)/1000).toFixed(3)}&loss=14`;
+                            const u = `https://corsproxy.io/?${encodeURIComponent(baseUrl)}`;
+                            proms.push(fetch(u).then(async r=>{if(!r.ok) throw new Error(await r.text()); return r.json();}).then(d=>({sId:str.id, d:d.outputs.hourly, sF:shadingFactor})));
                         }
-                    }
-                }
+                    });
+                });
+
+                const apiResults = await Promise.all(proms);
 
                 let invH = {}; 
                 let activeInvIds = [...new Set(strings.map(s => parseInt(s.inverterId)))];
@@ -1124,7 +1103,7 @@
                 YieldDataCache = groupedResults; FlowCache = flow; activeGroupIndex = null; 
                 renderDashboard();
                 switchTab('uebersicht'); // Switch to ROI Overview after calculation
-            } catch(e) { console.error(e); alert("Berechnungsfehler: " + e.message); }
+            } catch(e) { console.error(e); alert("Fehler: " + e.message); }
             if(btn) { btn.innerHTML = origTxt; btn.disabled = false; }
         }
 
@@ -1163,7 +1142,7 @@
                 else { chartYield = new Chart(yCtx.getContext('2d'), { type: 'bar', data: { labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"], datasets: grpRes.map(g => ({ label: g.name, data: g.mo.map(v => Math.round(v)), backgroundColor: g.color })) }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, min: 0 } }, plugins: { legend: { position: 'bottom' } } } }); }
             }
 
-            // Autarky Calcs & SVG Rings
+            // Autarky Calcs & SVG Rings (Sicher per setAttribute pathLength)
             let totalCons = FlowCache.direct + FlowCache.fromBat + FlowCache.fromGrid;
             let d2Dir = document.getElementById('d2-direct'); if(d2Dir) d2Dir.innerText = Math.round(FlowCache.direct).toLocaleString() + " kWh";
             let d2Bat = document.getElementById('d2-frombat'); if(d2Bat) d2Bat.innerText = Math.round(FlowCache.fromBat).toLocaleString() + " kWh";
