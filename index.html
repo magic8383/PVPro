@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PV-Planung Pro 6.6 (Stable UX & Full Manual)</title>
+    <title>PV-Planung Pro 6.7 (Network Armor)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -43,8 +42,8 @@
         <div class="max-w-7xl mx-auto px-4 py-3 md:py-4">
             <div class="flex justify-between items-center mb-3">
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">PV-Planung <span class="text-blue-400">Pro 6.6</span></h1>
-                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Stable UX & Full Documentation</p>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">PV-Planung <span class="text-blue-400">Pro 6.7</span></h1>
+                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Network Armor & Fallback Routing</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <button id="btnHeaderSave" onclick="saveConfiguration()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition-colors flex items-center gap-1">
@@ -223,7 +222,7 @@
 
             <button id="btnCalculateMain" onclick="calculateYieldAPI()" class="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-extrabold text-lg py-5 px-6 rounded-2xl shadow-xl transition-all transform active:scale-95 flex items-center justify-center gap-3">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                <span>Szenario berechnen & Auswerten</span>
+                <span>Berechnung starten</span>
             </button>
         </div>
 
@@ -515,12 +514,25 @@
                 </div>
             </div>
 
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <button onclick="toggleAcc('acc_bg4')" class="w-full p-5 text-left font-bold text-slate-800 flex justify-between bg-slate-50 hover:bg-slate-100 transition-colors"><span>Changelog</span><span class="text-slate-400">▼</span></button>
+                <div id="acc_bg4" class="acc-content px-5 pb-5 text-sm text-slate-600 border-t border-slate-100">
+                    <ul class="space-y-3 mt-4">
+                        <li><strong>v6.7 (Current):</strong> Kritischer Network-Blocker Fix: Implementierung des Hybrid-Fetchers mit automatischem Proxy-Failover bei CORS-Blocks. API Rate-Limit Protection (500ms). Wischgesten-Logik überarbeitet (weniger fehleranfällig beim vertikalen Scrollen). Glossar zu echtem Handbuch ausgebaut.</li>
+                        <li><strong>v6.3:</strong> Re-Architektur UX (Tab Flow). Trennung von String-Ansicht und Edit-Modus. "Steuererklärung" visualisiert. Einzeltage repariert.</li>
+                        <li><strong>v6.0:</strong> Finance Engine (Sektorenkopplung Benzin/Gas), Dynamische EEG-Berechnung (Mischvergütung), Custom-DB Formular.</li>
+                        <li><strong>v5.2:</strong> Clean Architecture (Separation of Concerns).</li>
+                        <li><strong>v5.1:</strong> Einführung Perfect Foresight Wetter-KI & Smart Charging.</li>
+                        <li><strong>v5.0:</strong> Major Redesign (Tailwind), Poly-String Support.</li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </main>
 
     <script>
         // ==========================================
-        // UI HELPERS
+        // UI HELPERS & FETCH ENGINE
         // ==========================================
         function toggleAcc(id) { 
             const el = document.getElementById(id); 
@@ -530,21 +542,25 @@
 
         const delay = ms => new Promise(res => setTimeout(res, ms));
 
-        // Network Fallback Wrapper (Behebt den "Failed to fetch" Fehler zuverlässig)
+        // Die absolute Fallback-Kette gegen "Failed to fetch" (CORS, AdBlocker)
         async function safeFetch(url) {
-            try {
-                // Versuch 1: Direkter, nativer Call zu PVGIS
-                const res = await fetch(url);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                return await res.json();
-            } catch (err) {
-                console.warn("Direct fetch blocked (CORS/Adblock). Trying fallback proxy...", err);
-                // Versuch 2: Sicherer Fallback-Proxy (erlaubt CORS)
-                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-                const res2 = await fetch(proxyUrl);
-                if (!res2.ok) throw new Error(`Proxy fallback failed: ${res2.status}`);
-                return await res2.json();
+            const routes = [
+                url, // Route 1: Nativ (Schnell, aber oft CORS geblockt)
+                `https://corsproxy.io/?${encodeURIComponent(url)}`, // Route 2: Standard Proxy
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` // Route 3: Notfall Proxy
+            ];
+
+            let lastErr = "";
+            for (let route of routes) {
+                try {
+                    let res = await fetch(route);
+                    if (res.ok) return await res.json();
+                    lastErr = `Server meldet Code ${res.status}`;
+                } catch (e) {
+                    lastErr = e.message; // Fängt "Failed to fetch" ab
+                }
             }
+            throw new Error(`Dein Browser blockiert die Daten (Meldung: ${lastErr}). Bitte Adblocker oder Brave-Shields deaktivieren!`);
         }
 
         // ==========================================
@@ -695,7 +711,7 @@
         }
 
         // ==========================================
-        // 3. UI TAB ROUTING & STABLE SWIPE
+        // 3. UI TAB ROUTING & SWIPE GESTURES
         // ==========================================
         const tabOrder = ['system', 'verbrauch', 'finance', 'uebersicht', 'auswertung', 'database', 'faq'];
         let touchStartX = 0, touchStartY = 0;
@@ -706,17 +722,14 @@
         }, {passive:true});
         
         document.addEventListener('touchend', e => {
-            // Wenn man auf Buttons, Inputs, oder Scrollbars tippt/wischt, soll nicht gewischt werden.
             let t = e.target.nodeType === 3 ? e.target.parentNode : e.target;
             if (t.closest('input') || t.closest('select') || t.closest('button') || t.closest('canvas') || t.closest('.overflow-x-auto') || t.closest('a')) return;
             
             let touchEndX = e.changedTouches[0].clientX;
             let touchEndY = e.changedTouches[0].clientY;
-            
             let diffX = touchEndX - touchStartX;
             let diffY = touchEndY - touchStartY;
             
-            // Wisch-Toleranz (etwas flacher als vorher, aber deutlich horizontal)
             if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY) * 1.8) {
                 let current = document.querySelector('.tab-content.active');
                 if(!current) return;
@@ -849,7 +862,6 @@
 
                 return `
                 <div class="bg-white border-2 ${safe ? 'border-slate-100' : 'border-rose-400'} rounded-xl shadow-sm mb-3">
-                    <!-- Übersichtskarte (Kompakt & OHNE Onclick) -->
                     <div class="p-3 flex justify-between items-center bg-white rounded-xl">
                         <div class="flex items-center gap-3">
                             <div class="w-2 h-8 rounded-full shrink-0" style="background-color: ${str.color}"></div>
@@ -862,7 +874,6 @@
                         </button>
                     </div>
 
-                    <!-- Edit Bereich (Hidden by Default) -->
                     <div id="edit-${str.id}" class="hidden p-4 bg-slate-50 border-t border-slate-200 rounded-b-xl space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
                             <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Name</label><input type="text" value="${str.name}" onchange="updateStringData(${str.id}, 'name', this.value)" class="w-full border-2 rounded-lg px-2 py-1.5 text-sm outline-none"></div>
@@ -1052,17 +1063,6 @@
         // ==========================================
         // 7. PVGIS API & ENGINE (HYBRID FETCHER)
         // ==========================================
-        async function searchLocation() { 
-            const q = document.getElementById('locSearchInput').value; if(!q) return;
-            try { const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`); const data = await res.json();
-                if(data.length>0) { 
-                    LocationData = {lat:parseFloat(data[0].lat).toFixed(2), lon:parseFloat(data[0].lon).toFixed(2), name:data[0].display_name.split(',')[0]}; 
-                    let locTxt = document.getElementById('locNameText'); if(locTxt) locTxt.innerText=LocationData.name; 
-                    let editBox = document.getElementById('locEditBox'); if(editBox) editBox.classList.add('hidden');
-                }
-            } catch(e) {}
-        }
-
         async function calculateYieldAPI() {
             const btn = document.getElementById('btnCalculateMain'); const origTxt = btn ? btn.innerHTML : '';
             if(btn) { btn.innerHTML = '<svg class="w-6 h-6 spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10" stroke-width="4" stroke-dasharray="30 30"></circle></svg><span>API Simulation läuft...</span>'; btn.disabled = true; }
@@ -1080,7 +1080,7 @@
                             // Nutze den robusten Hybrid-Fetcher
                             const data = await safeFetch(u);
                             apiResults.push({sId:str.id, d:data.outputs.hourly, sF:shadingFactor});
-                            await delay(300); // Throttling zum Schutz vor IP-Banns
+                            await delay(500); // 500ms Throttling zum Schutz vor IP-Banns (Rate-Limiting)
                         }
                     }
                 }
@@ -1183,7 +1183,7 @@
                 YieldDataCache = groupedResults; FlowCache = flow; activeGroupIndex = null; 
                 renderDashboard();
                 switchTab('uebersicht'); // Switch to ROI Overview after calculation
-            } catch(e) { console.error(e); alert("Fehler: " + e.message); }
+            } catch(e) { console.error(e); alert("Berechnungsfehler: " + e.message); }
             if(btn) { btn.innerHTML = origTxt; btn.disabled = false; }
         }
 
@@ -1222,7 +1222,7 @@
                 else { chartYield = new Chart(yCtx.getContext('2d'), { type: 'bar', data: { labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"], datasets: grpRes.map(g => ({ label: g.name, data: g.mo.map(v => Math.round(v)), backgroundColor: g.color })) }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, min: 0 } }, plugins: { legend: { position: 'bottom' } } } }); }
             }
 
-            // Autarky Calcs & SVG Rings
+            // Autarky Calcs & SVG Rings (Sicher per setAttribute pathLength)
             let totalCons = FlowCache.direct + FlowCache.fromBat + FlowCache.fromGrid;
             let d2Dir = document.getElementById('d2-direct'); if(d2Dir) d2Dir.innerText = Math.round(FlowCache.direct).toLocaleString() + " kWh";
             let d2Bat = document.getElementById('d2-frombat'); if(d2Bat) d2Bat.innerText = Math.round(FlowCache.fromBat).toLocaleString() + " kWh";
