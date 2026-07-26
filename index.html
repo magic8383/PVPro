@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PV-Planung Pro 6.5 (Stable Fetch)</title>
+    <title>PV-Planung Pro 6.6 (Stable Fetch & Cache)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -42,8 +42,8 @@
         <div class="max-w-7xl mx-auto px-4 py-3 md:py-4">
             <div class="flex justify-between items-center mb-3">
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">PV-Planung <span class="text-blue-400">Pro 6.5</span></h1>
-                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Stable Corsproxy Engine</p>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">PV-Planung <span class="text-blue-400">Pro 6.6</span></h1>
+                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Stable Corsproxy & Cache Engine</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <button id="btnHeaderSave" onclick="saveConfiguration()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition-colors flex items-center gap-1">
@@ -432,7 +432,7 @@
 
         <!-- TAB 7: GLOSSAR (AKKORDEONS) -->
         <div id="tab-faq" class="tab-content max-w-4xl mx-auto space-y-4 mt-2">
-            <h2 class="text-2xl font-black text-slate-800 mb-6">Glossar & Logik (v6.5)</h2>
+            <h2 class="text-2xl font-black text-slate-800 mb-6">Glossar & Logik (v6.6)</h2>
             
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <button onclick="toggleAcc('acc1')" class="w-full p-5 text-left font-bold text-slate-800 flex justify-between bg-slate-50 hover:bg-slate-100 transition-colors"><span>1. Die Farblogik der Strings (Spannungen)</span><span class="text-slate-400">▼</span></button>
@@ -474,7 +474,7 @@
                 <button onclick="toggleAcc('acc4')" class="w-full p-5 text-left font-bold text-slate-800 flex justify-between bg-slate-50 hover:bg-slate-100 transition-colors"><span>Changelog</span><span class="text-slate-400">▼</span></button>
                 <div id="acc4" class="acc-content px-5 pb-5 text-sm text-slate-600 border-t border-slate-100">
                     <ul class="space-y-3 mt-4">
-                        <li><strong>v6.5 (Current):</strong> Revert des PVGIS Fetchers zur stabilen `corsproxy.io` Architektur aus v5.2, die den CORS-Block des mobilen Browsers zu 100 % umgeht. Re-Architektur UX (Tab Flow). Trennung von String-Ansicht und Edit-Modus in super-schlankes Design. SVG Autarkie-Ringe via `pathLength` abgesichert. Interaktives Glossar. "Steuererklärung" Line-by-Line Report eingebaut. Einzeltage repariert. Verbrauch UI onchange fixes.</li>
+                        <li><strong>v6.6 (Current):</strong> Kritischer Null-Pointer Fix beim Array-Caching (`ConsumptionCache`). Die Auswertung läuft nun 100% stabil durch. Revert des PVGIS Fetchers zur stabilen `corsproxy.io` Architektur aus v5.2 (umgeht Browser-CORS-Blocks komplett). Trennung von String-Ansicht und Edit-Modus in super-schlankes Design. SVG Autarkie-Ringe via `pathLength` abgesichert. Interaktives Glossar. "Steuererklärung" Line-by-Line Report.</li>
                         <li><strong>v6.0:</strong> Finance Engine (Sektorenkopplung Benzin/Gas), Dynamische EEG-Berechnung (Mischvergütung), Custom-DB Formular. Full MasterDB Restore.</li>
                         <li><strong>v5.2:</strong> Clean Architecture (Separation of Concerns, State Isolation).</li>
                         <li><strong>v5.1:</strong> Einführung Perfect Foresight Wetter-KI & Smart Charging (EV/BWWP).</li>
@@ -613,6 +613,7 @@
                 
                 if(localStorage.getItem('pvpro_loc')) LocationData = JSON.parse(localStorage.getItem('pvpro_loc'));
                 
+                // Crash-Safe DOM Manipulation
                 let locInp = document.getElementById('locSearchInput'); if(locInp) locInp.value = LocationData.name;
                 let locTxt = document.getElementById('locNameText'); if(locTxt) locTxt.innerText = LocationData.name;
 
@@ -885,6 +886,8 @@
                 if(c.ev>0) { if(c.evSmart && pvProfile) { if(smartEvHours.has(h)) out.ev[h]=(c.ev*1000/52)/14; } else if(hr>=18&&hr<=23) out.ev[h]=(c.ev*1000/365)/6; }
                 out.total[h] = out.base[h]+out.it[h]+out.ac[h]+out.wp[h]+out.bw[h]+out.ev[h];
             }
+            // CRITICAL FIX FOR v6.6: Set Global Cache!
+            ConsumptionCache = out; 
             return out;
         }
 
@@ -968,7 +971,7 @@
         }
 
         // ==========================================
-        // 7. PVGIS API & ENGINE (CORSPROXY STABLE)
+        // 7. PVGIS API & ENGINE
         // ==========================================
         async function searchLocation() { 
             const q = document.getElementById('locSearchInput').value; if(!q) return;
@@ -976,8 +979,6 @@
                 if(data.length>0) { 
                     LocationData = {lat:parseFloat(data[0].lat).toFixed(2), lon:parseFloat(data[0].lon).toFixed(2), name:data[0].display_name.split(',')[0]}; 
                     let locTxt = document.getElementById('locNameText'); if(locTxt) locTxt.innerText=LocationData.name; 
-                    let locLat = document.getElementById('locLatText'); if(locLat) locLat.innerText=LocationData.lat; 
-                    let locLon = document.getElementById('locLonText'); if(locLon) locLon.innerText=LocationData.lon; 
                     let editBox = document.getElementById('locEditBox'); if(editBox) editBox.classList.add('hidden');
                 }
             } catch(e) {}
@@ -995,7 +996,6 @@
                         const p = flatPanels.find(x=>x.id===parseInt(f.panelId));
                         if(p && f.count>0) {
                             let asp = str.azimuth - 180; if (asp>180) asp-=360; if (asp<-180) asp+=360;
-                            // RESTORED STABLE CORSPROXY FROM v5.2
                             const baseUrl = `https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?lat=${LocationData.lat}&lon=${LocationData.lon}&usehorizon=1&pvcalculation=1&startyear=2019&endyear=2019&outputformat=json&angle=${f.tilt}&aspect=${asp}&peakpower=${((p.pmax*f.count)/1000).toFixed(3)}&loss=14`;
                             const u = `https://corsproxy.io/?${encodeURIComponent(baseUrl)}`;
                             proms.push(fetch(u).then(async r=>{if(!r.ok) throw new Error(await r.text()); return r.json();}).then(d=>({sId:str.id, d:d.outputs.hourly, sF:shadingFactor})));
@@ -1102,8 +1102,8 @@
                 
                 YieldDataCache = groupedResults; FlowCache = flow; activeGroupIndex = null; 
                 renderDashboard();
-                switchTab('uebersicht'); // Switch to ROI Overview after calculation
-            } catch(e) { console.error(e); alert("Fehler: " + e.message); }
+                switchTab('uebersicht');
+            } catch(e) { console.error(e); alert("Berechnungsfehler: " + e.message); }
             if(btn) { btn.innerHTML = origTxt; btn.disabled = false; }
         }
 
@@ -1117,7 +1117,6 @@
             let grpRes = YieldDataCache; let dK = 0, dY = 0;
             grpRes.forEach(g => { dK+=g.kwp; dY+=g.yield; });
 
-            // BIG KPIs (Übersicht Tab)
             let kGen = document.getElementById('kpi_gen'); if(kGen) kGen.innerText = Math.round(dY).toLocaleString() + " kWh";
             let kSpec = document.getElementById('kpi_spec'); if(kSpec) kSpec.innerText = (dK>0 ? Math.round(dY/dK) : 0) + " kWh/kWp";
             let kCons = document.getElementById('kpi_cons'); if(kCons) kCons.innerText = Math.round(FlowCache.direct + FlowCache.fromBat + FlowCache.fromGrid).toLocaleString() + " kWh";
@@ -1135,14 +1134,12 @@
                 }).join('');
             }
 
-            // Chart 1: Yield
             let yCtx = document.getElementById('yieldChart');
             if(yCtx) {
                 if(chartYield) { chartYield.data.datasets = grpRes.map((g, idx) => ({ label: g.name, data: g.mo.map(v => Math.round(v)), backgroundColor: (activeGroupIndex !== null && activeGroupIndex !== idx) ? g.color+'20' : g.color, borderRadius: 3 })); chartYield.update(); } 
                 else { chartYield = new Chart(yCtx.getContext('2d'), { type: 'bar', data: { labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"], datasets: grpRes.map(g => ({ label: g.name, data: g.mo.map(v => Math.round(v)), backgroundColor: g.color })) }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, min: 0 } }, plugins: { legend: { position: 'bottom' } } } }); }
             }
 
-            // Autarky Calcs & SVG Rings (Sicher per setAttribute pathLength)
             let totalCons = FlowCache.direct + FlowCache.fromBat + FlowCache.fromGrid;
             let d2Dir = document.getElementById('d2-direct'); if(d2Dir) d2Dir.innerText = Math.round(FlowCache.direct).toLocaleString() + " kWh";
             let d2Bat = document.getElementById('d2-frombat'); if(d2Bat) d2Bat.innerText = Math.round(FlowCache.fromBat).toLocaleString() + " kWh";
@@ -1156,7 +1153,6 @@
             let ga = document.getElementById('gauge-autarky'); if(ga) ga.setAttribute('stroke-dasharray', `${autarkyPct} 100`);
             let ge = document.getElementById('gauge-eigen'); if(ge) ge.setAttribute('stroke-dasharray', `${eigenPct} 100`);
 
-            // Month Breakdown for Charts
             let moBreakdown = { base: [], it: [], ac: [], wp: [], bw: [], ev: [], toGrid: [], pvTotal: [], clip: [], toBat: [] };
             const mStart = [0, 744, 1416, 2160, 2880, 3624, 4344, 5088, 5832, 6552, 7296, 8016];
             for(let m=0; m<12; m++) {
