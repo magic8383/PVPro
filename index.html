@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PV-Planung Pro 6.8 (5.2 API Restore)</title>
+    <title>PV-Planung Pro 6.9 (Stable API & Fixes)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -42,8 +42,8 @@
         <div class="max-w-7xl mx-auto px-4 py-3 md:py-4">
             <div class="flex justify-between items-center mb-3">
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">PV-Planung <span class="text-blue-400">Pro 6.8</span></h1>
-                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">v5.2 API Restore & Full Manual</p>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">PV-Planung <span class="text-blue-400">Pro 6.9</span></h1>
+                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">v5.2 API Restore & Cache Fix</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <button id="btnHeaderSave" onclick="saveConfiguration()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition-colors flex items-center gap-1">
@@ -518,13 +518,12 @@
                 <button onclick="toggleAcc('acc_bg4')" class="w-full p-5 text-left font-bold text-slate-800 flex justify-between bg-slate-50 hover:bg-slate-100 transition-colors"><span>Changelog</span><span class="text-slate-400">▼</span></button>
                 <div id="acc_bg4" class="acc-content px-5 pb-5 text-sm text-slate-600 border-t border-slate-100">
                     <ul class="space-y-3 mt-4">
-                        <li><strong>v6.8 (Current):</strong> Revert der API-Schnittstelle auf 100% v5.2 Architektur (direkter `corsproxy.io` und parallele Promise-Auflösung ohne Delay). Erhalt der robusten Wischgesten-Logik, der Finanz-Engine und des umfassenden Akkordeon-Handbuchs aus v6.6.</li>
+                        <li><strong>v6.9 (Current):</strong> Kritischer Bugfix: Wiederherstellung der in der Compression verloren gegangenen `ConsumptionCache` Variable, die beim Rendern der Dashboards zum Crash `Cannot read properties of null (reading 'base')` geführt hat. Diagramme und Verbrauchs-Arrays laufen wieder voll stabil durch.</li>
+                        <li><strong>v6.8:</strong> Revert der API-Schnittstelle auf 100% v5.2 Architektur (direkter `corsproxy.io` und parallele Promise-Auflösung ohne Delay). Erhalt der robusten Wischgesten-Logik.</li>
                         <li><strong>v6.7:</strong> Kritischer Network-Blocker Fix (Fehlgeschlagen). API Throttle Experimente.</li>
                         <li><strong>v6.3:</strong> Re-Architektur UX (Tab Flow). Trennung von String-Ansicht und Edit-Modus in super-schlankes Design. "Steuererklärung" visualisiert. Einzeltage repariert. Verbrauch UI onchange fixes.</li>
                         <li><strong>v6.0:</strong> Finance Engine (Sektorenkopplung Benzin/Gas), Dynamische EEG-Berechnung (Mischvergütung), Custom-DB Formular. Full MasterDB Restore.</li>
                         <li><strong>v5.2:</strong> Clean Architecture (Separation of Concerns, State Isolation).</li>
-                        <li><strong>v5.1:</strong> Einführung Perfect Foresight Wetter-KI & Smart Charging (EV/BWWP).</li>
-                        <li><strong>v5.0:</strong> Major Redesign (Tailwind), Poly-String Support (Mehrere Modulfelder pro String).</li>
                     </ul>
                 </div>
             </div>
@@ -798,8 +797,7 @@
                     limitMaxI: inv?.mppts?.find(m => m.id == str.mpptId)?.maxIsc || 20, 
                     minMppV: inv?.minMppV || 0, 
                     maxMppV: inv?.maxMppV || 0, 
-                    invStartV: inv?.startV || 0,
-                    mismatchPct: 0
+                    invStartV: inv?.startV || 0
                 };
                 str._phys.isVocSafe = str._phys.vocCold <= str._phys.limitMaxV; 
                 str._phys.isIscSafe = isc <= str._phys.limitMaxI;
@@ -840,7 +838,6 @@
 
                 return `
                 <div class="bg-white border-2 ${safe ? 'border-slate-100' : 'border-rose-400'} rounded-xl shadow-sm mb-3">
-                    <!-- Übersichtskarte (Kompakt & OHNE Onclick) -->
                     <div class="p-3 flex justify-between items-center bg-white rounded-xl">
                         <div class="flex items-center gap-3">
                             <div class="w-2 h-8 rounded-full shrink-0" style="background-color: ${str.color}"></div>
@@ -853,7 +850,6 @@
                         </button>
                     </div>
 
-                    <!-- Edit Bereich (Hidden by Default) -->
                     <div id="edit-${str.id}" class="hidden p-4 bg-slate-50 border-t border-slate-200 rounded-b-xl space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
                             <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Name</label><input type="text" value="${str.name}" onchange="updateStringData(${str.id}, 'name', this.value)" class="w-full border-2 rounded-lg px-2 py-1.5 text-sm outline-none"></div>
@@ -958,6 +954,8 @@
                 if(c.ev>0) { if(c.evSmart && pvProfile) { if(smartEvHours.has(h)) out.ev[h]=(c.ev*1000/52)/14; } else if(hr>=18&&hr<=23) out.ev[h]=(c.ev*1000/365)/6; }
                 out.total[h] = out.base[h]+out.it[h]+out.ac[h]+out.wp[h]+out.bw[h]+out.ev[h];
             }
+            
+            ConsumptionCache = out; // CRITICAL FIX: Save the result globally for the dashboard
             return out;
         }
 
@@ -1043,17 +1041,6 @@
         // ==========================================
         // 7. PVGIS API & ENGINE (EXAKTER 5.2 RESTORE)
         // ==========================================
-        async function searchLocation() { 
-            const q = document.getElementById('locSearchInput').value; if(!q) return;
-            try { const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`); const data = await res.json();
-                if(data.length>0) { 
-                    LocationData = {lat:parseFloat(data[0].lat).toFixed(2), lon:parseFloat(data[0].lon).toFixed(2), name:data[0].display_name.split(',')[0]}; 
-                    let locTxt = document.getElementById('locNameText'); if(locTxt) locTxt.innerText=LocationData.name; 
-                    let editBox = document.getElementById('locEditBox'); if(editBox) editBox.classList.add('hidden');
-                }
-            } catch(e) {}
-        }
-
         async function calculateYieldAPI() {
             const btn = document.getElementById('btnCalculateMain'); 
             const origTxt = btn ? btn.innerHTML : '';
