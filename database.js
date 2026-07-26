@@ -1,5 +1,6 @@
-// database.js - Die zentrale Stammdatenbank für PVPro (v4.2)
-
+// ==========================================
+// MASTER DATENBANK (Hardware)
+// ==========================================
 const MasterDB = {
     panels: [
         { series: "AIKO Neostar 3S+54", models: [
@@ -69,13 +70,13 @@ const MasterDB = {
             ]}
         ]},
         { series: "Fronius Symo GEN24 Plus", models: [
-            { id: 10, name: "GEN24 3.0 Plus", acMax: 3000, startV: 80, minMppV: 125, maxMppV: 800, maxV: 1000, batteryId: 204, mppts: [{id:1, name:"MPPT 1", maxIsc: 20, maxI: 12.5}, {id:2, name:"MPPT 2", maxIsc: 20, maxI: 12.5}] },
-            { id: 11, name: "GEN24 4.0 Plus", acMax: 4000, startV: 80, minMppV: 170, maxMppV: 800, maxV: 1000, batteryId: 204, mppts: [{id:1, name:"MPPT 1", maxIsc: 20, maxI: 12.5}, {id:2, name:"MPPT 2", maxIsc: 20, maxI: 12.5}] },
-            { id: 12, name: "GEN24 5.0 Plus", acMax: 5000, startV: 80, minMppV: 210, maxMppV: 800, maxV: 1000, batteryId: 204, mppts: [{id:1, name:"MPPT 1", maxIsc: 20, maxI: 12.5}, {id:2, name:"MPPT 2", maxIsc: 20, maxI: 12.5}] },
-            { id: 13, name: "GEN24 6.0 Plus", acMax: 6000, startV: 80, minMppV: 174, maxMppV: 800, maxV: 1000, batteryId: 204, mppts: [{id:1, name:"MPPT 1", maxIsc: 40, maxI: 25}, {id:2, name:"MPPT 2", maxIsc: 20, maxI: 12.5}] },
-            { id: 14, name: "GEN24 8.0 Plus", acMax: 8000, startV: 80, minMppV: 224, maxMppV: 800, maxV: 1000, batteryId: 204, mppts: [{id:1, name:"MPPT 1", maxIsc: 40, maxI: 25}, {id:2, name:"MPPT 2", maxIsc: 20, maxI: 12.5}] },
-            { id: 15, name: "GEN24 10.0 Plus", acMax: 10000, startV: 80, minMppV: 278, maxMppV: 800, maxV: 1000, batteryId: 204, mppts: [{id:1, name:"MPPT 1", maxIsc: 40, maxI: 25}, {id:2, name:"MPPT 2", maxIsc: 20, maxI: 12.5}] },
-            { id: 16, name: "GEN24 12.0 SC Plus", acMax: 12000, startV: 80, minMppV: 295, maxMppV: 800, maxV: 1000, batteryId: 204, mppts: [{id:1, name:"MPPT 1", maxIsc: 40, maxI: 28}, {id:2, name:"MPPT 2", maxIsc: 20, maxI: 14}] }
+            { id: 10, name: "GEN24 3.0 Plus", acMax: 3000, startV: 80, minMppV: 125, maxMppV: 800, maxV: 1000, batteryId: 1, mppts: [{id:1, name:"MPPT 1", maxIsc: 20, maxI: 12.5}, {id:2, name:"MPPT 2", maxIsc: 20, maxI: 12.5}] },
+            { id: 11, name: "GEN24 4.0 Plus", acMax: 4000, startV: 80, minMppV: 170, maxMppV: 800, maxV: 1000, batteryId: 1, mppts: [{id:1, name:"MPPT 1", maxIsc: 20, maxI: 12.5}, {id:2, name:"MPPT 2", maxIsc: 20, maxI: 12.5}] },
+            { id: 12, name: "GEN24 5.0 Plus", acMax: 5000, startV: 80, minMppV: 210, maxMppV: 800, maxV: 1000, batteryId: 1, mppts: [{id:1, name:"MPPT 1", maxIsc: 20, maxI: 12.5}, {id:2, name:"MPPT 2", maxIsc: 20, maxI: 12.5}] },
+            { id: 13, name: "GEN24 6.0 Plus", acMax: 6000, startV: 80, minMppV: 174, maxMppV: 800, maxV: 1000, batteryId: 1, mppts: [{id:1, name:"MPPT 1", maxIsc: 40, maxI: 25}, {id:2, name:"MPPT 2", maxIsc: 20, maxI: 12.5}] },
+            { id: 14, name: "GEN24 8.0 Plus", acMax: 8000, startV: 80, minMppV: 224, maxMppV: 800, maxV: 1000, batteryId: 1, mppts: [{id:1, name:"MPPT 1", maxIsc: 40, maxI: 25}, {id:2, name:"MPPT 2", maxIsc: 20, maxI: 12.5}] },
+            { id: 15, name: "GEN24 10.0 Plus", acMax: 10000, startV: 80, minMppV: 278, maxMppV: 800, maxV: 1000, batteryId: 1, mppts: [{id:1, name:"MPPT 1", maxIsc: 40, maxI: 25}, {id:2, name:"MPPT 2", maxIsc: 20, maxI: 12.5}] },
+            { id: 16, name: "GEN24 12.0 SC Plus", acMax: 12000, startV: 80, minMppV: 295, maxMppV: 800, maxV: 1000, batteryId: 1, mppts: [{id:1, name:"MPPT 1", maxIsc: 40, maxI: 28}, {id:2, name:"MPPT 2", maxIsc: 20, maxI: 14}] }
         ]}
     ]
 };
