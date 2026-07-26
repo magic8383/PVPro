@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PV-Planung Pro 6.3 (Stable Build)</title>
+    <title>PV-Planung Pro 6.4 (Network Stable)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -42,8 +42,8 @@
         <div class="max-w-7xl mx-auto px-4 py-3 md:py-4">
             <div class="flex justify-between items-center mb-3">
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">PV-Planung <span class="text-blue-400">Pro 6.3</span></h1>
-                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Stabile UX & Finance Engine</p>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">PV-Planung <span class="text-blue-400">Pro 6.4</span></h1>
+                    <p class="text-slate-400 text-[10px] md:text-xs mt-1">Hybrid API & Stabile UX</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <button id="btnHeaderSave" onclick="saveConfiguration()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition-colors flex items-center gap-1">
@@ -475,7 +475,7 @@
                 <button onclick="toggleAcc('acc4')" class="w-full p-5 text-left font-bold text-slate-800 flex justify-between bg-slate-50 hover:bg-slate-100 transition-colors"><span>Changelog</span><span class="text-slate-400">▼</span></button>
                 <div id="acc4" class="acc-content px-5 pb-5 text-sm text-slate-600 border-t border-slate-100">
                     <ul class="space-y-3 mt-4">
-                        <li><strong>v6.3 (Current):</strong> Kritischer DOM-Exception Fix behoben (Die eingefrorenen Tabs). Fallback für iOS-ScrollTo-Bug integriert. `pathLength` für korrekte Autarkie-Ringe auf Mobilgeräten gesetzt. Nativer PVGIS Call ohne Proxy mit 300ms Delay-Throttle implementiert. Standort-Suche ins String-Tab gewandert. "Steuererklärung" visualisiert.</li>
+                        <li><strong>v6.3 (Current):</strong> Kritischer DOM-Exception Fix behoben (Die eingefrorenen Tabs). Hybrid-API Fallback eingeführt für robuste Netzwerk-Requests ohne Proxy-Rate-Limits. Fallback für iOS-ScrollTo-Bug integriert. `pathLength` für korrekte Autarkie-Ringe auf Mobilgeräten gesetzt. Standort-Suche ins String-Tab gewandert. "Steuererklärung" visualisiert.</li>
                         <li><strong>v6.0:</strong> Finance Engine (Sektorenkopplung Benzin/Gas), Dynamische EEG-Berechnung (Mischvergütung), Custom-DB Formular. Full MasterDB Restore.</li>
                         <li><strong>v5.2:</strong> Clean Architecture (Separation of Concerns, State Isolation).</li>
                         <li><strong>v5.1:</strong> Einführung Perfect Foresight Wetter-KI & Smart Charging (EV/BWWP).</li>
@@ -497,6 +497,21 @@
         }
 
         const delay = ms => new Promise(res => setTimeout(res, ms));
+
+        // Network Fallback Wrapper (Behebt den "Failed to fetch" Fehler)
+        async function safeFetch(url) {
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return await res.json();
+            } catch (err) {
+                console.warn("Direct fetch blocked (CORS/Adblock). Trying fallback proxy...", err);
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+                const res2 = await fetch(proxyUrl);
+                if (!res2.ok) throw new Error(`Proxy fallback failed: ${res2.status}`);
+                return await res2.json();
+            }
+        }
 
         // ==========================================
         // 1. MASTER DATENBANK
@@ -649,24 +664,9 @@
         }
 
         // ==========================================
-        // 3. UI TAB ROUTING & SWIPE GESTURES
+        // 3. UI TAB ROUTING
         // ==========================================
         const tabOrder = ['system', 'verbrauch', 'finance', 'uebersicht', 'auswertung', 'database', 'faq'];
-        let touchStartX = 0, touchStartY = 0;
-        document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; }, {passive:true});
-        document.addEventListener('touchend', e => {
-            if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'CANVAS'].includes(e.target.tagName) || e.target.type === 'range' || e.target.closest('button')) return;
-            let diffX = e.changedTouches[0].screenX - touchStartX, diffY = e.changedTouches[0].screenY - touchStartY;
-            if (Math.abs(diffX) > 60 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
-                let current = document.querySelector('.tab-content.active');
-                if(!current) return;
-                let cIdx = tabOrder.indexOf(current.id.replace('tab-', ''));
-                if(cIdx !== -1) {
-                    if(diffX < 0 && cIdx < tabOrder.length-1) switchTab(tabOrder[cIdx+1]); 
-                    else if(diffX > 0 && cIdx > 0) switchTab(tabOrder[cIdx-1]);
-                }
-            }
-        }, {passive:true});
 
         function switchTab(tabId) {
             const current = document.querySelector('.tab-content.active');
@@ -689,13 +689,9 @@
             let btn = document.getElementById('btn-'+tabId);
             let scroller = document.getElementById('navScroller');
             if(btn && scroller) {
-                try {
-                    scroller.scrollTo({left: btn.offsetLeft - window.innerWidth/2 + 50, behavior:'smooth'});
-                } catch(e) {
-                    scroller.scrollLeft = btn.offsetLeft - window.innerWidth/2 + 50;
-                }
+                try { scroller.scrollTo({left: btn.offsetLeft - window.innerWidth/2 + 50, behavior:'smooth'}); } 
+                catch(e) { scroller.scrollLeft = btn.offsetLeft - window.innerWidth/2 + 50; }
             }
-            
             if(tabId === 'auswertung' && currentDetailMonth !== null) updateDetailCharts(currentDetailMonth);
         }
 
@@ -794,7 +790,6 @@
 
                 return `
                 <div class="bg-white border-2 ${safe ? 'border-slate-100' : 'border-rose-400'} rounded-xl shadow-sm mb-3">
-                    <!-- Übersichtskarte (Kompakt & OHNE Onclick) -->
                     <div class="p-3 flex justify-between items-center bg-white rounded-xl">
                         <div class="flex items-center gap-3">
                             <div class="w-2 h-8 rounded-full shrink-0" style="background-color: ${str.color}"></div>
@@ -807,7 +802,6 @@
                         </button>
                     </div>
 
-                    <!-- Edit Bereich (Hidden by Default) -->
                     <div id="edit-${str.id}" class="hidden p-4 bg-slate-50 border-t border-slate-200 rounded-b-xl space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
                             <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Name</label><input type="text" value="${str.name}" onchange="updateStringData(${str.id}, 'name', this.value)" class="w-full border-2 rounded-lg px-2 py-1.5 text-sm outline-none"></div>
@@ -949,7 +943,9 @@
             let baseEeg = totalKwp <= 10 ? 8.20 : ((10 * 8.20) + ((totalKwp - 10) * 7.10)) / totalKwp;
             let finalEeg = baseEeg * degression;
             document.getElementById('lbl_eeg_rate_pre').innerText = finalEeg.toFixed(2);
-            document.getElementById('rep_b_eeg_rate').innerText = finalEeg.toFixed(2);
+            
+            let eegUi = document.getElementById('rep_b_eeg_rate');
+            if(eegUi) eegUi.innerText = finalEeg.toFixed(2);
 
             if(!FlowCache) return;
 
@@ -977,23 +973,23 @@
             let amort = savings > 0 ? (sysCost / savings).toFixed(1) : "∞";
 
             // Populate Report in Uebersicht Tab
-            document.getElementById('rep_a_grid').innerText = "+ " + costA_grid.toFixed(2) + " €";
-            document.getElementById('rep_a_car').innerText = "+ " + costA_car.toFixed(2) + " €";
-            document.getElementById('rep_a_heat').innerText = "+ " + costA_heat.toFixed(2) + " €";
-            document.getElementById('rep_a_total').innerText = costA_total.toFixed(2) + " €";
+            let rAGrid = document.getElementById('rep_a_grid'); if(rAGrid) rAGrid.innerText = "+ " + costA_grid.toFixed(2) + " €";
+            let rACar = document.getElementById('rep_a_car'); if(rACar) rACar.innerText = "+ " + costA_car.toFixed(2) + " €";
+            let rAHeat = document.getElementById('rep_a_heat'); if(rAHeat) rAHeat.innerText = "+ " + costA_heat.toFixed(2) + " €";
+            let rATotal = document.getElementById('rep_a_total'); if(rATotal) rATotal.innerText = costA_total.toFixed(2) + " €";
 
-            document.getElementById('rep_b_grid').innerText = "+ " + costB_grid.toFixed(2) + " €";
-            document.getElementById('rep_b_rev').innerText = "- " + costB_rev.toFixed(2) + " €";
-            document.getElementById('rep_b_total').innerText = costB_total.toFixed(2) + " €";
+            let rBGrid = document.getElementById('rep_b_grid'); if(rBGrid) rBGrid.innerText = "+ " + costB_grid.toFixed(2) + " €";
+            let rBRev = document.getElementById('rep_b_rev'); if(rBRev) rBRev.innerText = "- " + costB_rev.toFixed(2) + " €";
+            let rBTotal = document.getElementById('rep_b_total'); if(rBTotal) rBTotal.innerText = costB_total.toFixed(2) + " €";
 
-            document.getElementById('rep_diff').innerText = Math.round(savings).toLocaleString() + " €";
+            let rDiff = document.getElementById('rep_diff'); if(rDiff) rDiff.innerText = Math.round(savings).toLocaleString() + " €";
             
-            document.getElementById('kpi_savings').innerText = Math.round(savings).toLocaleString() + " €";
-            document.getElementById('kpi_roi').innerText = amort;
+            let kpiSav = document.getElementById('kpi_savings'); if(kpiSav) kpiSav.innerText = Math.round(savings).toLocaleString() + " €";
+            let kpiRoi = document.getElementById('kpi_roi'); if(kpiRoi) kpiRoi.innerText = amort;
         }
 
         // ==========================================
-        // 7. PVGIS API & ENGINE (DIRECT CALL)
+        // 7. PVGIS API & ENGINE (HYBRID FETCHER)
         // ==========================================
         async function searchLocation() { 
             const q = document.getElementById('locSearchInput').value; if(!q) return;
@@ -1020,17 +1016,12 @@
                         const p = flatPanels.find(x=>x.id===parseInt(f.panelId));
                         if(p && f.count>0) {
                             let asp = str.azimuth - 180; if (asp>180) asp-=360; if (asp<-180) asp+=360;
-                            // Nativer direkter PVGIS API Aufruf
                             const u = `https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?lat=${LocationData.lat}&lon=${LocationData.lon}&usehorizon=1&pvcalculation=1&startyear=2019&endyear=2019&outputformat=json&angle=${f.tilt}&aspect=${asp}&peakpower=${((p.pmax*f.count)/1000).toFixed(3)}&loss=14`;
                             
-                            const resp = await fetch(u);
-                            if(!resp.ok) {
-                                const errText = await resp.text();
-                                throw new Error(`PVGIS Server Fehler (Code ${resp.status}): ${errText}`);
-                            }
-                            const data = await resp.json();
+                            // Nutze den robusten Hybrid-Fetcher
+                            const data = await safeFetch(u);
                             apiResults.push({sId:str.id, d:data.outputs.hourly, sF:shadingFactor});
-                            await delay(300); // Throttling zum Schutz vor IP-Banns (300ms)
+                            await delay(300); // Throttling zum Schutz vor IP-Banns
                         }
                     }
                 }
@@ -1148,19 +1139,22 @@
             grpRes.forEach(g => { dK+=g.kwp; dY+=g.yield; });
 
             // BIG KPIs (Übersicht Tab)
-            document.getElementById('kpi_gen').innerText = Math.round(dY).toLocaleString() + " kWh";
-            document.getElementById('kpi_spec').innerText = (dK>0 ? Math.round(dY/dK) : 0) + " kWh/kWp";
-            document.getElementById('kpi_cons').innerText = Math.round(FlowCache.direct + FlowCache.fromBat + FlowCache.fromGrid).toLocaleString() + " kWh";
+            let kGen = document.getElementById('kpi_gen'); if(kGen) kGen.innerText = Math.round(dY).toLocaleString() + " kWh";
+            let kSpec = document.getElementById('kpi_spec'); if(kSpec) kSpec.innerText = (dK>0 ? Math.round(dY/dK) : 0) + " kWh/kWp";
+            let kCons = document.getElementById('kpi_cons'); if(kCons) kCons.innerText = Math.round(FlowCache.direct + FlowCache.fromBat + FlowCache.fromGrid).toLocaleString() + " kWh";
             
             let sysY = grpRes.reduce((sum, g) => sum + g.yield, 0);
-            document.getElementById('stringBreakdown').innerHTML = grpRes.map((g, idx) => {
-                const pct = sysY>0 ? ((g.yield / sysY)*100).toFixed(1) : 0;
-                return `
-                <div class="p-4 rounded-2xl border flex justify-between cursor-pointer ${activeGroupIndex===idx?'bg-blue-50 ring-2 ring-blue-400 shadow-md scale-[1.02]':'bg-white shadow-sm'}" onclick="setFocus(${idx})">
-                    <div class="flex items-center gap-3"><div class="w-4 h-4 rounded-full" style="background-color: ${g.color}"></div><div><p class="text-sm font-bold">${g.name}</p><p class="text-[10px] text-slate-500">${g.panels} Module (${g.kwp.toFixed(2)} kWp)</p></div></div>
-                    <div class="text-right"><p class="text-base font-black">${pct}%</p></div>
-                </div>`;
-            }).join('');
+            let sBD = document.getElementById('stringBreakdown');
+            if(sBD) {
+                sBD.innerHTML = grpRes.map((g, idx) => {
+                    const pct = sysY>0 ? ((g.yield / sysY)*100).toFixed(1) : 0;
+                    return `
+                    <div class="p-4 rounded-2xl border flex justify-between cursor-pointer ${activeGroupIndex===idx?'bg-blue-50 ring-2 ring-blue-400 shadow-md scale-[1.02]':'bg-white shadow-sm'}" onclick="setFocus(${idx})">
+                        <div class="flex items-center gap-3"><div class="w-4 h-4 rounded-full" style="background-color: ${g.color}"></div><div><p class="text-sm font-bold">${g.name}</p><p class="text-[10px] text-slate-500">${g.panels} Module (${g.kwp.toFixed(2)} kWp)</p></div></div>
+                        <div class="text-right"><p class="text-base font-black">${pct}%</p></div>
+                    </div>`;
+                }).join('');
+            }
 
             // Chart 1: Yield
             let yCtx = document.getElementById('yieldChart');
@@ -1169,17 +1163,17 @@
                 else { chartYield = new Chart(yCtx.getContext('2d'), { type: 'bar', data: { labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"], datasets: grpRes.map(g => ({ label: g.name, data: g.mo.map(v => Math.round(v)), backgroundColor: g.color })) }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, min: 0 } }, plugins: { legend: { position: 'bottom' } } } }); }
             }
 
-            // Autarky Calcs & SVG Rings (Sicher per setAttribute pathLength)
+            // Autarky Calcs & SVG Rings
             let totalCons = FlowCache.direct + FlowCache.fromBat + FlowCache.fromGrid;
-            document.getElementById('d2-direct').innerText = Math.round(FlowCache.direct).toLocaleString() + " kWh";
-            document.getElementById('d2-frombat').innerText = Math.round(FlowCache.fromBat).toLocaleString() + " kWh";
-            document.getElementById('d2-grid-in').innerText = Math.round(FlowCache.fromGrid).toLocaleString() + " kWh";
-            document.getElementById('d2-grid-out').innerText = Math.round(FlowCache.toGrid).toLocaleString() + " kWh";
+            let d2Dir = document.getElementById('d2-direct'); if(d2Dir) d2Dir.innerText = Math.round(FlowCache.direct).toLocaleString() + " kWh";
+            let d2Bat = document.getElementById('d2-frombat'); if(d2Bat) d2Bat.innerText = Math.round(FlowCache.fromBat).toLocaleString() + " kWh";
+            let d2GridI = document.getElementById('d2-grid-in'); if(d2GridI) d2GridI.innerText = Math.round(FlowCache.fromGrid).toLocaleString() + " kWh";
+            let d2GridO = document.getElementById('d2-grid-out'); if(d2GridO) d2GridO.innerText = Math.round(FlowCache.toGrid).toLocaleString() + " kWh";
             
             let autarkyPct = Math.round(totalCons > 0 ? ((FlowCache.direct + FlowCache.fromBat) / totalCons) * 100 : 0);
             let eigenPct = Math.round(sysY > 0 ? (1 - (FlowCache.toGrid / sysY)) * 100 : 0);
-            document.getElementById('d2-val-autarky').innerText = autarkyPct + "%";
-            document.getElementById('d2-val-eigen').innerText = eigenPct + "%";
+            let d2ValA = document.getElementById('d2-val-autarky'); if(d2ValA) d2ValA.innerText = autarkyPct + "%";
+            let d2ValE = document.getElementById('d2-val-eigen'); if(d2ValE) d2ValE.innerText = eigenPct + "%";
             let ga = document.getElementById('gauge-autarky'); if(ga) ga.setAttribute('stroke-dasharray', `${autarkyPct} 100`);
             let ge = document.getElementById('gauge-eigen'); if(ge) ge.setAttribute('stroke-dasharray', `${eigenPct} 100`);
 
@@ -1218,7 +1212,8 @@
             currentDetailMonth = monthIdx;
             if(!FlowCache || !ConsumptionCache) return;
             const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
-            document.getElementById('detailMonthName').innerText = monthNames[monthIdx];
+            let mNameUI = document.getElementById('detailMonthName'); if(mNameUI) mNameUI.innerText = monthNames[monthIdx];
+            
             const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
             let startDay = 0; for(let i=0; i<monthIdx; i++) startDay += daysInMonth[i];
             let dailyLabels = [], dBase = [], dIt = [], dAc = [], dWp = [], dBw = [], dEv = [], dToGrid = [], dToBat = [], dPvTotal = [], dDirect = [], dFromBat = [], dFromGrid = [];
@@ -1248,11 +1243,14 @@
         // ==========================================
         // 10. EIGENE HARDWARE (CUSTOM DB)
         // ==========================================
-        function toggleCustomDbForm() { document.getElementById('customDbForm').classList.toggle('hidden'); }
+        function toggleCustomDbForm() { 
+            let f = document.getElementById('customDbForm'); 
+            if(f) f.classList.toggle('hidden'); 
+        }
         function updateCustomDbFields() {
             let t = document.getElementById('cdb_type').value;
-            ['panel', 'inv', 'bat'].forEach(x => document.getElementById(`cdb_fields_${x}`).classList.add('hidden'));
-            document.getElementById(`cdb_fields_${t}`).classList.remove('hidden');
+            ['panel', 'inv', 'bat'].forEach(x => { let el = document.getElementById(`cdb_fields_${x}`); if(el) el.classList.add('hidden'); });
+            let tEl = document.getElementById(`cdb_fields_${t}`); if(tEl) tEl.classList.remove('hidden');
         }
         function saveCustomDevice() {
             let t = document.getElementById('cdb_type').value;
@@ -1290,32 +1288,41 @@
         function renderDatabaseUI() {
             let batOptions = DB.batteries.map(s => `<optgroup label="${s.series}">${(s.models||[]).map(m => `<option value="${m.id}">${m.name}</option>`).join('')}</optgroup>`).join('');
             
-            document.getElementById('wrCardGrid').innerHTML = flatInverters.map(w => {
-                let currentBatOpt = batOptions.replace(`value="${w.batteryId}"`, `value="${w.batteryId}" selected`);
-                return `
-                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                    <div>
-                        <h4 class="font-bold text-slate-800 text-sm">${w.name}</h4>
-                        <div class="flex gap-2 text-[10px] text-slate-500 mt-1 mb-3"><span class="bg-slate-100 px-1.5 py-0.5 rounded">AC Max: ${w.acMax}W</span><span class="bg-slate-100 px-1.5 py-0.5 rounded">Start: ${w.startV}V</span></div>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Zugewiesene Batterie</label>
-                        <select onchange="updateInverterBattery(${w.id}, this.value)" class="w-full text-xs font-medium border-2 border-slate-200 rounded-lg px-2 py-1.5 bg-white cursor-pointer outline-none">${currentBatOpt}</select>
-                    </div>
-                </div>`;
-            }).join('');
+            let wrCard = document.getElementById('wrCardGrid');
+            if(wrCard) {
+                wrCard.innerHTML = flatInverters.map(w => {
+                    let currentBatOpt = batOptions.replace(`value="${w.batteryId}"`, `value="${w.batteryId}" selected`);
+                    return `
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-sm">${w.name}</h4>
+                            <div class="flex gap-2 text-[10px] text-slate-500 mt-1 mb-3"><span class="bg-slate-100 px-1.5 py-0.5 rounded">AC Max: ${w.acMax}W</span><span class="bg-slate-100 px-1.5 py-0.5 rounded">Start: ${w.startV}V</span></div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Zugewiesene Batterie</label>
+                            <select onchange="updateInverterBattery(${w.id}, this.value)" class="w-full text-xs font-medium border-2 border-slate-200 rounded-lg px-2 py-1.5 bg-white cursor-pointer outline-none">${currentBatOpt}</select>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
 
-            document.getElementById('panelCardGrid').innerHTML = flatPanels.map(p => `
-                <div class="bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center shadow-sm">
-                    <div><h4 class="font-bold text-xs text-slate-800">${p.name}</h4><p class="text-[9px] text-slate-500">Voc: ${p.voc}V | Vmp: ${p.vmp?.toFixed(1)}V | Isc: ${p.isc}A</p></div>
-                    <div class="text-right"><span class="text-xs font-black text-blue-600">${p.pmax} W</span></div>
-                </div>`).join('');
+            let pCard = document.getElementById('panelCardGrid');
+            if(pCard) {
+                pCard.innerHTML = flatPanels.map(p => `
+                    <div class="bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center shadow-sm">
+                        <div><h4 class="font-bold text-xs text-slate-800">${p.name}</h4><p class="text-[9px] text-slate-500">Voc: ${p.voc}V | Vmp: ${p.vmp?.toFixed(1)}V | Isc: ${p.isc}A</p></div>
+                        <div class="text-right"><span class="text-xs font-black text-blue-600">${p.pmax} W</span></div>
+                    </div>`).join('');
+            }
             
-            document.getElementById('batCardGrid').innerHTML = flatBatteries.map(b => `
-                <div class="bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center shadow-sm">
-                    <div><h4 class="font-bold text-xs text-slate-800">${b.name}</h4><p class="text-[9px] text-slate-500">Max. P: ${b.power}W | Eff: ${Math.round((b.eff || 1) * 100)}%</p></div>
-                    <div class="text-right"><span class="text-xs font-black text-emerald-600">${b.cap.toFixed(2)} kWh</span></div>
-                </div>`).join('');
+            let bCard = document.getElementById('batCardGrid');
+            if(bCard) {
+                bCard.innerHTML = flatBatteries.map(b => `
+                    <div class="bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center shadow-sm">
+                        <div><h4 class="font-bold text-xs text-slate-800">${b.name}</h4><p class="text-[9px] text-slate-500">Max. P: ${b.power}W | Eff: ${Math.round((b.eff || 1) * 100)}%</p></div>
+                        <div class="text-right"><span class="text-xs font-black text-emerald-600">${b.cap.toFixed(2)} kWh</span></div>
+                    </div>`).join('');
+            }
         }
 
         window.onload = initDatabase;
