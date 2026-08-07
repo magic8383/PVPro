@@ -8,38 +8,84 @@ let YieldDataCache = null, ConsumptionCache = null, FlowCache = null, activeGrou
 let strings = [], currentDetailMonth = null;
 let chartYield = null, chartAutarkyCons = null, chartAutarkyGen = null, detailConsChart = null, detailGenChart = null;
 
+const DEFAULT_THEME = { primary: '#3b82f6', accent: '#10b981', dark: false };
+
+function readJsonStorage(key, fallback) {
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        const value = JSON.parse(raw);
+        return value ?? fallback;
+    } catch (error) {
+        console.warn(`Ungültige LocalStorage-Daten für ${key}; Standardwert wird verwendet.`, error);
+        return fallback;
+    }
+}
+
+function isHexColor(value) {
+    return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
+}
+
+function getThemeSettings() {
+    const stored = readJsonStorage('pvpro_theme', {});
+    return {
+        primary: isHexColor(stored.primary) ? stored.primary : DEFAULT_THEME.primary,
+        accent: isHexColor(stored.accent) ? stored.accent : DEFAULT_THEME.accent,
+        dark: stored.dark === true
+    };
+}
+
 // ==========================================
 // 1. INITIALISIERUNG
 // ==========================================
 function initDatabase() {
     try {
+        // Theme laden
+        loadThemeSettings();
+        
         DB = { panels: [], batteries: [], inverters: [] };
         DB.panels = [...MasterDB.panels]; 
         DB.batteries = [...MasterDB.batteries]; 
         DB.inverters = [...MasterDB.inverters];
         
         try {
-            const userDB = JSON.parse(localStorage.getItem('pvpro_user_db')) || { panels: [], batteries: [], inverters: [] };
-            if (userDB.panels.length > 0) DB.panels.push({ series: "Eigene Module", models: userDB.panels });
-            if (userDB.inverters.length > 0) DB.inverters.push({ series: "Eigene WR", models: userDB.inverters });
-            if (userDB.batteries.length > 0) DB.batteries.push({ series: "Eigene Batterien", models: userDB.batteries });
-        } catch(e) {}
+            const userDB = readJsonStorage('pvpro_user_db', { panels: [], batteries: [], inverters: [] });
+            if (userDB && userDB.panels && userDB.panels.length > 0) DB.panels.push({ series: "Eigene Module", models: userDB.panels });
+            if (userDB && userDB.inverters && userDB.inverters.length > 0) DB.inverters.push({ series: "Eigene WR", models: userDB.inverters });
+            if (userDB && userDB.batteries && userDB.batteries.length > 0) DB.batteries.push({ series: "Eigene Batterien", models: userDB.batteries });
+        } catch(e) {
+            console.warn("User DB im LocalStorage ist korrupt, Zurücksetzen auf Standard.", e);
+        }
 
         flatPanels = DB.panels.flatMap(s => s.models || []); 
         flatInverters = DB.inverters.flatMap(s => s.models || []); 
         flatBatteries = DB.batteries.flatMap(s => s.models || []);
 
-        let batMap = JSON.parse(localStorage.getItem('pvpro_batmap') || '{}');
+        let batMap = readJsonStorage('pvpro_batmap', {});
         flatInverters.forEach(inv => { if(batMap[inv.id] !== undefined) inv.batteryId = parseInt(batMap[inv.id]); });
 
         if(localStorage.getItem('pvpro_strings')) {
             try {
-                let loaded = JSON.parse(localStorage.getItem('pvpro_strings'));
-                strings = loaded.map(s => { if(!s.fields) s.fields = [{ id: Date.now()+Math.random(), panelId: flatPanels[0]?.id||1, count: s.panels||1, tilt: 30 }]; return s; });
-            } catch(e) { strings = []; }
+                let loaded = readJsonStorage('pvpro_strings', []);
+                if (Array.isArray(loaded)) {
+                    strings = loaded.map(s => { if(!s.fields) s.fields = [{ id: Date.now()+Math.random(), panelId: flatPanels[0]?.id||1, count: s.panels||1, tilt: 30 }]; return s; });
+                } else {
+                    strings = [];
+                }
+            } catch(e) { 
+                strings = []; 
+                console.warn("String-Daten im LocalStorage korrupt.", e);
+            }
         }
         
-        if(localStorage.getItem('pvpro_loc')) LocationData = JSON.parse(localStorage.getItem('pvpro_loc'));
+        const storedLocation = readJsonStorage('pvpro_loc', null);
+        if (storedLocation && Number.isFinite(Number(storedLocation.lat)) && Number.isFinite(Number(storedLocation.lon))) {
+            LocationData = {
+                lat: Number(storedLocation.lat),
+                lon: Number(storedLocation.lon),
+                name: typeof storedLocation.name === 'string' && storedLocation.name.trim() ? storedLocation.name : LocationData.name
+            };
+        }
         
         let locInp = document.getElementById('locSearchInput'); if(locInp) locInp.value = LocationData.name;
         let locTxt = document.getElementById('locNameText'); if(locTxt) locTxt.innerText = LocationData.name;
@@ -68,7 +114,7 @@ function saveConfiguration() {
     let btn = document.getElementById('btnHeaderSave');
     if(btn) {
         btn.classList.remove('bg-amber-500', 'animate-pulse');
-        btn.classList.add('bg-blue-600');
+        btn.classList.add('bg-primary');
     }
     alert("Erfolgreich gespeichert!"); 
 }
@@ -115,9 +161,9 @@ function switchTab(tabId) {
         let btn = document.getElementById('btn-' + id);
         if(btn) {
             btn.className = (id === tabId) 
-                ? "snap-start shrink-0 px-4 py-2 text-sm font-bold rounded-xl bg-blue-600 text-white shadow-md transition-colors" 
+                ? "snap-start shrink-0 px-4 py-2 text-sm font-bold rounded-xl bg-primary text-white shadow-md transition-colors" 
                 : "snap-start shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors";
-            if(id==='auswertung' && id!==tabId) btn.classList.add('text-emerald-400');
+            if(id==='auswertung' && id!==tabId) btn.classList.add('text-accent');
         }
     });
     
@@ -355,7 +401,7 @@ function saveConsumptionSettings() {
 }
 
 function loadConsumptionSettings() {
-    let c = JSON.parse(localStorage.getItem('pvpro_cons')); if(!c) return;
+    let c = readJsonStorage('pvpro_cons', null); if(!c || typeof c !== 'object') return;
     let bInp = document.getElementById('cons_base_kwh'); if(bInp) bInp.value = c.baseInp || 3500; 
     updateHouseHint();
     let hInp = document.getElementById('cons_house'); if(hInp) hInp.value = c.house || 0;
@@ -394,7 +440,7 @@ function build8760ConsumptionArray(pvProfile = null) {
 // 6. FINANZEN & BERECHNUNG (ROI)
 // ==========================================
 function loadFinanceSettings() {
-    let s = JSON.parse(localStorage.getItem('pvpro_finance') || '{}');
+    let s = readJsonStorage('pvpro_finance', {});
     let gP = document.getElementById('fin_grid_price'); if(gP) gP.value = s.grid || 0.32;
     let sC = document.getElementById('fin_sys_cost'); if(sC) sC.value = s.cost || 15000;
     let eD = document.getElementById('fin_eeg_date'); if(eD) eD.value = s.date || "2024-05";
@@ -506,12 +552,27 @@ async function calculateYieldAPI() {
                 if(p && f.count>0) {
                     let asp = str.azimuth - 180; if (asp>180) asp-=360; if (asp<-180) asp+=360;
                     const u = `https://corsproxy.io/?${encodeURIComponent(`https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?lat=${LocationData.lat}&lon=${LocationData.lon}&usehorizon=1&pvcalculation=1&startyear=2019&endyear=2019&outputformat=json&angle=${f.tilt}&aspect=${asp}&peakpower=${((p.pmax*f.count)/1000).toFixed(3)}&loss=14`)}`;
-                    proms.push(fetch(u).then(async r=>{if(!r.ok) throw new Error(await r.text()); return r.json();}).then(d=>({sId:str.id, fId:f.id, d:d.outputs.hourly, sF:shadingFactor, panel: p, count: f.count})));
+                    
+                    proms.push(
+                        fetch(u)
+                        .then(async r => { if(!r.ok) throw new Error(await r.text()); return r.json(); })
+                        .then(d => ({ sId: str.id, fId: f.id, d: d.outputs.hourly, sF: shadingFactor, panel: p, count: f.count }))
+                        .catch(err => {
+                            console.warn("PVGIS API Fehler für Modulfeld - nutze Offline-Fallback:", err);
+                            let peakPower = (p.pmax * f.count) / 1000;
+                            let syntheticData = generateSyntheticPVGISData(LocationData.lat, f.tilt, str.azimuth, peakPower);
+                            return { sId: str.id, fId: f.id, d: syntheticData, sF: shadingFactor, panel: p, count: f.count, offline: true };
+                        })
+                    );
                 }
             });
         });
 
         const res = await Promise.all(proms);
+        let hasOfflineData = res.some(r => r.offline);
+        if (hasOfflineData) {
+            alert("⚠️ Offline-Modus aktiv: Die Ertragsdaten wurden synthetisch berechnet, da die PVGIS-API nicht erreichbar war.");
+        }
 
         let invH = {}; 
         let activeInvIds = [...new Set(strings.map(s => parseInt(s.inverterId)))];
@@ -879,6 +940,129 @@ function renderDatabaseUI() {
                 <div class="text-right"><span class="text-xs font-black text-emerald-600">${b.cap.toFixed(2)} kWh</span></div>
             </div>`).join('');
     }
+}
+
+// ==========================================
+// SYNTHETISCHER OFFLINE FALLBACK GENERATOR
+// ==========================================
+function generateSyntheticPVGISData(lat, tilt, azimuth, peakPower) {
+    let hourly = [];
+    const monthlyPeakW = [15, 30, 60, 95, 120, 130, 125, 105, 75, 45, 20, 10]; 
+    
+    let aspect = azimuth - 180;
+    let azLoss = 1 - (Math.abs(aspect) / 180) * 0.25; 
+    let tiltLoss = 1 - (Math.abs(tilt - 35) / 90) * 0.15; 
+    
+    const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    let monthIdx = 0;
+    
+    for(let h=0; h<8760; h++) {
+        let d = Math.floor(h/24);
+        let hr = h%24;
+        
+        let accum = 0;
+        for(let m=0; m<12; m++) {
+            accum += daysInMonth[m];
+            if(d < accum) {
+                monthIdx = m;
+                break;
+            }
+        }
+        
+        let sunPower = 0;
+        if(hr >= 6 && hr <= 18) {
+            let sine = Math.sin((hr - 6) * Math.PI / 12);
+            let noise = 0.6 + 0.4 * Math.sin(d * 13.5) * Math.cos(d * 5.2);
+            noise = Math.max(0.1, Math.min(1.0, noise));
+            sunPower = (peakPower * 1000) * (monthlyPeakW[monthIdx] / 150) * sine * azLoss * tiltLoss * noise;
+        }
+        hourly.push({ P: sunPower });
+    }
+    return hourly;
+}
+
+// ==========================================
+// THEME & DESIGN MANAGEMENT
+// ==========================================
+function loadThemeSettings() {
+    const theme = getThemeSettings();
+    let pInput = document.getElementById('themePrimaryColor');
+    let aInput = document.getElementById('themeAccentColor');
+    if(pInput) pInput.value = theme.primary;
+    if(aInput) aInput.value = theme.accent;
+    applyTheme(theme.primary, theme.accent, theme.dark);
+}
+
+function toggleThemePanel() {
+    let p = document.getElementById('themeSettingsPanel');
+    if(p) p.classList.toggle('hidden');
+}
+
+function applyTheme(primary, accent, dark) {
+    if(primary) {
+        document.documentElement.style.setProperty('--color-primary', primary);
+        let hover = adjustColorBrightness(primary, -15);
+        document.documentElement.style.setProperty('--color-primary-hover', hover);
+    }
+    if(accent) {
+        document.documentElement.style.setProperty('--color-accent', accent);
+        let hover = adjustColorBrightness(accent, -15);
+        document.documentElement.style.setProperty('--color-accent-hover', hover);
+    }
+    
+    let html = document.documentElement;
+    let btn = document.getElementById('btnThemeDarkMode');
+    if(dark) {
+        html.classList.add('dark');
+        if(btn) btn.innerText = "Ausschalten";
+    } else {
+        html.classList.remove('dark');
+        if(btn) btn.innerText = "Aktivieren";
+    }
+    
+    if (typeof Chart !== 'undefined') {
+        Chart.defaults.color = dark ? '#cbd5e1' : '#475569';
+        Chart.defaults.borderColor = dark ? '#334155' : '#e2e8f0';
+        if (chartYield) chartYield.update();
+        if (chartAutarkyCons) chartAutarkyCons.update();
+        if (chartAutarkyGen) chartAutarkyGen.update();
+        if (detailConsChart) detailConsChart.update();
+        if (detailGenChart) detailGenChart.update();
+    }
+}
+
+function updateThemeColors(primary, accent) {
+    let theme = getThemeSettings();
+    if(isHexColor(primary)) theme.primary = primary;
+    if(isHexColor(accent)) theme.accent = accent;
+    localStorage.setItem('pvpro_theme', JSON.stringify(theme));
+    applyTheme(theme.primary, theme.accent, theme.dark);
+}
+
+function toggleDarkMode() {
+    let theme = getThemeSettings();
+    theme.dark = !theme.dark;
+    localStorage.setItem('pvpro_theme', JSON.stringify(theme));
+    applyTheme(theme.primary, theme.accent, theme.dark);
+}
+
+function adjustColorBrightness(hex, percent) {
+    let R = parseInt(hex.substring(1,3),16);
+    let G = parseInt(hex.substring(3,5),16);
+    let B = parseInt(hex.substring(5,7),16);
+
+    R = parseInt(R * (100 + percent) / 100);
+    G = parseInt(G * (100 + percent) / 100);
+    B = parseInt(B * (100 + percent) / 100);
+
+    R = (R<255)?R:255;  G = (G<255)?G:255;  B = (B<255)?B:255;  
+    R = (R>0)?R:0;      G = (G>0)?G:0;      B = (B>0)?B:0;  
+
+    let rHex = ((R.toString(16).length==1)?"0"+R.toString(16):R.toString(16));
+    let gHex = ((G.toString(16).length==1)?"0"+G.toString(16):G.toString(16));
+    let bHex = ((B.toString(16).length==1)?"0"+B.toString(16):B.toString(16));
+
+    return "#"+rHex+gHex+bHex;
 }
 
 window.onload = initDatabase;
