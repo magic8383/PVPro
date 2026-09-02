@@ -5,36 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PV-Planung Pro 6.10 (Modular Build)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            DEFAULT: 'var(--color-primary, #3b82f6)',
-                            hover: 'var(--color-primary-hover, #2563eb)',
-                            text: 'var(--color-primary-text, #ffffff)',
-                        },
-                        accent: {
-                            DEFAULT: 'var(--color-accent, #10b981)',
-                            hover: 'var(--color-accent-hover, #059669)',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root {
-            --color-primary: #3b82f6;
-            --color-primary-hover: #2563eb;
-            --color-primary-text: #ffffff;
-            --color-accent: #10b981;
-            --color-accent-hover: #059669;
-        }
-
         body { overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -64,21 +36,18 @@
         .acc-content.open { max-height: 1500px; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased h-[100dvh] flex flex-col overflow-hidden transition-colors duration-300">
+<body class="bg-slate-50 text-slate-800 font-sans antialiased h-[100dvh] flex flex-col overflow-hidden">
 
-    <header class="bg-slate-900 text-white shadow-md z-20 shrink-0 relative border-b border-slate-800">
+    <header class="bg-slate-900 text-white shadow-md z-20 shrink-0 relative">
         <div class="max-w-7xl mx-auto px-4 py-3 md:py-4">
             <div class="flex justify-between items-center mb-3">
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">PV-Planung <span class="text-primary">Pro 6.10</span></h1>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white leading-none">PV-Planung <span class="text-blue-400">Pro 6.10</span></h1>
                     <p class="text-slate-400 text-[10px] md:text-xs mt-1">Modular Architecture</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button id="btnHeaderSave" onclick="saveConfiguration()" class="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition-colors flex items-center gap-1">
+                    <button id="btnHeaderSave" onclick="saveConfiguration()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition-colors flex items-center gap-1">
                         💾 <span class="hidden md:inline">Speichern</span>
-                    </button>
-                    <button onclick="toggleThemePanel()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition-colors flex items-center gap-1">
-                        🎨 <span class="hidden md:inline">Design</span>
                     </button>
                     <button onclick="clearLocalStorage()" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow transition-colors flex items-center gap-1">
                         🗑️ <span class="hidden md:inline">Reset</span>
@@ -86,29 +55,14 @@
                 </div>
             </div>
             
-            <!-- Collapsible Theme & Design Panel -->
-            <div id="themeSettingsPanel" class="hidden border-t border-slate-800 pt-3 pb-1 mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                <div class="flex items-center justify-between bg-slate-800/60 p-2 rounded-lg border border-slate-700">
-                    <span class="font-bold text-slate-300 flex items-center gap-1">🔵 Hauptfarbe:</span>
-                    <input type="color" id="themePrimaryColor" onchange="updateThemeColors(this.value, null)" class="w-8 h-8 rounded-full border-none cursor-pointer">
-                </div>
-                <div class="flex items-center justify-between bg-slate-800/60 p-2 rounded-lg border border-slate-700">
-                    <span class="font-bold text-slate-300 flex items-center gap-1">🟢 Akzentfarbe:</span>
-                    <input type="color" id="themeAccentColor" onchange="updateThemeColors(null, this.value)" class="w-8 h-8 rounded-full border-none cursor-pointer">
-                </div>
-                <div class="flex items-center justify-between bg-slate-800/60 p-2 rounded-lg border border-slate-700">
-                    <span class="font-bold text-slate-300 flex items-center gap-1">🌙 Dark Mode:</span>
-                    <button id="btnThemeDarkMode" onclick="toggleDarkMode()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors">Aktivieren</button>
-                </div>
-            </div>
-            
-            <div id="navScroller" class="flex overflow-x-auto hide-scroll space-x-1 bg-slate-800/50 p-1 rounded-lg items-center snap-x snap-mandatory mt-3">
-                <button onclick="switchTab('system')" id="btn-system" class="snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-bold rounded-md bg-primary text-white shadow-md transition-all">Strings</button>
+            <div id="navScroller" class="flex overflow-x-auto hide-scroll space-x-1 bg-slate-800/50 p-1 rounded-lg items-center snap-x snap-mandatory">
+                <button onclick="switchTab('system')" id="btn-system" class="snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-bold rounded-md bg-blue-600 text-white shadow-md transition-all">Strings</button>
                 <button onclick="switchTab('verbrauch')" id="btn-verbrauch" class="snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-all">Verbrauch</button>
+                <button onclick="switchTab('invest')" id="btn-invest" class="snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-all">Investition</button>
                 <button onclick="switchTab('finance')" id="btn-finance" class="snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-all">Kosten</button>
                 <div class="w-px h-4 bg-slate-600 shrink-0 mx-1"></div>
                 <button onclick="switchTab('uebersicht')" id="btn-uebersicht" class="snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-all">Übersicht</button>
-                <button onclick="switchTab('auswertung')" id="btn-auswertung" class="snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-all text-accent">Auswertung</button>
+                <button onclick="switchTab('auswertung')" id="btn-auswertung" class="snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-all text-emerald-400">Auswertung</button>
                 <div class="w-px h-4 bg-slate-600 shrink-0 mx-1"></div>
                 <button onclick="switchTab('database')" id="btn-database" class="snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-all">Datenbank</button>
                 <button onclick="switchTab('faq')" id="btn-faq" class="snap-start shrink-0 px-3 py-1.5 text-xs md:text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-all">Handbuch</button>
@@ -120,119 +74,221 @@
         
         <!-- TAB 1: STRINGS & ORT -->
         <div id="tab-system" class="tab-content active max-w-4xl mx-auto space-y-6 mt-2">
-            
-            <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-4">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
                 <div class="flex gap-3 items-center justify-between">
                     <div class="flex gap-3 items-center">
                         <span class="text-2xl">🌍</span>
                         <div>
-                            <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest leading-none mb-1">Standort für PVGIS API</p>
-                            <p class="text-sm font-bold text-primary leading-none" id="locNameText">Villingen-Schwenningen</p>
+                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-none mb-1">Standort für PVGIS API</p>
+                            <p class="text-sm font-bold text-blue-600 leading-none" id="locNameText">Villingen-Schwenningen</p>
                         </div>
                     </div>
-                    <button onclick="document.getElementById('locEditBox').classList.toggle('hidden')" class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Ändern</button>
+                    <button onclick="document.getElementById('locEditBox').classList.toggle('hidden')" class="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-200 transition-colors">Ändern</button>
                 </div>
-                <div id="locEditBox" class="hidden mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex gap-2">
-                    <input type="text" id="locSearchInput" class="flex-1 text-sm border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-lg px-3 py-2 outline-none" placeholder="Ort (z.B. Berlin)">
-                    <button onclick="searchLocation()" class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg text-xs font-bold">Suchen</button>
+                <div id="locEditBox" class="hidden mt-4 pt-4 border-t border-slate-100 flex gap-2">
+                    <input type="text" id="locSearchInput" class="flex-1 text-sm border-2 border-slate-200 focus:border-blue-500 rounded-lg px-3 py-2 outline-none" placeholder="Ort (z.B. Berlin)">
+                    <button onclick="searchLocation()" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-xs font-bold">Suchen</button>
                 </div>
             </div>
 
             <div class="flex justify-between items-end mb-2 mt-8">
                 <div>
-                    <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100">Verschaltung & Strings</h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Definiere Dachflächen, Module und Wechselrichter.</p>
+                    <h3 class="text-xl font-bold text-slate-800">Verschaltung & Strings</h3>
+                    <p class="text-xs text-slate-500">Definiere Dachflächen, Module und Wechselrichter.</p>
                 </div>
-                <button onclick="addString()" class="bg-primary hover:bg-primary-hover text-white text-xs md:text-sm font-bold px-4 py-2.5 rounded-xl shadow-md transition-colors">+ Neuer String</button>
+                <button onclick="addString()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm font-bold px-4 py-2.5 rounded-xl shadow-md transition-colors">+ Neuer String</button>
             </div>
             
             <div id="stringsList" class="space-y-3"></div>
-            <div id="emptyStringMessage" class="hidden text-center py-10 bg-slate-100 dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-800">
-                <p class="text-slate-500 dark:text-slate-400 font-medium">Noch keine Strings angelegt.</p>
+            <div id="emptyStringMessage" class="hidden text-center py-10 bg-slate-100 rounded-2xl border-2 border-dashed border-slate-300">
+                <p class="text-slate-500 font-medium">Noch keine Strings angelegt.</p>
             </div>
         </div>
 
         <!-- TAB 2: VERBRAUCH -->
         <div id="tab-verbrauch" class="tab-content max-w-4xl mx-auto space-y-6 mt-2">
-            <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                <div class="p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-                    <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">Haushalts-Grundlast (SLP VDI 4655)</h3>
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-5 border-b border-slate-200 bg-slate-50/50">
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">Haushalts-Grundlast (SLP VDI 4655)</h3>
                 </div>
                 <div class="p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Grundbedarf (kWh / Jahr)</label>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Grundbedarf (kWh / Jahr)</label>
                         <div class="flex items-center gap-3">
-                            <input type="number" id="cons_base_kwh" step="100" min="500" value="3500" class="w-28 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-4 py-2 text-sm font-bold focus:border-primary outline-none" oninput="updateConsumptionEstimate(); updateHouseHint();">
-                            <span id="cons_house_hint" class="text-xs text-slate-500 dark:text-slate-400 font-medium bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg">3-Personen-Haushalt</span>
+                            <input type="number" id="cons_base_kwh" step="100" min="500" value="3500" class="w-28 border-2 border-slate-200 rounded-xl px-4 py-2 text-sm font-bold focus:border-blue-500 outline-none" oninput="updateConsumptionEstimate(); updateHouseHint();">
+                            <span id="cons_house_hint" class="text-xs text-slate-500 font-medium bg-slate-100 px-2 py-1 rounded-lg">3-Personen-Haushalt</span>
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Wohnform</label>
-                        <select id="cons_house" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-4 py-2.5 text-sm font-medium focus:border-primary outline-none" onchange="updateConsumptionEstimate()">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Wohnform</label>
+                        <select id="cons_house" class="w-full border-2 border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:border-blue-500 outline-none" onchange="updateConsumptionEstimate()">
                             <option value="0">Wohnung</option><option value="500" selected>Einfamilienhaus (+500 kWh für Außen/Pumpen)</option>
                         </select>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                <div class="p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-                    <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">Großverbraucher (Stundenprofile)</h3>
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-5 border-b border-slate-200 bg-slate-50/50">
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">Großverbraucher (Stundenprofile)</h3>
                 </div>
                 <div class="p-5 md:p-6 space-y-4">
-                    <div class="flex items-start gap-4 p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/40 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                    <div class="flex items-start gap-4 p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors">
                         <div class="mt-0.5"><input type="checkbox" id="cons_it_active" class="w-5 h-5 rounded" onchange="toggleConsGroup('it')"></div>
                         <div class="flex-1">
-                            <label for="cons_it_active" class="block text-sm font-bold text-slate-800 dark:text-slate-200 cursor-pointer">24/7 Dauerlast (IT / Server)</label>
-                            <div id="grp_it" class="hidden flex items-center gap-2 mt-2"><input type="number" id="cons_it_w" value="100" step="10" class="w-24 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-lg px-3 py-1.5 text-sm outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600 dark:text-slate-400">Watt (konstant)</span></div>
+                            <label for="cons_it_active" class="block text-sm font-bold text-slate-800 cursor-pointer">24/7 Dauerlast (IT / Server)</label>
+                            <div id="grp_it" class="hidden flex items-center gap-2 mt-2"><input type="number" id="cons_it_w" value="100" step="10" class="w-24 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600">Watt (konstant)</span></div>
                         </div>
                     </div>
-                    <div class="flex items-start gap-4 p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/40 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                    <div class="flex items-start gap-4 p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors">
                         <div class="mt-0.5"><input type="checkbox" id="cons_ac_active" class="w-5 h-5 rounded" onchange="toggleConsGroup('ac')"></div>
                         <div class="flex-1">
-                            <label for="cons_ac_active" class="block text-sm font-bold text-slate-800 dark:text-slate-200 cursor-pointer">Klimaanlage(n)</label>
-                            <div id="grp_ac" class="hidden flex items-center gap-2 mt-2"><input type="number" id="cons_ac_kwh" value="400" step="100" class="w-24 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-lg px-3 py-1.5 text-sm outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600 dark:text-slate-400">kWh/a</span></div>
+                            <label for="cons_ac_active" class="block text-sm font-bold text-slate-800 cursor-pointer">Klimaanlage(n)</label>
+                            <div id="grp_ac" class="hidden flex items-center gap-2 mt-2"><input type="number" id="cons_ac_kwh" value="400" step="100" class="w-24 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600">kWh/a</span></div>
                         </div>
                     </div>
-                    <div class="flex items-start gap-4 p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/40 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                    <div class="flex items-start gap-4 p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors">
                         <div class="mt-0.5"><input type="checkbox" id="cons_wp_active" class="w-5 h-5 rounded" onchange="toggleConsGroup('wp')"></div>
                         <div class="flex-1">
-                            <label for="cons_wp_active" class="block text-sm font-bold text-slate-800 dark:text-slate-200 cursor-pointer">Heizungs-Wärmepumpe</label>
-                            <div id="grp_wp" class="hidden flex items-center gap-2 mt-2"><input type="number" id="cons_wp_kwh" value="3500" step="100" class="w-24 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-lg px-3 py-1.5 text-sm outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600 dark:text-slate-400">kWh/a</span></div>
+                            <label for="cons_wp_active" class="block text-sm font-bold text-slate-800 cursor-pointer">Heizungs-Wärmepumpe</label>
+                            <div id="grp_wp" class="hidden flex items-center gap-2 mt-2"><input type="number" id="cons_wp_kwh" value="3500" step="100" class="w-24 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600">kWh/a</span></div>
                         </div>
                     </div>
-                    <div class="flex items-start gap-4 p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/40 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                    <div class="flex items-start gap-4 p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors">
                         <div class="mt-0.5"><input type="checkbox" id="cons_bw_active" class="w-5 h-5 rounded" onchange="toggleConsGroup('bw')"></div>
                         <div class="flex-1">
-                            <label for="cons_bw_active" class="block text-sm font-bold text-slate-800 dark:text-slate-200 cursor-pointer">Brauchwasser-Wärmepumpe (BWWP)</label>
+                            <label for="cons_bw_active" class="block text-sm font-bold text-slate-800 cursor-pointer">Brauchwasser-Wärmepumpe (BWWP)</label>
                             <div id="grp_bw" class="hidden flex flex-col gap-2 mt-2">
-                                <div class="flex items-center gap-2"><input type="number" id="cons_bw_kwh" value="800" step="100" class="w-24 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-lg px-3 py-1.5 text-sm outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600 dark:text-slate-400">kWh/a</span></div>
-                                <label class="flex items-center gap-2 text-xs text-accent font-bold bg-emerald-50 dark:bg-emerald-950/20 w-fit px-2 py-1 rounded cursor-pointer border border-emerald-200 dark:border-emerald-900/30"><input type="checkbox" id="cons_bw_smart" checked onchange="updateConsumptionEstimate()" class="rounded border-emerald-300"> Wetter-KI: Lädt an sonnigsten Stunden</label>
+                                <div class="flex items-center gap-2"><input type="number" id="cons_bw_kwh" value="800" step="100" class="w-24 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600">kWh/a</span></div>
+                                <label class="flex items-center gap-2 text-xs text-emerald-600 font-bold bg-emerald-50 w-fit px-2 py-1 rounded cursor-pointer border border-emerald-200"><input type="checkbox" id="cons_bw_smart" checked onchange="updateConsumptionEstimate()" class="rounded border-emerald-300"> Wetter-KI: Lädt an sonnigsten Stunden</label>
                             </div>
                         </div>
                     </div>
-                    <div class="flex items-start gap-4 p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/40 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                    <div class="flex items-start gap-4 p-4 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors">
                         <div class="mt-0.5"><input type="checkbox" id="cons_ev_active" class="w-5 h-5 rounded" onchange="toggleConsGroup('ev')"></div>
                         <div class="flex-1">
-                            <label for="cons_ev_active" class="block text-sm font-bold text-slate-800 dark:text-slate-200 cursor-pointer">E-Auto (Wallbox)</label>
+                            <label for="cons_ev_active" class="block text-sm font-bold text-slate-800 cursor-pointer">E-Auto (Wallbox)</label>
                             <div id="grp_ev" class="hidden flex flex-col gap-3 mt-2">
                                 <div class="flex gap-4">
-                                    <div><span class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Jahresfahrleistung</span><div class="flex items-center"><input type="number" id="cons_ev_km" value="12000" step="1000" class="w-24 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-lg px-3 py-1.5 text-sm outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600 dark:text-slate-400 ml-2">km</span></div></div>
-                                    <div><span class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Verbrauch</span><div class="flex items-center"><input type="number" id="cons_ev_kwh100" value="18" step="1" class="w-20 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-lg px-3 py-1.5 text-sm outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600 dark:text-slate-400 ml-2">kWh/100km</span></div></div>
+                                    <div><span class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Jahresfahrleistung</span><div class="flex items-center"><input type="number" id="cons_ev_km" value="12000" step="1000" class="w-24 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600 ml-2">km</span></div></div>
+                                    <div><span class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Verbrauch</span><div class="flex items-center"><input type="number" id="cons_ev_kwh100" value="18" step="1" class="w-20 border-2 border-slate-200 rounded-lg px-3 py-1.5 text-sm outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600 ml-2">kWh/100km</span></div></div>
                                 </div>
-                                <label class="flex items-center gap-2 text-xs text-accent font-bold bg-emerald-50 dark:bg-emerald-950/20 w-fit px-2 py-1 rounded cursor-pointer border border-emerald-200 dark:border-emerald-900/30"><input type="checkbox" id="cons_ev_smart" onchange="updateConsumptionEstimate()" class="rounded border-emerald-300"> Wetter-KI: Lädt am PV-Optimum der Woche</label>
+                                <label class="flex items-center gap-2 text-xs text-emerald-600 font-bold bg-emerald-50 w-fit px-2 py-1 rounded cursor-pointer border border-emerald-200"><input type="checkbox" id="cons_ev_smart" onchange="updateConsumptionEstimate()" class="rounded border-emerald-300"> Wetter-KI: Lädt am PV-Optimum der Woche</label>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="p-5 bg-slate-800 text-white text-right flex justify-between items-center">
                     <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Simulierter Jahresbedarf:</p>
-                    <p class="text-2xl font-black text-accent"><span id="lbl_total_kwh_est">4000</span> <span class="text-sm font-normal text-slate-300">kWh/a</span></p>
+                    <p class="text-2xl font-black text-emerald-400"><span id="lbl_total_kwh_est">4000</span> <span class="text-sm font-normal text-slate-300">kWh/a</span></p>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 3: KOSTEN (FINANZEN) & START BERECHNUNG -->
+        <!-- TAB 3: INVESTITIONSKOSTEN -->
+        <div id="tab-invest" class="tab-content max-w-4xl mx-auto space-y-6 mt-2">
+            <div class="flex justify-between items-center mb-2">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-800">Investitionskosten</h2>
+                    <p class="text-xs text-slate-500">Detaillierte Aufstellung aller Anschaffungs- und Montagekosten.</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-[10px] uppercase font-bold text-slate-400">Gesamt-Investition</p>
+                    <p class="text-xl font-black text-blue-600"><span id="lbl_invest_total">0</span> €</p>
+                </div>
+            </div>
+
+            <!-- Kategorie 1: Module & Unterkonstruktion -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">☀️ 1. Module & Unterkonstruktion</h3>
+                    <span class="text-xs font-bold text-slate-600 font-mono" id="sub_invest_cat1">0 €</span>
+                </div>
+                <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Solarmodule Gesamt (€)</label>
+                        <input type="number" step="10" id="inv_cost_panels" value="0" class="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-500" oninput="calcInvestTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Unterkonstruktion / Schienen (€)</label>
+                        <input type="number" step="10" id="inv_cost_mounting" value="0" class="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm outline-none" oninput="calcInvestTotal()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kategorie 2: Elektronik & Speicher -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">⚡ 2. Leistungselektronik & Speicher</h3>
+                    <span class="text-xs font-bold text-slate-600 font-mono" id="sub_invest_cat2">0 €</span>
+                </div>
+                <div class="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Wechselrichter (€)</label>
+                        <input type="number" step="10" id="inv_cost_inverter" value="0" class="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm outline-none" oninput="calcInvestTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Batteriespeicher (€)</label>
+                        <input type="number" step="10" id="inv_cost_battery" value="0" class="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm outline-none" oninput="calcInvestTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Smart Meter / Backup Box (€)</label>
+                        <input type="number" step="10" id="inv_cost_smartmeter" value="0" class="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm outline-none" oninput="calcInvestTotal()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kategorie 3: Elektroinstallation & Zubehör -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">🔌 3. Elektroinstallation & Zubehör</h3>
+                    <span class="text-xs font-bold text-slate-600 font-mono" id="sub_invest_cat3">0 €</span>
+                </div>
+                <div class="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">DC-Kabel & Stecker (€)</label>
+                        <input type="number" step="10" id="inv_cost_cables" value="0" class="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm outline-none" oninput="calcInvestTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Überspannungsschutz / GAK (€)</label>
+                        <input type="number" step="10" id="inv_cost_gak" value="0" class="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm outline-none" oninput="calcInvestTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Zählerschrank / AC-Material (€)</label>
+                        <input type="number" step="10" id="inv_cost_acmat" value="0" class="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm outline-none" oninput="calcInvestTotal()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kategorie 4: Montage & Dienstleistung -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-4 border-b border-slate-200 bg-slate-50/50 flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">🏗️ 4. Montage, Abnahme & Sonstiges</h3>
+                    <span class="text-xs font-bold text-slate-600 font-mono" id="sub_invest_cat4">0 €</span>
+                </div>
+                <div class="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Dachmontage / Gerüst (€)</label>
+                        <input type="number" step="10" id="inv_cost_scaffold" value="0" class="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm outline-none" oninput="calcInvestTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Elektriker-Abnahme / IBN (€)</label>
+                        <input type="number" step="10" id="inv_cost_electrician" value="0" class="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm outline-none" oninput="calcInvestTotal()">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Sonstiges / Puffer (€)</label>
+                        <input type="number" step="10" id="inv_cost_misc" value="0" class="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm outline-none" oninput="calcInvestTotal()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 bg-blue-50 border border-blue-200 rounded-xl flex justify-between items-center">
+                <p class="text-xs text-blue-800 font-medium">💡 Die Gesamtsumme wird automatisch in den Tab <strong>Kosten</strong> als Anlagenkosten übernommen.</p>
+                <button onclick="switchTab('finance')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors">Weiter zu Kosten →</button>
+            </div>
+        </div>
+
+        <!-- TAB 4: KOSTEN (FINANZEN) & START BERECHNUNG -->
         <div id="tab-finance" class="tab-content max-w-4xl mx-auto space-y-6 mt-2">
             <h2 class="text-2xl font-black text-slate-800 mb-4">Wirtschaftlichkeit & Parameter</h2>
             
@@ -275,9 +331,8 @@
             </button>
         </div>
 
-        <!-- TAB 4: ÜBERSICHT (KPIs & STEUERERKLÄRUNG) -->
+        <!-- TAB 5: ÜBERSICHT (KPIs & STEUERERKLÄRUNG) -->
         <div id="tab-uebersicht" class="tab-content max-w-5xl mx-auto space-y-6 mt-2">
-            
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="bg-blue-600 text-white p-5 rounded-2xl shadow-md">
                     <p class="text-[10px] font-bold uppercase tracking-widest text-blue-200">Netto Ertrag</p>
@@ -296,12 +351,10 @@
                 </div>
             </div>
 
-            <!-- STEUERERKLÄRUNG -->
             <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 md:p-10 mt-8">
                 <h3 class="text-xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3">Abrechnungsbericht (Pro Jahr)</h3>
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                    <!-- Szenario A -->
                     <div>
                         <div class="bg-rose-50 border border-rose-100 p-3 rounded-lg mb-3">
                             <h4 class="font-bold text-rose-800 text-sm">Szenario A (Status Quo / Ohne PV)</h4>
@@ -315,7 +368,6 @@
                         </div>
                     </div>
 
-                    <!-- Szenario B -->
                     <div>
                         <div class="bg-emerald-50 border border-emerald-100 p-3 rounded-lg mb-3">
                             <h4 class="font-bold text-emerald-800 text-sm">Szenario B (Mit PV & Speicher)</h4>
@@ -338,14 +390,12 @@
             <div id="stringBreakdown" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-8"></div>
         </div>
 
-        <!-- TAB 5: AUSWERTUNG (CHARTS & AUTARKIE) -->
+        <!-- TAB 6: AUSWERTUNG (CHARTS & AUTARKIE) -->
         <div id="tab-auswertung" class="tab-content max-w-7xl mx-auto space-y-6 mt-2">
-            
             <div class="bg-slate-900 rounded-3xl shadow-xl overflow-hidden text-white relative p-6 md:p-10">
                 <h2 class="text-2xl font-bold mb-8 text-center md:text-left">Autarkie & Energiefluss</h2>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                    <!-- Ring 1 -->
                     <div class="glass-card rounded-2xl p-6 flex flex-col items-center justify-center relative">
                         <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Autarkiegrad</h3>
                         <div class="relative w-32 h-32 flex items-center justify-center">
@@ -356,7 +406,6 @@
                             <span class="text-3xl font-black text-white z-10" id="d2-val-autarky">0%</span>
                         </div>
                     </div>
-                    <!-- Ring 2 -->
                     <div class="glass-card rounded-2xl p-6 flex flex-col items-center justify-center relative">
                         <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Eigenverbrauch</h3>
                         <div class="relative w-32 h-32 flex items-center justify-center">
@@ -367,7 +416,6 @@
                             <span class="text-3xl font-black text-white z-10" id="d2-val-eigen">0%</span>
                         </div>
                     </div>
-                    <!-- Data Blocks -->
                     <div class="flex flex-col gap-4 justify-center lg:col-span-2">
                         <div class="grid grid-cols-2 gap-4">
                             <div class="glass-card rounded-xl p-4">
@@ -420,7 +468,7 @@
             </div>
         </div>
 
-        <!-- TAB 6: GERÄTEDATENBANK -->
+        <!-- TAB 7: GERÄTEDATENBANK -->
         <div id="tab-database" class="tab-content max-w-7xl mx-auto space-y-6 mt-2">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-bold text-slate-800">Geräte & Zuweisung</h3>
@@ -441,7 +489,6 @@
                         <input type="text" id="cdb_name" placeholder="Z.B. Trina Vertex S+ 440W" class="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm outline-none">
                     </div>
                 </div>
-                <!-- Dynamic Fields -->
                 <div id="cdb_fields_panel" class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div><label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Pmax (W)</label><input type="number" id="cdb_pmax" class="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm outline-none"></div>
                     <div><label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Voc (V)</label><input type="number" step="0.1" id="cdb_voc" class="w-full border-2 border-slate-200 rounded-lg px-3 py-2 text-sm outline-none"></div>
@@ -479,13 +526,12 @@
             </div>
         </div>
 
-        <!-- TAB 7: GLOSSAR & HANDBUCH -->
+        <!-- TAB 8: GLOSSAR & HANDBUCH -->
         <div id="tab-faq" class="tab-content max-w-4xl mx-auto space-y-4 mt-2">
             <!-- Wird von content.js via app.js gefüllt -->
         </div>
     </main>
 
-    <!-- HIER WERDEN DIE 3 AUSGELAGERTEN DATEIEN GELADEN -->
     <script src="database.js"></script>
     <script src="content.js"></script>
     <script src="app.js"></script>
