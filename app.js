@@ -8,83 +8,44 @@ let YieldDataCache = null, ConsumptionCache = null, FlowCache = null, activeGrou
 let strings = [], currentDetailMonth = null;
 let chartYield = null, chartAutarkyCons = null, chartAutarkyGen = null, detailConsChart = null, detailGenChart = null;
 
-const DEFAULT_THEME = { primary: '#3b82f6', accent: '#10b981', dark: false };
-
-function readJsonStorage(key, fallback) {
-    try {
-        const raw = localStorage.getItem(key);
-        if (!raw) return fallback;
-        const value = JSON.parse(raw);
-        return value ?? fallback;
-    } catch (error) {
-        console.warn(`Ungültige LocalStorage-Daten für ${key}; Standardwert wird verwendet.`, error);
-        return fallback;
-    }
-}
-
-function isHexColor(value) {
-    return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
-}
-
-function getThemeSettings() {
-    const stored = readJsonStorage('pvpro_theme', {});
-    return {
-        primary: isHexColor(stored.primary) ? stored.primary : DEFAULT_THEME.primary,
-        accent: isHexColor(stored.accent) ? stored.accent : DEFAULT_THEME.accent,
-        dark: stored.dark === true
-    };
-}
-
 // ==========================================
 // 1. INITIALISIERUNG
 // ==========================================
 function initDatabase() {
     try {
-        // Theme laden
-        loadThemeSettings();
-        
         DB = { panels: [], batteries: [], inverters: [] };
         DB.panels = [...MasterDB.panels]; 
         DB.batteries = [...MasterDB.batteries]; 
         DB.inverters = [...MasterDB.inverters];
         
         try {
-            const userDB = readJsonStorage('pvpro_user_db', { panels: [], batteries: [], inverters: [] });
-            if (userDB && userDB.panels && userDB.panels.length > 0) DB.panels.push({ series: "Eigene Module", models: userDB.panels });
-            if (userDB && userDB.inverters && userDB.inverters.length > 0) DB.inverters.push({ series: "Eigene WR", models: userDB.inverters });
-            if (userDB && userDB.batteries && userDB.batteries.length > 0) DB.batteries.push({ series: "Eigene Batterien", models: userDB.batteries });
-        } catch(e) {
-            console.warn("User DB im LocalStorage ist korrupt, Zurücksetzen auf Standard.", e);
-        }
+            const userDB = JSON.parse(localStorage.getItem('pvpro_user_db')) || { panels: [], batteries: [], inverters: [] };
+            if (userDB.panels.length > 0) DB.panels.push({ series: "Eigene Module", models: userDB.panels });
+            if (userDB.inverters.length > 0) DB.inverters.push({ series: "Eigene WR", models: userDB.inverters });
+            if (userDB.batteries.length > 0) DB.batteries.push({ series: "Eigene Batterien", models: userDB.batteries });
+        } catch(e) {}
 
         flatPanels = DB.panels.flatMap(s => s.models || []); 
         flatInverters = DB.inverters.flatMap(s => s.models || []); 
         flatBatteries = DB.batteries.flatMap(s => s.models || []);
 
-        let batMap = readJsonStorage('pvpro_batmap', {});
+        let batMap = JSON.parse(localStorage.getItem('pvpro_batmap') || '{}');
         flatInverters.forEach(inv => { if(batMap[inv.id] !== undefined) inv.batteryId = parseInt(batMap[inv.id]); });
 
         if(localStorage.getItem('pvpro_strings')) {
             try {
-                let loaded = readJsonStorage('pvpro_strings', []);
-                if (Array.isArray(loaded)) {
-                    strings = loaded.map(s => { if(!s.fields) s.fields = [{ id: Date.now()+Math.random(), panelId: flatPanels[0]?.id||1, count: s.panels||1, tilt: 30 }]; return s; });
-                } else {
-                    strings = [];
-                }
-            } catch(e) { 
-                strings = []; 
-                console.warn("String-Daten im LocalStorage korrupt.", e);
-            }
+                let loaded = JSON.parse(localStorage.getItem('pvpro_strings'));
+                strings = loaded.map(s => { if(!s.fields) s.fields = [{ id: Date.now()+Math.random(), panelId: flatPanels[0]?.id||1, count: s.panels||1, tilt: 30 }]; return s; });
+            } catch(e) { strings = []; }
         }
         
-        const storedLocation = readJsonStorage('pvpro_loc', null);
-        if (storedLocation && Number.isFinite(Number(storedLocation.lat)) && Number.isFinite(Number(storedLocation.lon))) {
-            LocationData = {
-                lat: Number(storedLocation.lat),
-                lon: Number(storedLocation.lon),
-                name: typeof storedLocation.name === 'string' && storedLocation.name.trim() ? storedLocation.name : LocationData.name
-            };
+        if(localStorage.getItem('pvpro_loc')) {
+            try {
+                let parsedLoc = JSON.parse(localStorage.getItem('pvpro_loc'));
+                if(parsedLoc && parsedLoc.lat && parsedLoc.lon) {
+                    LocationData = parsedLoc;
+                }
+            } catch(e) {}
         }
         
         let locInp = document.getElementById('locSearchInput'); if(locInp) locInp.value = LocationData.name;
@@ -95,6 +56,7 @@ function initDatabase() {
 
         loadConsumptionSettings(); 
         loadFinanceSettings();
+        loadInvestSettings();
         updatePhysicsOnly();
     } catch(e) { console.error("Init Error:", e); }
 }
@@ -114,7 +76,7 @@ function saveConfiguration() {
     let btn = document.getElementById('btnHeaderSave');
     if(btn) {
         btn.classList.remove('bg-amber-500', 'animate-pulse');
-        btn.classList.add('bg-primary');
+        btn.classList.add('bg-blue-600');
     }
     alert("Erfolgreich gespeichert!"); 
 }
@@ -122,7 +84,7 @@ function saveConfiguration() {
 // ==========================================
 // 2. UI TAB ROUTING & SWIPE GESTURES
 // ==========================================
-const tabOrder = ['system', 'verbrauch', 'finance', 'uebersicht', 'auswertung', 'database', 'faq'];
+const tabOrder = ['system', 'verbrauch', 'invest', 'finance', 'uebersicht', 'auswertung', 'database', 'faq'];
 let touchStartX = 0, touchStartY = 0;
 
 document.addEventListener('touchstart', e => { 
@@ -161,9 +123,9 @@ function switchTab(tabId) {
         let btn = document.getElementById('btn-' + id);
         if(btn) {
             btn.className = (id === tabId) 
-                ? "snap-start shrink-0 px-4 py-2 text-sm font-bold rounded-xl bg-primary text-white shadow-md transition-colors" 
+                ? "snap-start shrink-0 px-4 py-2 text-sm font-bold rounded-xl bg-blue-600 text-white shadow-md transition-colors" 
                 : "snap-start shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors";
-            if(id==='auswertung' && id!==tabId) btn.classList.add('text-accent');
+            if(id==='auswertung' && id!==tabId) btn.classList.add('text-emerald-400');
         }
     });
     
@@ -271,17 +233,15 @@ function renderStringsUI() {
         let mOpt = (inv.mppts || []).map(m => `<option value="${m.id}" ${str.mpptId == m.id ? 'selected':''}>${m.name}</option>`).join('');
         
         const safe = p.isVocSafe && p.isIscSafe;
-        let vmpColor = 'bg-amber-400', vmpText = 'text-amber-500';
         let vmpBadge = '🟠';
-        if (p.vmpHot >= p.minMppV && p.vmpHot <= p.maxMppV) { vmpColor = 'bg-emerald-500'; vmpText = 'text-emerald-500'; vmpBadge = '🟢'; }
-        else if (p.vmpHot < p.invStartV) { vmpColor = 'bg-rose-500'; vmpText = 'text-rose-500'; vmpBadge = '🔴'; }
+        if (p.vmpHot >= p.minMppV && p.vmpHot <= p.maxMppV) { vmpBadge = '🟢'; }
+        else if (p.vmpHot < p.invStartV) { vmpBadge = '🔴'; }
 
         let uocBadge = p.isVocSafe ? '🟢' : '🔴';
         let iscBadge = p.isIscSafe ? '🟢' : '🔴';
         let mismatchInfo = (p.mismatchPct > 0) ? `<span class="text-rose-500 font-bold ml-2">Mismatch: -${p.mismatchPct.toFixed(1)}% 🔴</span>` : '';
 
         let modTotal = (str.fields || []).reduce((sum, f) => sum + Number(f.count), 0);
-        let mpptName = (inv.mppts || []).find(m=>m.id==str.mpptId)?.name || 'MPPT';
 
         return `
         <div class="bg-white border-2 ${safe ? 'border-slate-100' : 'border-rose-400'} rounded-xl shadow-sm mb-3">
@@ -357,7 +317,7 @@ function renderStringsUI() {
 }
 
 // ==========================================
-// 5. VERBRAUCHS-LOGIK
+// 4. VERBRAUCHS-LOGIK
 // ==========================================
 function updateHouseHint() {
     let val = parseInt(document.getElementById('cons_base_kwh').value) || 0;
@@ -401,7 +361,7 @@ function saveConsumptionSettings() {
 }
 
 function loadConsumptionSettings() {
-    let c = readJsonStorage('pvpro_cons', null); if(!c || typeof c !== 'object') return;
+    let c = JSON.parse(localStorage.getItem('pvpro_cons')); if(!c) return;
     let bInp = document.getElementById('cons_base_kwh'); if(bInp) bInp.value = c.baseInp || 3500; 
     updateHouseHint();
     let hInp = document.getElementById('cons_house'); if(hInp) hInp.value = c.house || 0;
@@ -437,10 +397,59 @@ function build8760ConsumptionArray(pvProfile = null) {
 }
 
 // ==========================================
+// 5. INVESTITIONSKOSTEN-LOGIK
+// ==========================================
+function getInvestConfig() {
+    return {
+        panels: parseFloat(document.getElementById('inv_cost_panels')?.value) || 0,
+        mounting: parseFloat(document.getElementById('inv_cost_mounting')?.value) || 0,
+        inverter: parseFloat(document.getElementById('inv_cost_inverter')?.value) || 0,
+        battery: parseFloat(document.getElementById('inv_cost_battery')?.value) || 0,
+        smartmeter: parseFloat(document.getElementById('inv_cost_smartmeter')?.value) || 0,
+        cables: parseFloat(document.getElementById('inv_cost_cables')?.value) || 0,
+        gak: parseFloat(document.getElementById('inv_cost_gak')?.value) || 0,
+        acmat: parseFloat(document.getElementById('inv_cost_acmat')?.value) || 0,
+        scaffold: parseFloat(document.getElementById('inv_cost_scaffold')?.value) || 0,
+        electrician: parseFloat(document.getElementById('inv_cost_electrician')?.value) || 0,
+        misc: parseFloat(document.getElementById('inv_cost_misc')?.value) || 0
+    };
+}
+
+function calcInvestTotal() {
+    let inv = getInvestConfig();
+    let cat1 = inv.panels + inv.mounting;
+    let cat2 = inv.inverter + inv.battery + inv.smartmeter;
+    let cat3 = inv.cables + inv.gak + inv.acmat;
+    let cat4 = inv.scaffold + inv.electrician + inv.misc;
+    let total = cat1 + cat2 + cat3 + cat4;
+
+    let c1El = document.getElementById('sub_invest_cat1'); if(c1El) c1El.innerText = Math.round(cat1).toLocaleString() + " €";
+    let c2El = document.getElementById('sub_invest_cat2'); if(c2El) c2El.innerText = Math.round(cat2).toLocaleString() + " €";
+    let c3El = document.getElementById('sub_invest_cat3'); if(c3El) c3El.innerText = Math.round(cat3).toLocaleString() + " €";
+    let c4El = document.getElementById('sub_invest_cat4'); if(c4El) c4El.innerText = Math.round(cat4).toLocaleString() + " €";
+    let totEl = document.getElementById('lbl_invest_total'); if(totEl) totEl.innerText = Math.round(total).toLocaleString();
+
+    if (total > 0) {
+        let sysCostEl = document.getElementById('fin_sys_cost');
+        if(sysCostEl) sysCostEl.value = Math.round(total);
+    }
+    localStorage.setItem('pvpro_invest', JSON.stringify(inv));
+}
+
+function loadInvestSettings() {
+    let inv = JSON.parse(localStorage.getItem('pvpro_invest') || '{}');
+    ['panels', 'mounting', 'inverter', 'battery', 'smartmeter', 'cables', 'gak', 'acmat', 'scaffold', 'electrician', 'misc'].forEach(k => {
+        let el = document.getElementById(`inv_cost_${k}`);
+        if(el && inv[k] !== undefined) el.value = inv[k];
+    });
+    calcInvestTotal();
+}
+
+// ==========================================
 // 6. FINANZEN & BERECHNUNG (ROI)
 // ==========================================
 function loadFinanceSettings() {
-    let s = readJsonStorage('pvpro_finance', {});
+    let s = JSON.parse(localStorage.getItem('pvpro_finance') || '{}');
     let gP = document.getElementById('fin_grid_price'); if(gP) gP.value = s.grid || 0.32;
     let sC = document.getElementById('fin_sys_cost'); if(sC) sC.value = s.cost || 15000;
     let eD = document.getElementById('fin_eeg_date'); if(eD) eD.value = s.date || "2024-05";
@@ -524,7 +533,7 @@ function calculateFinances() {
 }
 
 // ==========================================
-// 7. PVGIS API & ENGINE (5.2 RESTORE)
+// 7. PVGIS API & ENGINE
 // ==========================================
 async function searchLocation() { 
     const q = document.getElementById('locSearchInput').value; if(!q) return;
@@ -544,6 +553,9 @@ async function calculateYieldAPI() {
     
     try {
         let proms = [];
+        let safeLat = parseFloat(LocationData?.lat) || 48.06;
+        let safeLon = parseFloat(LocationData?.lon) || 8.46;
+
         strings.forEach(str => {
             let shadingFactor = 1 - ((str.shading || 0) / 100);
 
@@ -551,28 +563,41 @@ async function calculateYieldAPI() {
                 const p = flatPanels.find(x=>x.id===parseInt(f.panelId));
                 if(p && f.count>0) {
                     let asp = str.azimuth - 180; if (asp>180) asp-=360; if (asp<-180) asp+=360;
-                    const u = `https://corsproxy.io/?${encodeURIComponent(`https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?lat=${LocationData.lat}&lon=${LocationData.lon}&usehorizon=1&pvcalculation=1&startyear=2019&endyear=2019&outputformat=json&angle=${f.tilt}&aspect=${asp}&peakpower=${((p.pmax*f.count)/1000).toFixed(3)}&loss=14`)}`;
-                    
+                    let peakKw = ((p.pmax * f.count) / 1000).toFixed(3);
+                    const pvgisUrl = `https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?lat=${safeLat}&lon=${safeLon}&usehorizon=1&pvcalculation=1&startyear=2019&endyear=2019&outputformat=json&angle=${f.tilt}&aspect=${asp}&peakpower=${peakKw}&loss=14`;
+
+                    const fetchWithFallback = async () => {
+                        // 1. Primär: corsproxy.io
+                        try {
+                            const res1 = await fetch(`https://corsproxy.io/?${encodeURIComponent(pvgisUrl)}`);
+                            if(res1.ok) return await res1.json();
+                        } catch(e) {}
+
+                        // 2. Sekundär: allorigins
+                        try {
+                            const res2 = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(pvgisUrl)}`);
+                            if(res2.ok) return await res2.json();
+                        } catch(e) {}
+
+                        // 3. Tertiär: direkt
+                        const res3 = await fetch(pvgisUrl);
+                        if(!res3.ok) throw new Error(`PVGIS-Server HTTP ${res3.status}`);
+                        return await res3.json();
+                    };
+
                     proms.push(
-                        fetch(u)
-                        .then(async r => { if(!r.ok) throw new Error(await r.text()); return r.json(); })
+                        fetchWithFallback()
                         .then(d => ({ sId: str.id, fId: f.id, d: d.outputs.hourly, sF: shadingFactor, panel: p, count: f.count }))
-                        .catch(err => {
-                            console.warn("PVGIS API Fehler für Modulfeld - nutze Offline-Fallback:", err);
-                            let peakPower = (p.pmax * f.count) / 1000;
-                            let syntheticData = generateSyntheticPVGISData(LocationData.lat, f.tilt, str.azimuth, peakPower);
-                            return { sId: str.id, fId: f.id, d: syntheticData, sF: shadingFactor, panel: p, count: f.count, offline: true };
-                        })
                     );
                 }
             });
         });
 
-        const res = await Promise.all(proms);
-        let hasOfflineData = res.some(r => r.offline);
-        if (hasOfflineData) {
-            alert("⚠️ Offline-Modus aktiv: Die Ertragsdaten wurden synthetisch berechnet, da die PVGIS-API nicht erreichbar war.");
+        if (proms.length === 0) {
+            throw new Error("Keine gültigen Strings oder Module definiert.");
         }
+
+        const res = await Promise.all(proms);
 
         let invH = {}; 
         let activeInvIds = [...new Set(strings.map(s => parseInt(s.inverterId)))];
@@ -776,7 +801,7 @@ function renderDashboard() {
     let aCCtx = document.getElementById('autarkyConsChart');
     if(aCCtx) {
         if(chartAutarkyCons) chartAutarkyCons.destroy();
-        chartAutarkyCons = new Chart(aCCtx.getContext('2d'), { type: 'bar', data: { labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"], datasets: [ { label: 'Einspeisung', data: moBreakdown.toGrid, backgroundColor: '#f59e0b', stack: '0' }, { label: 'Bat-Ladung', data: moBreakdown.toBat, backgroundColor: '#10b981', stack: '0' }, { label: 'E-Auto', data: moBreakdown.ev, backgroundColor: '#84cc16', stack: '0' }, { label: 'Klima', data: moBreakdown.ac, backgroundColor: '#0ea5e9', stack: '0' }, { label: 'Wärmepumpe', data: moBreakdown.wp, backgroundColor: '#ef4444', stack: '0' }, { label: 'BWWP', data: moBreakdown.bw, backgroundColor: '#f43f5e', stack: '0' }, { label: 'IT/Server', data: moBreakdown.it, backgroundColor: '#3b82f6', stack: '0' }, { label: 'Grundlast', data: moBreakdown.base, backgroundColor: '#94a3b8', stack: '0' } ]}, options: cOpts });
+        chartAutarkyCons = new Chart(aCCtx.getContext('2d'), { type: 'bar', data: { labels: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"], datasets: [ { label: 'Einspeisung', data: moBreakdown.toGrid, backgroundColor: '#f59e0b', stack: '0' }, { label: 'Bat-Ladung', data: moBreakdown.toBat, backgroundColor: '#10b981', stack: '0' }, { label: 'E-Auto', data: moBreakdown.ev, backgroundColor: '#84cc16', stack: '0' }, { label: 'Klima', data: moBreakdown.ac, backgroundColor: '#0ea5e9', stack: '0' }, { label: 'Wärmepumpe', data: moBreakdown.wp, backgroundColor: '#ef4444', stack: '0' }, { label: 'BWWP', data: moBreakdown.bw, backgroundColor: '#f43f5e', stack: '0' }, { label: 'IT', data: dIt, backgroundColor: '#3b82f6', stack: '0' }, { label: 'Grundlast', data: moBreakdown.base, backgroundColor: '#94a3b8', stack: '0' } ]}, options: cOpts });
     }
 
     let aGCtx = document.getElementById('autarkyGenChart');
@@ -940,129 +965,6 @@ function renderDatabaseUI() {
                 <div class="text-right"><span class="text-xs font-black text-emerald-600">${b.cap.toFixed(2)} kWh</span></div>
             </div>`).join('');
     }
-}
-
-// ==========================================
-// SYNTHETISCHER OFFLINE FALLBACK GENERATOR
-// ==========================================
-function generateSyntheticPVGISData(lat, tilt, azimuth, peakPower) {
-    let hourly = [];
-    const monthlyPeakW = [15, 30, 60, 95, 120, 130, 125, 105, 75, 45, 20, 10]; 
-    
-    let aspect = azimuth - 180;
-    let azLoss = 1 - (Math.abs(aspect) / 180) * 0.25; 
-    let tiltLoss = 1 - (Math.abs(tilt - 35) / 90) * 0.15; 
-    
-    const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    let monthIdx = 0;
-    
-    for(let h=0; h<8760; h++) {
-        let d = Math.floor(h/24);
-        let hr = h%24;
-        
-        let accum = 0;
-        for(let m=0; m<12; m++) {
-            accum += daysInMonth[m];
-            if(d < accum) {
-                monthIdx = m;
-                break;
-            }
-        }
-        
-        let sunPower = 0;
-        if(hr >= 6 && hr <= 18) {
-            let sine = Math.sin((hr - 6) * Math.PI / 12);
-            let noise = 0.6 + 0.4 * Math.sin(d * 13.5) * Math.cos(d * 5.2);
-            noise = Math.max(0.1, Math.min(1.0, noise));
-            sunPower = (peakPower * 1000) * (monthlyPeakW[monthIdx] / 150) * sine * azLoss * tiltLoss * noise;
-        }
-        hourly.push({ P: sunPower });
-    }
-    return hourly;
-}
-
-// ==========================================
-// THEME & DESIGN MANAGEMENT
-// ==========================================
-function loadThemeSettings() {
-    const theme = getThemeSettings();
-    let pInput = document.getElementById('themePrimaryColor');
-    let aInput = document.getElementById('themeAccentColor');
-    if(pInput) pInput.value = theme.primary;
-    if(aInput) aInput.value = theme.accent;
-    applyTheme(theme.primary, theme.accent, theme.dark);
-}
-
-function toggleThemePanel() {
-    let p = document.getElementById('themeSettingsPanel');
-    if(p) p.classList.toggle('hidden');
-}
-
-function applyTheme(primary, accent, dark) {
-    if(primary) {
-        document.documentElement.style.setProperty('--color-primary', primary);
-        let hover = adjustColorBrightness(primary, -15);
-        document.documentElement.style.setProperty('--color-primary-hover', hover);
-    }
-    if(accent) {
-        document.documentElement.style.setProperty('--color-accent', accent);
-        let hover = adjustColorBrightness(accent, -15);
-        document.documentElement.style.setProperty('--color-accent-hover', hover);
-    }
-    
-    let html = document.documentElement;
-    let btn = document.getElementById('btnThemeDarkMode');
-    if(dark) {
-        html.classList.add('dark');
-        if(btn) btn.innerText = "Ausschalten";
-    } else {
-        html.classList.remove('dark');
-        if(btn) btn.innerText = "Aktivieren";
-    }
-    
-    if (typeof Chart !== 'undefined') {
-        Chart.defaults.color = dark ? '#cbd5e1' : '#475569';
-        Chart.defaults.borderColor = dark ? '#334155' : '#e2e8f0';
-        if (chartYield) chartYield.update();
-        if (chartAutarkyCons) chartAutarkyCons.update();
-        if (chartAutarkyGen) chartAutarkyGen.update();
-        if (detailConsChart) detailConsChart.update();
-        if (detailGenChart) detailGenChart.update();
-    }
-}
-
-function updateThemeColors(primary, accent) {
-    let theme = getThemeSettings();
-    if(isHexColor(primary)) theme.primary = primary;
-    if(isHexColor(accent)) theme.accent = accent;
-    localStorage.setItem('pvpro_theme', JSON.stringify(theme));
-    applyTheme(theme.primary, theme.accent, theme.dark);
-}
-
-function toggleDarkMode() {
-    let theme = getThemeSettings();
-    theme.dark = !theme.dark;
-    localStorage.setItem('pvpro_theme', JSON.stringify(theme));
-    applyTheme(theme.primary, theme.accent, theme.dark);
-}
-
-function adjustColorBrightness(hex, percent) {
-    let R = parseInt(hex.substring(1,3),16);
-    let G = parseInt(hex.substring(3,5),16);
-    let B = parseInt(hex.substring(5,7),16);
-
-    R = parseInt(R * (100 + percent) / 100);
-    G = parseInt(G * (100 + percent) / 100);
-    B = parseInt(B * (100 + percent) / 100);
-
-    R = (R<255)?R:255;  G = (G<255)?G:255;  B = (B<255)?B:255;  
-    R = (R>0)?R:0;      G = (G>0)?G:0;      B = (B>0)?B:0;  
-
-    let rHex = ((R.toString(16).length==1)?"0"+R.toString(16):R.toString(16));
-    let gHex = ((G.toString(16).length==1)?"0"+G.toString(16):G.toString(16));
-    let bHex = ((B.toString(16).length==1)?"0"+B.toString(16):B.toString(16));
-
-    return "#"+rHex+gHex+bHex;
 }
 
 window.onload = initDatabase;
