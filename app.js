@@ -611,39 +611,24 @@ async function calculateYieldAPI() {
                 if(p && f.count>0) {
                     let asp = str.azimuth - 180; if (asp>180) asp-=360; if (asp<-180) asp+=360;
                     let peakKw = ((p.pmax * f.count) / 1000).toFixed(3);
-                    const pvgisUrl = `https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?lat=${safeLat}&lon=${safeLon}&usehorizon=1&pvcalculation=1&startyear=2019&endyear=2019&outputformat=json&angle=${f.tilt}&aspect=${asp}&peakpower=${peakKw}&loss=14`;
+                    let peakPower = (p.pmax * f.count) / 1000;
+                    const pvgisUrl = `https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?lat=${safeLat}&lon=${safeLon}&usehorizon=1&pvcalculation=1&peakpower=${peakKw}&loss=14&angle=${f.tilt}&aspect=${asp}&outputformat=json`;
 
                     const fetchWithFallback = async () => {
-                        let peakPower = (p.pmax * f.count) / 1000;
-                        // 1. AllOrigins JSON endpoint (handles CORS and wrapped response reliably)
+                        // 1. AllOrigins JSON endpoint mit PVcalc (unter 2 KB, kein Timeout)
                         try {
                             const r1 = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(pvgisUrl)}`);
                             if (r1.ok) {
                                 const json = await r1.json();
-                                if (json && json.outputs && json.outputs.hourly) return json;
+                                const mData = json.outputs?.monthly?.fixed || json.outputs?.monthly;
+                                if (mData && mData.length === 12) {
+                                    let monthlyKWh = mData.map(m => m.E_m);
+                                    return { outputs: { hourly: generateHourlyFromPVGISMonthly(monthlyKWh, safeLat, f.tilt, str.azimuth, peakPower) } };
+                                }
                             }
-                        } catch(e) { console.warn("Proxy 1 fehlgeschlagen", e); }
+                        } catch(e) {}
 
-                        // 2. Corsproxy.io
-                        try {
-                            const r2 = await fetch(`https://corsproxy.io/?${encodeURIComponent(pvgisUrl)}`);
-                            if (r2.ok) {
-                                const json = await r2.json();
-                                if (json && json.outputs && json.outputs.hourly) return json;
-                            }
-                        } catch(e) { console.warn("Proxy 2 fehlgeschlagen", e); }
-
-                        // 3. Direkter Versuch (falls CORS lokal/Server erlaubt)
-                        try {
-                            const r3 = await fetch(pvgisUrl);
-                            if (r3.ok) {
-                                const json = await r3.json();
-                                if (json && json.outputs && json.outputs.hourly) return json;
-                            }
-                        } catch(e) { console.warn("Direktaufruf fehlgeschlagen", e); }
-
-                        // Garantierter Fallback: Simulation bricht NIEMALS mit Failed to fetch ab
-                        console.info("Nutze synthetische PVGIS-Berechnung für String", str.name);
+                        // Fallback auf synthetische Berechnung falls offline
                         let synthetic = generateSyntheticPVGISData(safeLat, f.tilt, str.azimuth, peakPower);
                         return { outputs: { hourly: synthetic }, offline: true };
                     };
@@ -1158,3 +1143,39 @@ function adjustColorBrightness(hex, percent) {
 }
 
 window.onload = initDatabase;
+
+function generateHourlyFromPVGISMonthly(monthlyKWh, lat, tilt, azimuth, peakPower) {
+    let hourly = [];
+    const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    let aspect = azimuth - 180;
+    let azLoss = Math.max(0.2, 1 - (Math.abs(aspect) / 180) * 0.35);
+    let tiltLoss = Math.max(0.5, 1 - (Math.abs(tilt - 35) / 90) * 0.25);
+
+    for (let m = 0; m < 12; m++) {
+        let days = daysInMonth[m];
+        let targetWhMonth = (monthlyKWh[m] || 0) * 1000;
+        let monthRawCurve = [];
+        let monthRawSum = 0;
+
+        for (let d = 0; d < days; d++) {
+            for (let hr = 0; hr < 24; hr++) {
+                let sunPower = 0;
+                let sunrise = 7 - 2 * Math.cos(m * Math.PI / 6);
+                let sunset = 17 + 3 * Math.cos(m * Math.PI / 6);
+                if (hr >= sunrise && hr <= sunset) {
+                    let dayFraction = (hr - sunrise) / (sunset - sunrise);
+                    let sine = Math.sin(dayFraction * Math.PI);
+                    sunPower = Math.max(0, sine * azLoss * tiltLoss);
+                }
+                monthRawCurve.push(sunPower);
+                monthRawSum += sunPower;
+            }
+        }
+
+        let scale = monthRawSum > 0 ? (targetWhMonth / monthRawSum) : 0;
+        for (let i = 0; i < monthRawCurve.length; i++) {
+            hourly.push({ P: monthRawCurve[i] * scale });
+        }
+    }
+    return hourly;
+}
