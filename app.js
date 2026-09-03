@@ -614,26 +614,36 @@ async function calculateYieldAPI() {
                     const pvgisUrl = `https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?lat=${safeLat}&lon=${safeLon}&usehorizon=1&pvcalculation=1&startyear=2019&endyear=2019&outputformat=json&angle=${f.tilt}&aspect=${asp}&peakpower=${peakKw}&loss=14`;
 
                     const fetchWithFallback = async () => {
-                        // 1. Route: corsproxy.io
+                        let peakPower = (p.pmax * f.count) / 1000;
+                        // 1. AllOrigins JSON endpoint (handles CORS and wrapped response reliably)
                         try {
-                            const r1 = await fetch(`https://corsproxy.io/?${encodeURIComponent(pvgisUrl)}`);
-                            if(r1.ok) return await r1.json();
-                        } catch(e) {}
-                        
-                        // 2. Route: allorigins
-                        try {
-                            const r2 = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(pvgisUrl)}`);
-                            if(r2.ok) return await r2.json();
-                        } catch(e) {}
+                            const r1 = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(pvgisUrl)}`);
+                            if (r1.ok) {
+                                const json = await r1.json();
+                                if (json && json.outputs && json.outputs.hourly) return json;
+                            }
+                        } catch(e) { console.warn("Proxy 1 fehlgeschlagen", e); }
 
-                        // 3. Route: direkt
+                        // 2. Corsproxy.io
+                        try {
+                            const r2 = await fetch(`https://corsproxy.io/?${encodeURIComponent(pvgisUrl)}`);
+                            if (r2.ok) {
+                                const json = await r2.json();
+                                if (json && json.outputs && json.outputs.hourly) return json;
+                            }
+                        } catch(e) { console.warn("Proxy 2 fehlgeschlagen", e); }
+
+                        // 3. Direkter Versuch (falls CORS lokal/Server erlaubt)
                         try {
                             const r3 = await fetch(pvgisUrl);
-                            if(r3.ok) return await r3.json();
-                        } catch(e) {}
+                            if (r3.ok) {
+                                const json = await r3.json();
+                                if (json && json.outputs && json.outputs.hourly) return json;
+                            }
+                        } catch(e) { console.warn("Direktaufruf fehlgeschlagen", e); }
 
-                        // Wenn alle fehlschlagen: synthetischer Fallback
-                        let peakPower = (p.pmax * f.count) / 1000;
+                        // Garantierter Fallback: Simulation bricht NIEMALS mit Failed to fetch ab
+                        console.info("Nutze synthetische PVGIS-Berechnung für String", str.name);
                         let synthetic = generateSyntheticPVGISData(safeLat, f.tilt, str.azimuth, peakPower);
                         return { outputs: { hourly: synthetic }, offline: true };
                     };
