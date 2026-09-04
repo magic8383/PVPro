@@ -1140,6 +1140,50 @@ function adjustColorBrightness(hex, percent) {
     return "#"+rHex+gHex+bHex;
 }
 
+// ==========================================
+// PWA SERVICE WORKER & INSTALL PROMPT
+// ==========================================
+let deferredPrompt = null;
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => {
+                console.log('PVPro Service Worker registriert:', reg.scope);
+            })
+            .catch(err => {
+                console.warn('PVPro Service Worker Registrierung fehlgeschlagen:', err);
+            });
+    });
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const btn = document.getElementById('btnPwaInstall');
+    if (btn) btn.classList.remove('hidden');
+});
+
+function installPwaApp() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+            console.log('PWA Installation akzeptiert');
+        }
+        deferredPrompt = null;
+        const btn = document.getElementById('btnPwaInstall');
+        if (btn) btn.classList.add('hidden');
+    });
+}
+
+window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    const btn = document.getElementById('btnPwaInstall');
+    if (btn) btn.classList.add('hidden');
+    console.log('PVPro erfolgreich installiert.');
+});
+
 window.onload = initDatabase;
 
 function generateHourlyFromPVGISMonthly(monthlyKWh, lat, tilt, azimuth, peakPower) {

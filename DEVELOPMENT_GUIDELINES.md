@@ -8,7 +8,9 @@
 
 ## 2. Modul-Architektur
 * `index.html`: DOM-Gerüst und Layout.
-* `app.js`: Berechnungs-Engine, API-Handling, State Management, Chart-Rendering.
+* `app.js`: Berechnungs-Engine, API-Handling, State Management, Chart-Rendering, PWA-Lifecycle.
 * `database.js`: Datenstamm (Module, Wechselrichter, Speicher).
 * `content.js`: Glossar, Texte, Changelog.
+* `sw.js`: Service Worker für Caching und Offline-Betrieb.
+* `manifest.json`: Web App Manifest für Installation und PWA-Metadaten.
 * `DEVELOPMENT_GUIDELINES.md`: Projektrichtlinien und Governance.
