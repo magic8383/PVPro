@@ -612,18 +612,16 @@ async function calculateYieldAPI() {
                     let asp = str.azimuth - 180; if (asp>180) asp-=360; if (asp<-180) asp+=360;
                     let peakKw = ((p.pmax * f.count) / 1000).toFixed(3);
                     let peakPower = (p.pmax * f.count) / 1000;
-                    const pvgisUrl = `https://pvgis.mb10.org/api/v5_2/PVcalc?lat=${safeLat}&lon=${safeLon}&usehorizon=1&pvcalculation=1&peakpower=${peakKw}&loss=14&angle=${f.tilt}&aspect=${asp}&outputformat=json`;
+                    const pvgisUrl = `https://pvgis.mb10.org/api/v5_2/seriescalc?lat=${safeLat}&lon=${safeLon}&pvcalculation=1&peakpower=${peakKw}&loss=14&angle=${f.tilt}&aspect=${asp}&startyear=2019&endyear=2019&outputformat=json`;
 
                     const fetchWithFallback = async () => {
-                        // 1. Direkter Aufruf über Synology PVGIS Proxy
+                        // 1. Reale 8.760h Stundenwerte über Synology PVGIS Proxy
                         try {
                             const r1 = await fetch(pvgisUrl);
                             if (r1.ok) {
                                 const json = await r1.json();
-                                const mData = json.outputs?.monthly?.fixed || json.outputs?.monthly;
-                                if (mData && mData.length === 12) {
-                                    let monthlyKWh = mData.map(m => m.E_m);
-                                    return { outputs: { hourly: generateHourlyFromPVGISMonthly(monthlyKWh, safeLat, f.tilt, str.azimuth, peakPower) } };
+                                if (json && json.outputs && Array.isArray(json.outputs.hourly) && json.outputs.hourly.length === 8760) {
+                                    return json;
                                 }
                             }
                         } catch(e) {}

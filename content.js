@@ -92,7 +92,8 @@ const HandbuchHTML = `
         <button onclick="toggleAcc('acc_bg4')" class="w-full p-5 text-left font-bold text-slate-800 flex justify-between bg-slate-50 hover:bg-slate-100 transition-colors"><span>Changelog</span><span class="text-slate-400">▼</span></button>
         <div id="acc_bg4" class="acc-content px-5 pb-5 text-sm text-slate-600 border-t border-slate-100">
             <ul class="space-y-3 mt-4">
-                <li><strong>v6.15 (Current):</strong> Umstellung auf dedizierten Synology PVGIS-Proxy (pvgis.mb10.org). Schnellerer & zuverlässiger Abruf ohne Drittanbieter-Timeouts.</li>
+                <li><strong>v6.16 (Current):</strong> Umstellung auf reale historische 8.760h-Stundenwerte via seriescalc über den Synology Reverse Proxy. Direkte stundengenaue Auswertung mit physikalischer Präzision.</li>
+                <li><strong>v6.15:</strong> Umstellung auf dedizierten Synology PVGIS-Proxy (pvgis.mb10.org). Schnellerer & zuverlässiger Abruf ohne Drittanbieter-Timeouts.</li>
                 <li><strong>v6.14:</strong> Umstellung auf schlanken PVGIS-PVcalc-Endpunkt. Direkte Monats-Kalibrierung der 8.760h-Jahressimulation, Beseitigung aller Proxy-Timeouts & lückenlose Berechnung.</li>
                 <li><strong>v6.13:</strong> Robuster PVGIS-Abruf via CORS-Proxy-Tunneling, nahtloser Offline-Fallback ohne Abbruch und Cache-Buster für mobile Browser.</li>
                 <li><strong>v6.12:</strong> Neuer Tab 'Investition' mit 4 Kategorien und Live-Übertrag in die Anlagenkosten. Mismatch-Berechnung und UI-Optimierung.</li>
