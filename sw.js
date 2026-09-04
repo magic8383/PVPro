@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pvpro-cache-v1';
+const CACHE_NAME = 'pvpro-cache-v6.17';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -9,7 +9,8 @@ const STATIC_ASSETS = [
     './icon-192.png',
     './icon-512.png',
     'https://cdn.tailwindcss.com',
-    'https://cdn.jsdelivr.net/npm/chart.js'
+    'https://cdn.jsdelivr.net/npm/chart.js',
+    'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap'
 ];
 
 // Install: Cache critical static assets

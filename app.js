@@ -158,16 +158,64 @@ function switchTab(tabId) {
     const target = document.getElementById('tab-' + tabId);
     if(target) target.classList.add('active');
     
+    // Desktop Segmented Bar Buttons aktualisieren
     tabOrder.forEach(id => {
         let btn = document.getElementById('btn-' + id);
         if(btn) {
-            btn.className = (id === tabId) 
-                ? "snap-start shrink-0 px-4 py-2 text-sm font-bold rounded-xl bg-primary text-white shadow-md transition-colors" 
-                : "snap-start shrink-0 px-4 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 transition-colors";
-            if(id==='auswertung' && id!==tabId) btn.classList.add('text-accent');
+            if(id === tabId) {
+                btn.className = "m3-segment-btn active snap-start shrink-0 px-3.5 py-1.5 text-xs md:text-sm font-bold rounded-xl bg-primary text-white shadow-sm flex items-center gap-1.5 transition-all";
+                let icon = btn.querySelector('.material-symbols-rounded');
+                if(icon) icon.classList.add('fill-1');
+            } else {
+                btn.className = "m3-segment-btn snap-start shrink-0 px-3.5 py-1.5 text-xs md:text-sm font-medium rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 flex items-center gap-1.5 transition-all";
+                if(id === 'auswertung') btn.classList.add('text-accent');
+                let icon = btn.querySelector('.material-symbols-rounded');
+                if(icon) icon.classList.remove('fill-1');
+            }
         }
     });
+
+    // Mobile Bottom Navigation Bar Buttons aktualisieren
+    const bottomNavIds = ['system', 'verbrauch', 'finance', 'auswertung'];
+    bottomNavIds.forEach(id => {
+        let bBtn = document.getElementById('bnav-' + id);
+        if(bBtn) {
+            let pill = bBtn.querySelector('.m3-bnav-pill');
+            let icon = bBtn.querySelector('.material-symbols-rounded');
+            let label = bBtn.querySelector('.m3-bnav-label');
+            if(id === tabId) {
+                if(pill) pill.className = "m3-bnav-pill px-4 py-1 rounded-full bg-primary/20 text-primary dark:bg-primary/30 dark:text-primary transition-all flex items-center justify-center";
+                if(icon) { icon.classList.add('fill-1'); icon.className = "material-symbols-rounded text-xl text-primary font-bold fill-1"; }
+                if(label) label.className = "m3-bnav-label text-[10px] font-bold text-primary mt-0.5 tracking-tight";
+            } else {
+                if(pill) pill.className = "m3-bnav-pill px-4 py-1 rounded-full bg-transparent text-slate-400 transition-all flex items-center justify-center";
+                if(icon) { icon.classList.remove('fill-1'); icon.className = "material-symbols-rounded text-xl text-slate-400"; }
+                if(label) label.className = "m3-bnav-label text-[10px] font-medium text-slate-400 mt-0.5 tracking-tight";
+            }
+        }
+    });
+
+    // Falls ein Tab aus dem "Mehr"-Sheet aktiv ist, den "Mehr"-Button hervorheben
+    let moreBtn = document.getElementById('bnav-more');
+    if(moreBtn) {
+        let isMoreChild = ['invest', 'uebersicht', 'database', 'faq'].includes(tabId);
+        let pill = moreBtn.querySelector('.m3-bnav-pill');
+        let icon = moreBtn.querySelector('.material-symbols-rounded');
+        let label = moreBtn.querySelector('.m3-bnav-label');
+        if(isMoreChild) {
+            if(pill) pill.className = "m3-bnav-pill px-4 py-1 rounded-full bg-primary/20 text-primary dark:bg-primary/30 dark:text-primary transition-all flex items-center justify-center";
+            if(icon) { icon.classList.add('fill-1'); icon.className = "material-symbols-rounded text-xl text-primary font-bold fill-1"; }
+            if(label) label.className = "m3-bnav-label text-[10px] font-bold text-primary mt-0.5 tracking-tight";
+        } else {
+            if(pill) pill.className = "m3-bnav-pill px-4 py-1 rounded-full bg-transparent text-slate-400 transition-all flex items-center justify-center";
+            if(icon) { icon.classList.remove('fill-1'); icon.className = "material-symbols-rounded text-xl text-slate-400"; }
+            if(label) label.className = "m3-bnav-label text-[10px] font-medium text-slate-400 mt-0.5 tracking-tight";
+        }
+    }
     
+    // Nach Auswahl Bottom Sheet schließen (falls mobil offen)
+    closeMoreSheet();
+
     let btn = document.getElementById('btn-'+tabId);
     let scroller = document.getElementById('navScroller');
     if(btn && scroller) {
@@ -175,6 +223,24 @@ function switchTab(tabId) {
         catch(e) { scroller.scrollLeft = btn.offsetLeft - window.innerWidth/2 + 50; }
     }
     if(tabId === 'auswertung' && currentDetailMonth !== null) updateDetailCharts(currentDetailMonth);
+}
+
+function openMoreSheet() {
+    const sheet = document.getElementById('m3MoreSheet');
+    const backdrop = document.getElementById('m3SheetBackdrop');
+    if(sheet && backdrop) {
+        backdrop.classList.remove('hidden');
+        sheet.classList.remove('translate-y-full');
+    }
+}
+
+function closeMoreSheet() {
+    const sheet = document.getElementById('m3MoreSheet');
+    const backdrop = document.getElementById('m3SheetBackdrop');
+    if(sheet && backdrop) {
+        sheet.classList.add('translate-y-full');
+        setTimeout(() => backdrop.classList.add('hidden'), 250);
+    }
 }
 
 function toggleAcc(id) { 
@@ -272,72 +338,119 @@ function renderStringsUI() {
         let mOpt = (inv.mppts || []).map(m => `<option value="${m.id}" ${str.mpptId == m.id ? 'selected':''}>${m.name}</option>`).join('');
         
         const safe = p.isVocSafe && p.isIscSafe;
-        let vmpColor = 'bg-amber-400', vmpText = 'text-amber-500';
-        let vmpBadge = '🟠';
-        if (p.vmpHot >= p.minMppV && p.vmpHot <= p.maxMppV) { vmpColor = 'bg-emerald-500'; vmpText = 'text-emerald-500'; vmpBadge = '🟢'; }
-        else if (p.vmpHot < p.invStartV) { vmpColor = 'bg-rose-500'; vmpText = 'text-rose-500'; vmpBadge = '🔴'; }
 
-        let uocBadge = p.isVocSafe ? '🟢' : '🔴';
-        let iscBadge = p.isIscSafe ? '🟢' : '🔴';
-        let mismatchInfo = (p.mismatchPct > 0) ? `<span class="text-rose-500 font-bold ml-2">Mismatch: -${p.mismatchPct.toFixed(1)}% 🔴</span>` : '';
+        // M3 Vector Status Badges
+        let vmpBadgeIcon = 'check_circle', vmpBadgeColor = 'text-emerald-400 bg-emerald-950/60 border-emerald-800/40';
+        if (p.vmpHot < p.invStartV) {
+            vmpBadgeIcon = 'cancel';
+            vmpBadgeColor = 'text-rose-400 bg-rose-950/60 border-rose-800/40 animate-pulse';
+        } else if (p.vmpHot < p.minMppV || p.vmpHot > p.maxMppV) {
+            vmpBadgeIcon = 'warning';
+            vmpBadgeColor = 'text-amber-400 bg-amber-950/60 border-amber-800/40';
+        }
+
+        let uocBadge = p.isVocSafe 
+            ? `<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded-full"><span class="material-symbols-rounded text-sm text-emerald-400 fill-1">check_circle</span> Uoc: ${p.vocCold.toFixed(0)}V</span>`
+            : `<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-400 bg-rose-950/60 border border-rose-800/40 px-2 py-0.5 rounded-full animate-pulse"><span class="material-symbols-rounded text-sm text-rose-400 fill-1">error</span> Uoc: ${p.vocCold.toFixed(0)}V</span>`;
+
+        let vmpBadge = `<span class="inline-flex items-center gap-1 text-[11px] font-semibold ${vmpBadgeColor} border px-2 py-0.5 rounded-full"><span class="material-symbols-rounded text-sm fill-1">${vmpBadgeIcon}</span> Umpp: ${p.vmpHot.toFixed(0)}V</span>`;
+
+        let iscBadge = p.isIscSafe 
+            ? `<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded-full"><span class="material-symbols-rounded text-sm text-emerald-400 fill-1">check_circle</span> Isc: ${p.isc.toFixed(1)}A</span>`
+            : `<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-400 bg-rose-950/60 border border-rose-800/40 px-2 py-0.5 rounded-full animate-pulse"><span class="material-symbols-rounded text-sm text-rose-400 fill-1">error</span> Isc: ${p.isc.toFixed(1)}A</span>`;
+
+        let mismatchInfo = (p.mismatchPct > 0) 
+            ? `<span class="inline-flex items-center gap-1 text-[11px] font-bold text-rose-400 bg-rose-950/60 border border-rose-800/40 px-2 py-0.5 rounded-full"><span class="material-symbols-rounded text-sm text-rose-400">alt_route</span> -${p.mismatchPct.toFixed(1)}% Mismatch</span>` 
+            : '';
 
         let modTotal = (str.fields || []).reduce((sum, f) => sum + Number(f.count), 0);
         let mpptName = (inv.mppts || []).find(m=>m.id==str.mpptId)?.name || 'MPPT';
 
         return `
-        <div class="bg-white border-2 ${safe ? 'border-slate-100' : 'border-rose-400'} rounded-xl shadow-sm mb-3">
-            <div class="p-3 bg-white rounded-xl">
-                <div class="flex justify-between items-center mb-2">
+        <div class="m3-card bg-white dark:bg-slate-900 border ${safe ? 'border-slate-200 dark:border-slate-800' : 'border-rose-500/80 ring-2 ring-rose-500/20'} rounded-2xl shadow-sm mb-4 transition-all overflow-hidden">
+            <div class="p-4">
+                <div class="flex justify-between items-center mb-3">
                     <div class="flex items-center gap-3">
-                        <div class="w-2 h-8 rounded-full shrink-0" style="background-color: ${str.color}"></div>
+                        <div class="w-2.5 h-9 rounded-full shrink-0 shadow-sm" style="background-color: ${str.color}"></div>
                         <div class="flex flex-col">
-                            <h4 class="font-bold text-sm text-slate-800 leading-none">${str.name} <span class="font-normal text-xs text-slate-400 ml-1">| ${modTotal}x Modul an ${inv.name}</span></h4>
+                            <h4 class="font-bold text-sm text-slate-800 dark:text-slate-100 flex items-center gap-1.5 leading-none">
+                                ${str.name} 
+                                <span class="font-normal text-xs text-slate-400">| ${modTotal}x Modul an ${inv.name}</span>
+                            </h4>
                         </div>
                     </div>
-                    <button onclick="toggleEditMode(${str.id})" class="bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-600 border border-slate-200 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 shadow-sm shrink-0">
-                        ✏️ <span class="hidden md:inline">Edit</span>
+                    <button onclick="toggleEditMode(${str.id})" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 shrink-0">
+                        <span class="material-symbols-rounded text-base">tune</span>
+                        <span class="hidden md:inline">Konfigurieren</span>
                     </button>
                 </div>
-                <div class="bg-slate-800 text-slate-300 text-[10px] md:text-xs rounded-lg px-3 py-1.5 flex items-center shadow-inner">
-                    <span>Uoc: ${p.vocCold.toFixed(0)}V ${uocBadge}</span> <span class="mx-2 text-slate-600">|</span> 
-                    <span>Umpp: ${p.vmpHot.toFixed(0)}V ${vmpBadge}</span> <span class="mx-2 text-slate-600">|</span> 
-                    <span>Isc: ${p.isc.toFixed(1)}A ${iscBadge}</span>
+                
+                <div class="bg-slate-900/90 text-slate-300 rounded-xl p-2.5 flex flex-wrap items-center gap-2 border border-slate-800 shadow-inner">
+                    ${uocBadge}
+                    ${vmpBadge}
+                    ${iscBadge}
                     ${mismatchInfo}
                 </div>
             </div>
 
-            <div id="edit-${str.id}" class="hidden p-4 bg-slate-50 border-t border-slate-200 rounded-b-xl space-y-4">
+            <div id="edit-${str.id}" class="hidden p-5 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-200 dark:border-slate-800 space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
-                    <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Name</label><input type="text" value="${str.name}" onchange="updateStringData(${str.id}, 'name', this.value)" class="w-full border-2 rounded-lg px-2 py-1.5 text-sm outline-none"></div>
-                    <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Gruppe</label><input type="text" value="${str.group || ''}" onchange="updateStringData(${str.id}, 'group', this.value)" class="w-full border-2 rounded-lg px-2 py-1.5 text-sm outline-none"></div>
-                    <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Azimut (°)</label><input type="number" value="${str.azimuth}" onchange="updateStringData(${str.id}, 'azimuth', this.value)" class="w-full border-2 rounded-lg px-2 py-1.5 text-sm outline-none"></div>
-                    <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">WR Zuweisung</label><select onchange="updateStringData(${str.id}, 'inverterId', this.value)" class="w-full border-2 rounded-lg px-2 py-1.5 text-sm outline-none">${wOpt}</select></div>
-                    <div><label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">MPPT</label><select onchange="updateStringData(${str.id}, 'mpptId', this.value)" class="w-full border-2 rounded-lg px-2 py-1.5 text-sm outline-none">${mOpt}</select></div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Name</label>
+                        <input type="text" value="${str.name}" onchange="updateStringData(${str.id}, 'name', this.value)" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-xl px-3 py-1.5 text-xs font-medium outline-none focus:border-primary">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Gruppe / Dach</label>
+                        <input type="text" value="${str.group || ''}" placeholder="Z.B. Süd-Dach" onchange="updateStringData(${str.id}, 'group', this.value)" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-xl px-3 py-1.5 text-xs font-medium outline-none focus:border-primary">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Wechselrichter</label>
+                        <select onchange="updateStringData(${str.id}, 'inverterId', this.value)" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-xl px-3 py-1.5 text-xs font-medium outline-none focus:border-primary">${wOpt}</select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Tracker</label>
+                        <select onchange="updateStringData(${str.id}, 'mpptId', this.value)" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-xl px-3 py-1.5 text-xs font-medium outline-none focus:border-primary">${mOpt}</select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Azimut (Grad)</label>
+                        <select onchange="updateStringData(${str.id}, 'azimuth', this.value)" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-xl px-3 py-1.5 text-xs font-medium outline-none focus:border-primary">
+                            <option value="180" ${str.azimuth==180?'selected':''}>Süd (180°)</option>
+                            <option value="90" ${str.azimuth==90?'selected':''}>Ost (90°)</option>
+                            <option value="270" ${str.azimuth==270?'selected':''}>West (270°)</option>
+                            <option value="0" ${str.azimuth==0?'selected':''}>Nord (0°)</option>
+                            <option value="135" ${str.azimuth==135?'selected':''}>Südost (135°)</option>
+                            <option value="225" ${str.azimuth==225?'selected':''}>Südwest (225°)</option>
+                        </select>
+                    </div>
                 </div>
-                
+
                 <div>
                     <div class="flex justify-between items-center mb-1">
-                        <label class="block text-[10px] text-slate-500 font-bold uppercase">Schatten (Pauschaler Verlust)</label>
-                        <span class="text-xs font-black text-slate-700 bg-slate-100 px-2 py-0.5 rounded">${str.shading || 0}%</span>
+                        <label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pauschale Verschattung</label>
+                        <span class="text-xs font-black text-slate-700 dark:text-slate-300 bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-full">${str.shading || 0}%</span>
                     </div>
                     <input type="range" min="0" max="80" step="1" value="${str.shading || 0}" onchange="updateStringData(${str.id}, 'shading', this.value)" oninput="this.previousElementSibling.querySelector('span').innerText = this.value + '%'" class="w-full">
                 </div>
 
-                <div class="border border-slate-200 rounded-xl overflow-hidden bg-white">
-                    <div class="bg-slate-100 px-3 py-2 border-b border-slate-200 flex justify-between items-center">
-                        <span class="text-[10px] font-bold text-slate-700 uppercase">Modulfelder</span>
-                        <button onclick="addField(${str.id})" class="text-blue-600 bg-blue-50 font-bold text-[10px] px-2 py-1 rounded">+ Feld</button>
+                <div class="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900">
+                    <div class="bg-slate-100 dark:bg-slate-800 px-4 py-2.5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                        <span class="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <span class="material-symbols-rounded text-sm text-primary">grid_view</span> Modulfelder
+                        </span>
+                        <button onclick="addField(${str.id})" class="text-primary bg-primary/10 hover:bg-primary/20 font-bold text-xs px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1">
+                            <span class="material-symbols-rounded text-sm">add</span> Feld
+                        </button>
                     </div>
                     <div class="p-3 space-y-2">
                         ${(str.fields || []).map(f => {
                             let currPOpt = panelOptions.replace(`value="${f.panelId}"`, `value="${f.panelId}" selected`);
                             return `
-                            <div class="flex flex-col md:flex-row items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-200">
-                                <select onchange="updateFieldData(${str.id}, ${f.id}, 'panelId', this.value)" class="w-full md:flex-1 border rounded px-2 py-1 outline-none text-xs font-medium">${currPOpt}</select>
-                                <div class="flex w-full md:w-auto justify-between gap-2">
-                                    <div class="flex items-center"><input type="number" value="${f.count}" onchange="updateFieldData(${str.id}, ${f.id}, 'count', this.value)" class="w-12 border rounded px-1 py-1 outline-none font-bold text-center text-xs"><span class="text-[9px] font-bold text-slate-500 uppercase ml-1">Stk</span></div>
-                                    <div class="flex items-center"><input type="number" value="${f.tilt}" onchange="updateFieldData(${str.id}, ${f.id}, 'tilt', this.value)" class="w-12 border rounded px-1 py-1 outline-none font-bold text-center text-xs"><span class="text-[9px] font-bold text-slate-500 uppercase ml-1">° Neig</span></div>
-                                    <button onclick="removeField(${str.id}, ${f.id})" class="text-rose-500 bg-rose-100 p-1.5 rounded"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                            <div class="flex flex-col md:flex-row items-center gap-2 bg-slate-50 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+                                <select onchange="updateFieldData(${str.id}, ${f.id}, 'panelId', this.value)" class="w-full md:flex-1 border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-2.5 py-1.5 outline-none text-xs font-medium">${currPOpt}</select>
+                                <div class="flex w-full md:w-auto justify-between items-center gap-2">
+                                    <div class="flex items-center"><input type="number" value="${f.count}" onchange="updateFieldData(${str.id}, ${f.id}, 'count', this.value)" class="w-14 border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-1.5 py-1 outline-none font-bold text-center text-xs"><span class="text-[9px] font-bold text-slate-500 uppercase ml-1">Stk</span></div>
+                                    <div class="flex items-center"><input type="number" value="${f.tilt}" onchange="updateFieldData(${str.id}, ${f.id}, 'tilt', this.value)" class="w-14 border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-lg px-1.5 py-1 outline-none font-bold text-center text-xs"><span class="text-[9px] font-bold text-slate-500 uppercase ml-1">° Neig</span></div>
+                                    <button onclick="removeField(${str.id}, ${f.id})" class="text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 p-1.5 rounded-lg transition-colors"><span class="material-symbols-rounded text-base">delete</span></button>
                                 </div>
                             </div>`
                         }).join('')}
@@ -345,12 +458,19 @@ function renderStringsUI() {
                 </div>
                 
                 <div class="flex items-center justify-between pt-2">
-                    <input type="color" value="${str.color}" onchange="updateStringData(${str.id}, 'color', this.value)" class="shrink-0 border-none">
-                    <button onclick="removeString(${str.id})" class="text-[10px] font-bold text-rose-500 bg-rose-500/10 px-3 py-1.5 rounded hover:bg-rose-500/20 transition-colors">String Löschen</button>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-500 dark:text-slate-400">Farbe:</span>
+                        <input type="color" value="${str.color}" onchange="updateStringData(${str.id}, 'color', this.value)" class="shrink-0 border-none cursor-pointer">
+                    </div>
+                    <button onclick="removeString(${str.id})" class="text-xs font-bold text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1">
+                        <span class="material-symbols-rounded text-sm">delete_forever</span> String Löschen
+                    </button>
                 </div>
 
-                <div class="text-center pt-4 border-t border-slate-200 mt-2">
-                    <button onclick="toggleEditMode(${str.id})" class="bg-slate-800 hover:bg-slate-700 text-white font-bold px-6 py-2 rounded-lg shadow-md w-full md:w-auto text-sm">💾 Speichern & Schließen</button>
+                <div class="text-center pt-4 border-t border-slate-200 dark:border-slate-800 mt-2">
+                    <button onclick="toggleEditMode(${str.id})" class="bg-primary hover:bg-primary-hover text-white font-bold px-6 py-2.5 rounded-xl shadow-md w-full md:w-auto text-xs flex items-center justify-center gap-1.5 mx-auto transition-all">
+                        <span class="material-symbols-rounded text-base">done</span> Schließen & Übernehmen
+                    </button>
                 </div>
             </div>
         </div>`;
@@ -985,14 +1105,20 @@ function renderDatabaseUI() {
         wrCard.innerHTML = flatInverters.map(w => {
             let currentBatOpt = batOptions.replace(`value="${w.batteryId}"`, `value="${w.batteryId}" selected`);
             return `
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div class="m3-card bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
                 <div>
-                    <h4 class="font-bold text-slate-800 text-sm">${w.name}</h4>
-                    <div class="flex gap-2 text-[10px] text-slate-500 mt-1 mb-3"><span class="bg-slate-100 px-1.5 py-0.5 rounded">AC Max: ${w.acMax}W</span><span class="bg-slate-100 px-1.5 py-0.5 rounded">Start: ${w.startV}V</span></div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="material-symbols-rounded text-primary text-xl">settings_input_component</span>
+                        <h4 class="font-bold text-slate-800 dark:text-slate-100 text-sm">${w.name}</h4>
+                    </div>
+                    <div class="flex gap-2 text-[10px] text-slate-500 dark:text-slate-400 mt-1 mb-4">
+                        <span class="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full font-medium">AC Max: ${w.acMax}W</span>
+                        <span class="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full font-medium">Start: ${w.startV}V</span>
+                    </div>
                 </div>
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Zugewiesene Batterie</label>
-                    <select onchange="updateInverterBattery(${w.id}, this.value)" class="w-full text-xs font-medium border-2 border-slate-200 rounded-lg px-2 py-1.5 bg-white cursor-pointer outline-none">${currentBatOpt}</select>
+                    <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Zugewiesene Batterie</label>
+                    <select onchange="updateInverterBattery(${w.id}, this.value)" class="w-full text-xs font-medium border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 cursor-pointer outline-none focus:border-primary">${currentBatOpt}</select>
                 </div>
             </div>`;
         }).join('');
@@ -1001,18 +1127,24 @@ function renderDatabaseUI() {
     let pCard = document.getElementById('panelCardGrid');
     if(pCard) {
         pCard.innerHTML = flatPanels.map(p => `
-            <div class="bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center shadow-sm">
-                <div><h4 class="font-bold text-xs text-slate-800">${p.name}</h4><p class="text-[9px] text-slate-500">Voc: ${p.voc}V | Vmp: ${p.vmp?.toFixed(1)}V | Isc: ${p.isc}A</p></div>
-                <div class="text-right"><span class="text-xs font-black text-blue-600">${p.pmax} W</span></div>
+            <div class="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex justify-between items-center shadow-sm">
+                <div>
+                    <h4 class="font-bold text-xs text-slate-800 dark:text-slate-100 flex items-center gap-1.5"><span class="material-symbols-rounded text-sm text-primary">solar_power</span> ${p.name}</h4>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Voc: ${p.voc}V | Vmp: ${p.vmp?.toFixed(1)}V | Isc: ${p.isc}A</p>
+                </div>
+                <div class="text-right"><span class="text-xs font-black text-primary">${p.pmax} W</span></div>
             </div>`).join('');
     }
     
     let bCard = document.getElementById('batCardGrid');
     if(bCard) {
         bCard.innerHTML = flatBatteries.map(b => `
-            <div class="bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center shadow-sm">
-                <div><h4 class="font-bold text-xs text-slate-800">${b.name}</h4><p class="text-[9px] text-slate-500">Max. P: ${b.power}W | Eff: ${Math.round((b.eff || 1) * 100)}%</p></div>
-                <div class="text-right"><span class="text-xs font-black text-emerald-600">${b.cap.toFixed(2)} kWh</span></div>
+            <div class="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex justify-between items-center shadow-sm">
+                <div>
+                    <h4 class="font-bold text-xs text-slate-800 dark:text-slate-100 flex items-center gap-1.5"><span class="material-symbols-rounded text-sm text-accent">battery_charging_full</span> ${b.name}</h4>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Max. P: ${b.power}W | Eff: ${Math.round((b.eff || 1) * 100)}%</p>
+                </div>
+                <div class="text-right"><span class="text-xs font-black text-accent">${b.cap.toFixed(2)} kWh</span></div>
             </div>`).join('');
     }
 }
