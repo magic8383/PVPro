@@ -80,3 +80,65 @@ const MasterDB = {
         ]}
     ]
 };
+
+// ==========================================
+// ZENTRALE KONFIGURATION (Single Source of Truth)
+// Alle physikalischen, kaufmännischen und Profil-
+// Konstanten stehen HIER – nicht verstreut im Code.
+// content.js (Handbuch) rendert dieselben Werte,
+// damit Doku und Engine nicht auseinanderdriften.
+// ==========================================
+const CONFIG = {
+    physics: {
+        tStc: 25,              // °C Referenz (STC)
+        tCold: -10,            // °C Auslegung kalt (Voc-Max)
+        tHot: 70,              // °C Auslegung heiß (Vmp-Min)
+        systemLossFactor: 0.95,// WR-/Systemwirkungsgrad pauschal
+        defaultTempVoc: -0.25  // %/K Fallback Temperaturkoeffizient
+    },
+    battery: {
+        usableShare: 0.90      // nutzbare Kapazität (DoD 90 %)
+    },
+    eeg: {
+        rateUpTo10kWp: 8.20,   // ct/kWh bis 10 kWp
+        rateAbove10kWp: 7.10,  // ct/kWh darüber
+        thresholdKwp: 10,
+        degressionFactor: 0.99,// -1 % pro Periode
+        degressionEveryMonths: 6,
+        refYear: 2024, refMonth: 2,  // Degressions-Start Feb 2024
+        cutoffYear: 2027             // ab hier 0 ct
+    },
+    heating: {
+        kwhPerOilLiter: 10      // 1 L Öl ≈ 1 m³ Gas ≈ 10 kWh
+    },
+    consumption: {
+        acSeasonStartDay: 120, acSeasonEndDay: 270, // inkl.
+        acHourStart: 12, acHourEnd: 18,             // inkl.
+        heatSeasonEndDay: 120, heatSeasonStartDay: 270, // Heizung wenn d<120 || d>270
+        bwEveningStart: 18, bwEveningEnd: 21,       // inkl. (4 h)
+        evEveningStart: 18, evEveningEnd: 23,       // inkl. (6 h)
+        smartEvWindowStart: 8, smartEvWindowEnd: 18,
+        smartEvHoursPerWeek: 14,
+        smartBwWindowStart: 9, smartBwWindowEnd: 16,
+        smartBwHoursPerDay: 4
+    },
+    pvgis: {
+        baseUrl: 'https://pvgis.mb10.org/api/v5_2/seriescalc',
+        timeoutMs: 15000,
+        year: 2019,            // historische Referenzstundenwerte
+        loss: 14               // % Systemverluste in PVGIS
+    },
+    nominatim: {
+        baseUrl: 'https://nominatim.openstreetmap.org/search',
+        timeoutMs: 10000
+    },
+    limits: {
+        nameLen: 60,
+        countMin: 1, countMax: 99,
+        tiltMin: 0, tiltMax: 90,
+        shadingMin: 0, shadingMax: 80,
+        azimuthMin: 0, azimuthMax: 360,
+        moneyMin: 0, moneyMax: 1000000,
+        priceMin: 0, priceMax: 10
+    }
+};

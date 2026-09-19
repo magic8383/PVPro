@@ -3,6 +3,7 @@
   "short_name": "PVPro",
   "description": "Professionelle Photovoltaik-Planung, Auslegung und Wirtschaftlichkeitsberechnung",
   "start_url": "./index.html",
+  "id": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",

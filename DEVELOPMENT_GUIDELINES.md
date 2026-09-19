@@ -1,7 +1,7 @@
 # Entwicklungs-, Architektur- & Release-Leitfaden (PV-Planung Pro)
 
-**Version:** 6.17 (Material Expressive 3 & Modern Modular Architecture)  
-**Repository:** `https://github.com/magic8383/PVPro.git`  
+**Version:** 7.0 (Security & Architecture Rebuild)
+**Repository:** `https://github.com/magic8383/PVPro.git`
 **Standard-Branch:** `main` (Production) | `New` (Feature / Refactor Staging)
 
 ---
@@ -13,52 +13,61 @@
 * **Review vor Umsetzung:** Geplante Änderungen, Schnittstellen-Anpassungen und Patchnotes werden vorab nachvollziehbar strukturiert.
 * **Explizites Freigabe-Prinzip:** Änderungen an Berechnungs-Engines, mathematischen Modellen und API-Endpunkten erfolgen stets konsistent und synchron über alle beteiligten Module.
 * **Keine Insellösungen (Single Source of Truth):**
-  * **Design & Icons:** Alle Symbole werden ausschließlich über die offizielle Google Material Symbols Font (`.material-symbols-rounded`) gerendert. Keine inkonsistenten Emojis, keine isolierten Einweg-Icons.
-  * **Zentral gesteuerte Logik:** Berechnungen (Physik, Finanzen, Verbrauch, Mismatch) residieren zentral in `app.js`. Texte, Changelog und Glossar liegen strikt in `content.js`. Gerätestammdaten liegen in `database.js`.
+  * **Version:** `APP_VERSION` in `version.js` (Titel/Header zur Laufzeit, SW-Cache-Name via `importScripts`).
+  * **Konstanten:** Alle physikalischen, kaufmännischen und Profil-Konstanten in `CONFIG` (`database.js`). Keine Magic Numbers in `app.js`.
+  * **Design & Icons:** Alle Symbole ausschließlich über Google Material Symbols (`.material-symbols-rounded`). Keine Emojis in UI/Alerts. Status-Badges nur über `badge()`, Charts nur über `stackedBarConfig()`/`makeChart()`, Monatsnamen nur über `MONTHS_SHORT`/`MONTHS_FULL`.
+  * **Zentral gesteuerte Logik:** Berechnungen (Physik, Finanzen, Verbrauch, Mismatch) residieren in `app.js`. Texte, Changelog und Glossar liegen in `content.js` und rendern Zahlenwerte aus `CONFIG`. Gerätestammdaten liegen in `database.js`.
+* **Sicherheits-Regeln (verbindlich):**
+  * Kein `innerHTML` mit ungefilterten Nutzerdaten — immer `esc()` verwenden.
+  * Keine Inline-Event-Handler (`onclick=` etc.) — immer `addEventListener` / Event-Delegation via `data-*`-Attribute (Voraussetzung für die CSP).
+  * Alle LocalStorage-Zugriffe nur über `readJsonStorage`/`writeJsonStorage` + Schema-Sanitizer (`sanitizeStrings`, `sanitizeUserDB`, `sanitizeLocation`).
+  * Neue CDN-Abhängigkeiten nur versionsgepinnt und mit SRI-Hash.
 
 ---
 
 ## 2. Modul-Architektur
 
-Die Applikation ist als performante, modular aufgebaute Progressive Web App (PWA) ohne Framework-Overhead konzipiert:
+Performante, modular aufgebaute PWA ohne Framework-Overhead:
 
-* `index.html`: Semantisches DOM-Gerüst, M3 Top App Bar, M3 Navigation Rail / Bottom Bar und Container-Hierarchie.
-* `app.js`: State Management, Physik-Engine, PVGIS-Proxy Seriescalc, Chart-Rendering und PWA-Lifecycle.
-* `database.js`: Stammdaten MasterDB (Module, Wechselrichter, Speicher, MPPT-Grenzen) und LocalStorage-User-DB.
-* `content.js`: Wissensbasis, Bedienungsanleitung, physikalische Formeln und zentraler Version Changelog.
-* `sw.js`: Service Worker für Caching, Stale-While-Revalidate und Offline-Betrieb.
-* `manifest.json`: Web App Manifest für Installation, Standalone-Modus und PWA-Metadaten.
+* `index.html`: Semantisches DOM, M3 Top App Bar, Navigation, Snackbar/Dialog/Progress-Shell. Enthält **kein** Inline-JS und **keine** Inline-Handler (CSP-konform).
+* `version.js`: Single Source of Truth für `APP_VERSION`.
+* `tailwind.config.js`: Externe Tailwind-Play-CDN-Konfiguration (CSP-konform statt Inline-Script).
+* `app.js`: State, Validierung, Physik-Engine, PVGIS mit Timeout, Chart-Rendering, PWA-Lifecycle. Strikter Modus, Event-Delegation.
+* `database.js`: Stammdaten MasterDB (Module, WR, Speicher) + zentrale `CONFIG`.
+* `content.js`: Wissensbasis als `buildHandbuchHTML()`-Template mit `CONFIG`-Werten und Changelog.
+* `sw.js`: Service Worker (resilienter Install via `allSettled`, Network-first für APIs, Navigations-Fallback auf App-Shell).
+* `manifest.json`: Web App Manifest für Installation und Standalone-Modus.
 * `DEVELOPMENT_GUIDELINES.md`: Projektgovernance, Git-Workflow, Architektur und UI-Standards.
-
 
 ---
 
 ## 3. Detail-Architektur & Datenfluss
 
 ### PVGIS Seriescalc & Offline-Fallback
-* Die Ertragssimulation nutzt reale 8.760h-Historienstundenwerte (`seriescalc`) über den dedizierten Synology Reverse Proxy `https://pvgis.mb10.org/api/v5_2/seriescalc`.
-* Sollte der Proxy oder die Internetverbindung ausfallen, greift die deterministische Offline-Fallback-Engine (`generateSyntheticPVGISData`) ein, ohne dass der Rechenprozess abbricht.
+* Ertragssimulation mit realen 8.760h-Historienstundenwerten (`seriescalc`) über `https://pvgis.mb10.org/api/v5_2/seriescalc` (URL/Timeout/Jahr in `CONFIG.pvgis`).
+* Jeder Abruf mit `AbortController`-Timeout; Antwort wird auf 8.760 numerisch valide Stundenwerte geprüft. Bei Ausfall greift deterministisch `generateSyntheticPVGISData` pro Feld; betroffene Felder werden per Snackbar ausgewiesen.
 
 ### Physik- & Modul-Engine
-* Temperaturabhängige Spannungen ($U_{oc}$ bei -10°C, $U_{mpp}$ bei +70°C) werden über den modulspezifischen Koeffizienten $T_k$ simuliert.
-* Automatische Grenzprüfung gegen den Wechselrichter ($U_{max}$, $I_{sc,max}$, MPPT-Bereich, Startspannung).
-* Stundengenaue Mismatch-Berechnung nach dem physikalischen Flaschenhalsprinzip für gemischte Dachneigungen und Ausrichtungen innerhalb eines Strings.
+* Temperaturabhängige Spannungen pro Modultyp: $U_{oc}$ bei -10 °C ($\Delta T = -35\,K$), $U_{mpp}$ bei +70 °C ($\Delta T = +45\,K$) über den jeweiligen $T_k$.
+* Grenzprüfung gegen den Wechselrichter: $U_{max}$, $I_{sc,max}$, Betriebsstrom $I_{mpp} = P_{max}/V_{mp}$ gegen $I_{max}$, MPPT-Bereich, Startspannung.
+* Stundengenaue Mismatch-Berechnung nach Flaschenhalsprinzip für gemischte Felder innerhalb eines Strings.
+* MPPT-Assistent (`suggestStringConfig`): legt die Modulanzahl mittig ins MPP-Fenster (geprüft gegen $U_{max}$ und Startspannung).
 
 ### Finanz- & Lastprofil-Bilanzierung
-* Haushaltslastprofile nach VDI 4655 (dynamische saisonale und tageszeitliche Gewichtung).
-* Sektorenkopplung für Wärmepumpe (JAZ-Heizenergiebilanz vs. Gas/Öl-Brennwert) und E-Mobilität (Wetter-KI optimiertes Laden an Ertragsspitzen).
-* Dynamische EEG-Mischvergütung basierend auf dem Inbetriebnahme-Datum mit automatischer 6-Monats-Degression und 2027-Cutoff.
+* Haushaltslastprofile nach VDI 4655, exakt auf die eingegebenen Jahres-kWh **normiert** (`normalizeToKwh`).
+* Sektorenkopplung für Wärmepumpe und E-Mobilität (Wetter-KI-Fenster in `CONFIG.consumption`).
+* Batterie: nutzbare Kapazität 90 % DoD (`CONFIG.battery`), Roundtrip-Wirkungsgrad je zur Hälfte beim Laden/Entladen.
+* Dynamische EEG-Mischvergütung aus `CONFIG.eeg` mit Degression und Cutoff; Amortisation als **statische** Rechnung gekennzeichnet.
 
 ---
 
-## 4. Design System: Material Design 3 Expressive (2026)
+## 4. Design System: Material Design 3 Expressive
 
-* **Vektor-Iconografie:** Alle Icons stammen aus **Google Material Symbols Rounded** (`material-symbols-rounded`). Keine Emojis in Buttons, Badges oder Navigationsleisten.
-* **Tonal Surfaces:** Weiche Oberflächenebenen (`bg-slate-900/60`, `bg-slate-800/40`, `border-slate-800/60` in Dark Mode, `bg-white`, `bg-slate-100` in Light Mode) mit abgerundeten Ecken (`rounded-2xl` bis `rounded-3xl`).
-* **Adaptive Navigation:**
-  * **Mobil (< 768px):** Schwebende M3 Bottom Navigation Bar mit Pill-Indikatoren für die 4 Hauptbereiche plus "Mehr"-Button, der ein M3 Bottom Sheet für Zusatzfunktionen öffnet.
-  * **Desktop (≥ 768px):** Vollständige M3 Segmented Bar mit visuell gegliederten Modulblöcken.
-  * Synchronisation zwischen Touch-Wischgesten (Swipes) und aktiven Navigations-Indikatoren.
+* **Vektor-Iconografie:** Google Material Symbols Rounded. Keine Emojis.
+* **Tonal Surfaces:** Light/Dark-konsistente Oberflächen; Status nur über zentralen `badge()`-Helper.
+* **Feedback:** M3 Snackbar (`toast()`) statt `alert()`, M3 Dialog (`confirmDialog()`) statt `confirm()`, Fortschrittsbalken bei Berechnung, Offline-Badge, Dirty-Indikator am Speichern-Button, Live-Anlagenstats im Header.
+* **Adaptive Navigation:** Mobil M3 Bottom Bar + More-Sheet, Desktop Segmented Bar; ein `data-tab`-Delegations-Listener steuert alle Navigationsflächen.
+* **Barrierefreiheit:** `aria-label` auf Icon-Buttons, `:focus-visible`, `prefers-reduced-motion`, Dark Mode folgt beim Erststart dem System.
 
 ---
 
@@ -68,8 +77,9 @@ Die Applikation ist als performante, modular aufgebaute Progressive Web App (PWA
 * **Branches:**
   * `main`: Stabiler Produktionszweig.
   * `origin/New`: Feature- und Staging-Branch.
-* **Release-Checkliste:**
-  1. Versionsnummer synchronisieren in `index.html`, `content.js` (Changelog) und `DEVELOPMENT_GUIDELINES.md`.
-  2. Cache-Name in `sw.js` inkrementieren (z.B. `pvpro-cache-v6.17`), um Service Worker Updates auf Client-Geräten sicherzustellen.
-  3. Git Commit mit strukturierter Nachricht und Push auf `origin main`.
-
+* **Release-Checkliste (v7, vereinfacht):**
+  1. `APP_VERSION` in `version.js` bumpen (Titel, Header-Tag und SW-Cache-Name folgen automatisch).
+  2. `?v=` Query-Strings in `index.html` synchronisieren.
+  3. Changelog-Eintrag in `content.js` ergänzen, Versionszeile hier aktualisieren.
+  4. Bei CDN-Updates: Version pinnen + SRI-Hash nachtragen.
+  5. Git Commit mit strukturierter Nachricht und Push.
