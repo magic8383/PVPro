@@ -1,28 +1,40 @@
 // ==========================================
 // TEXTE & HANDBUCH (Content Library)
+// Alle Zahlenwerte (EEG, Physik, Profile) werden aus
+// CONFIG (database.js) gerendert – Single Source of
+// Truth, kein Auseinanderdriften von Doku und Engine.
+// Interaktion via data-acc (Event-Delegation, CSP-sicher).
 // ==========================================
-const HandbuchHTML = `
+function buildHandbuchHTML() {
+    const eeg = CONFIG.eeg;
+    const phys = CONFIG.physics;
+    const heat = CONFIG.heating;
+    const effPct = Math.round(phys.systemLossFactor * 100);
+    const fmtCt = (v) => v.toFixed(2).replace('.', ',');
+
+    return `
     <div class="mb-6">
         <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100">Bedienungsanleitung & Logik</h2>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Wie die App rechnet und wie du sie optimal nutzt.</p>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Wie die App rechnet und wie du sie optimal nutzt. (v${typeof APP_VERSION !== 'undefined' ? APP_VERSION : ''})</p>
     </div>
-    
+
     <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 mt-8 mb-2 border-b border-slate-200 dark:border-slate-800 pb-2">Teil A: Bedienungsanleitung (How-To)</h3>
 
     <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <button onclick="toggleAcc('acc_ht1')" class="w-full p-5 text-left font-bold text-slate-800 dark:text-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <button data-acc="acc_ht1" class="w-full p-5 text-left font-bold text-slate-800 dark:text-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
             <span class="flex items-center gap-2"><span class="material-symbols-rounded text-primary">solar_power</span> Schritt 1: Standort & Strings einrichten</span>
             <span class="material-symbols-rounded text-slate-400 transform transition-transform acc-icon">expand_more</span>
         </button>
         <div id="acc_ht1" class="acc-content px-5 pb-5 text-sm text-slate-600 dark:text-slate-300 border-t border-slate-100 dark:border-slate-800">
             <p class="mt-4"><strong>Standort:</strong> Klicke im ersten Tab ("Strings") auf "Ändern" und gib deine Stadt ein. Die App zieht sich im Hintergrund automatisch die exakten GPS-Koordinaten. Diese sind zwingend nötig, damit die PVGIS-Sonnendatenbank weiß, welches Wetter bei dir herrscht.</p>
             <p class="mt-2"><strong>Strings & Modulfelder:</strong> Ein "String" repräsentiert einen Kabelstrang, der an einen Wechselrichter angeschlossen ist. Du kannst innerhalb eines Strings mehrere "Modulfelder" anlegen (z.B. 5 Module mit 30° Neigung und 2 Module mit 45° Neigung). Die App berechnet den Ertrag für jedes Feld einzeln und rechnet bei starken Unterschieden automatisch Mismatch-Verluste ein.</p>
+            <p class="mt-2"><strong>MPPT-Assistent:</strong> Der Button "MPPT-Optimum" (Zauberstab-Symbol) berechnet automatisch die ideale Modulanzahl, sodass die Stringspannung mittig im MPP-Fenster deines Wechselrichters liegt – inklusive Prüfung gegen Maximalspannung und Startspannung.</p>
             <p class="mt-2"><strong>Verschattung:</strong> Der Prozent-Slider für Verschattung zieht pauschal Leistung von diesem String ab. 10% bedeutet, dass über das Jahr hinweg 10% des Lichts durch Bäume, Kamine oder Nachbarhäuser blockiert werden.</p>
         </div>
     </div>
 
     <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <button onclick="toggleAcc('acc_ht2')" class="w-full p-5 text-left font-bold text-slate-800 dark:text-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <button data-acc="acc_ht2" class="w-full p-5 text-left font-bold text-slate-800 dark:text-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
             <span class="flex items-center gap-2"><span class="material-symbols-rounded text-primary">bolt</span> Schritt 2: Verbrauch & Smart-Home</span>
             <span class="material-symbols-rounded text-slate-400 transform transition-transform acc-icon">expand_more</span>
         </button>
@@ -38,7 +50,7 @@ const HandbuchHTML = `
     </div>
 
     <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <button onclick="toggleAcc('acc_ht3')" class="w-full p-5 text-left font-bold text-slate-800 dark:text-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <button data-acc="acc_ht3" class="w-full p-5 text-left font-bold text-slate-800 dark:text-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
             <span class="flex items-center gap-2"><span class="material-symbols-rounded text-primary">payments</span> Schritt 3: Kosten & Substitution</span>
             <span class="material-symbols-rounded text-slate-400 transform transition-transform acc-icon">expand_more</span>
         </button>
@@ -51,22 +63,22 @@ const HandbuchHTML = `
     <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 mt-10 mb-2 border-b border-slate-200 dark:border-slate-800 pb-2">Teil B: Physikalische & Kaufmännische Hintergründe</h3>
 
     <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <button onclick="toggleAcc('acc_bg1')" class="w-full p-5 text-left font-bold text-slate-800 dark:text-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <button data-acc="acc_bg1" class="w-full p-5 text-left font-bold text-slate-800 dark:text-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
             <span class="flex items-center gap-2"><span class="material-symbols-rounded text-primary">tune</span> Logik der Strings & Modul-Physik</span>
             <span class="material-symbols-rounded text-slate-400 transform transition-transform acc-icon">expand_more</span>
         </button>
         <div id="acc_bg1" class="acc-content px-5 pb-5 text-sm text-slate-600 dark:text-slate-300 border-t border-slate-100 dark:border-slate-800">
-            <p class="mt-4">In der String-Übersicht siehst du die Parameter deines Strings als Kennwerte. Die App prüft die Spannungen physikalisch gegen die Limits deines Wechselrichters:</p>
+            <p class="mt-4">In der String-Übersicht siehst du die Parameter deines Strings als Kennwerte. Die App prüft die Spannungen physikalisch gegen die Limits deines Wechselrichters (Auslegung: kalte Leerlaufspannung bei ${phys.tCold} °C, warme MPP-Spannung bei +${phys.tHot} °C):</p>
             <ul class="list-disc pl-5 mt-2 space-y-2">
-                <li><strong class="text-emerald-500">Grün (Optimal):</strong> Die Vmp (Spannung bei +70°C) liegt im perfekten MPPT-Bereich des WR. Der Isc (Kurzschlussstrom) ist sicher.</li>
+                <li><strong class="text-emerald-500">Grün (Optimal):</strong> Die Vmp (Spannung bei +${phys.tHot} °C) liegt im perfekten MPPT-Bereich des WR. Der Isc (Kurzschlussstrom) und der Betriebsstrom Impp sind sicher.</li>
                 <li><strong class="text-amber-500">Orange (Suboptimal):</strong> Z. B. bei 450V an einem 1000V WR, dessen MPPT aber erst ab 500V beginnt. Die Spannung reicht aus, damit der WR startet, sie liegt aber <i>unterhalb</i> des idealen Tracking-Fensters.</li>
-                <li><strong class="text-rose-500">Rot (Gefahr/Fehler):</strong> Die Voc (Leerlaufspannung bei -10°C im Winter) ist höher als die Maximalspannung des WR (Zerstörungsgefahr!), der Strom ist zu hoch, oder die Vmp ist so niedrig, dass der WR nicht anspringt.</li>
+                <li><strong class="text-rose-500">Rot (Gefahr/Fehler):</strong> Die Voc (Leerlaufspannung bei ${phys.tCold} °C im Winter) ist höher als die Maximalspannung des WR (Zerstörungsgefahr!), der Strom ist zu hoch, oder die Vmp ist so niedrig, dass der WR nicht anspringt.</li>
             </ul>
         </div>
     </div>
 
     <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <button onclick="toggleAcc('acc_bg_mismatch')" class="w-full p-5 text-left font-bold text-slate-800 dark:text-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <button data-acc="acc_bg_mismatch" class="w-full p-5 text-left font-bold text-slate-800 dark:text-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
             <span class="flex items-center gap-2"><span class="material-symbols-rounded text-primary">alt_route</span> Die stundengenaue Mismatch-Berechnung</span>
             <span class="material-symbols-rounded text-slate-400 transform transition-transform acc-icon">expand_more</span>
         </button>
@@ -78,45 +90,46 @@ const HandbuchHTML = `
     </div>
 
     <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <button onclick="toggleAcc('acc_bg2')" class="w-full p-5 text-left font-bold text-slate-800 dark:text-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <button data-acc="acc_bg2" class="w-full p-5 text-left font-bold text-slate-800 dark:text-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
             <span class="flex items-center gap-2"><span class="material-symbols-rounded text-primary">schedule</span> Die 8.760-Stunden-Matrix & AC-Clipping</span>
             <span class="material-symbols-rounded text-slate-400 transform transition-transform acc-icon">expand_more</span>
         </button>
         <div id="acc_bg2" class="acc-content px-5 pb-5 text-sm text-slate-600 dark:text-slate-300 border-t border-slate-100 dark:border-slate-800">
             <p class="mt-4">Die App iteriert durch alle 8.760 Stunden des Jahres. Für <strong>jede einzelne Stunde</strong> führt sie folgende Bilanzierung durch:</p>
             <ol class="list-decimal pl-5 mt-2 space-y-1">
-                <li>Was liefert die Sonne in dieser Stunde minus Mismatch minus WR-Wirkungsgrad (95%)? (Erzeugung)</li>
+                <li>Was liefert die Sonne in dieser Stunde minus Mismatch minus WR-Wirkungsgrad (${effPct} %)? (Erzeugung)</li>
                 <li>Was verbraucht das Haus exakt in dieser Stunde? (Last)</li>
-                <li>Wird mehr erzeugt als verbraucht? -> Lade die Batterie.</li>
-                <li>Ist die Batterie voll und noch Strom übrig? -> Ab ins Netz (Einspeisung / Clipping).</li>
-                <li>Wird mehr verbraucht als erzeugt? -> Entlade die Batterie.</li>
-                <li>Ist die Batterie leer? -> Kaufe Strom aus dem Netz.</li>
+                <li>Wird mehr erzeugt als verbraucht? -&gt; Lade die Batterie (nutzbar ${Math.round(CONFIG.battery.usableShare * 100)} %, Wirkungsgrad je zur Hälfte beim Laden/Entladen).</li>
+                <li>Ist die Batterie voll und noch Strom übrig? -&gt; Ab ins Netz (Einspeisung / Clipping).</li>
+                <li>Wird mehr verbraucht als erzeugt? -&gt; Entlade die Batterie.</li>
+                <li>Ist die Batterie leer? -&gt; Kaufe Strom aus dem Netz.</li>
             </ol>
         </div>
     </div>
 
     <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <button onclick="toggleAcc('acc_bg3')" class="w-full p-5 text-left font-bold text-slate-800 dark:text-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <button data-acc="acc_bg3" class="w-full p-5 text-left font-bold text-slate-800 dark:text-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
             <span class="flex items-center gap-2"><span class="material-symbols-rounded text-primary">trending_down</span> Finanzen: EEG-Degression & Öl/Gas Umrechnung</span>
             <span class="material-symbols-rounded text-slate-400 transform transition-transform acc-icon">expand_more</span>
         </button>
         <div id="acc_bg3" class="acc-content px-5 pb-5 text-sm text-slate-600 dark:text-slate-300 border-t border-slate-100 dark:border-slate-800">
             <p class="mt-4"><strong>EEG-Mischvergütung:</strong><br>
-            Die ersten 10 kWp einer Anlage erhalten 8,2 ct, danach 7,1 ct. Die App berechnet den gewichteten Durchschnitt. Ab Februar 2024 sinkt dieser Wert alle 6 Monate um 1 %. Wählst du ein Datum ab 2027, entfällt die Vergütung hart auf 0 ct.</p>
-            
+            Die ersten ${eeg.thresholdKwp} kWp einer Anlage erhalten ${fmtCt(eeg.rateUpTo10kWp)} ct, danach ${fmtCt(eeg.rateAbove10kWp)} ct. Die App berechnet den gewichteten Durchschnitt. Ab Februar ${eeg.refYear} sinkt dieser Wert alle ${eeg.degressionEveryMonths} Monate um ${Math.round((1 - eeg.degressionFactor) * 100)} %. Wählst du ein Datum ab ${eeg.cutoffYear}, entfällt die Vergütung hart auf 0 ct.</p>
+
             <p class="mt-4"><strong>Öl & Gas Umrechnung:</strong><br>
-            Die App nutzt den Standard-Brennwert: <strong>1 Liter Heizöl = 1 m³ Gas = ca. 10 kWh Wärme</strong>. Die App errechnet die Wärmemenge der WP (Strom × JAZ), teilt sie durch 10 und rechnet das Ergebnis auf deinen eingegebenen Liter-Preis hoch.</p>
+            Die App nutzt den Standard-Brennwert: <strong>1 Liter Heizöl = 1 m³ Gas = ca. ${heat.kwhPerOilLiter} kWh Wärme</strong>. Die App errechnet die Wärmemenge der WP (Strom × JAZ), teilt sie durch ${heat.kwhPerOilLiter} und rechnet das Ergebnis auf deinen eingegebenen Liter-Preis hoch. Die Amortisation ist eine <strong>statische</strong> Rechnung (ohne Degradation, Wartung, Preissteigerung und Diskontierung).</p>
         </div>
     </div>
 
     <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <button onclick="toggleAcc('acc_bg4')" class="w-full p-5 text-left font-bold text-slate-800 dark:text-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+        <button data-acc="acc_bg4" class="w-full p-5 text-left font-bold text-slate-800 dark:text-slate-100 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
             <span class="flex items-center gap-2"><span class="material-symbols-rounded text-primary">history</span> Changelog & Versionen</span>
             <span class="material-symbols-rounded text-slate-400 transform transition-transform acc-icon">expand_more</span>
         </button>
         <div id="acc_bg4" class="acc-content px-5 pb-5 text-sm text-slate-600 dark:text-slate-300 border-t border-slate-100 dark:border-slate-800">
             <ul class="space-y-3 mt-4">
-                <li><strong>v6.17 (Current):</strong> Material Expressive 3 (2026) Design-System. Google Material Symbols Rounded Vektor-Iconografie in der gesamten App. Adaptive Dual-Navigation (ergonomische M3 Bottom Navigation Bar auf Mobilgeräten + M3 Segmented Rail auf Desktop + animiertes M3 More Bottom Sheet). Konsistente Tonal Surfaces, zentrale Badge-Steuerung und vollständige Dark/Light-Mode Harmonisierung.</li>
+                <li><strong>v7.0 (Current):</strong> Sicherheits- & Architektur-Rebuild: XSS-Härtung (Escaping + Event-Delegation statt Inline-Handler), Content Security Policy, zentrale CONFIG (Physik/EEG/Profile), physikalisch exakte Temperatur-Spannungen pro Modultyp (-10 °C mit -35 K Delta), Betriebsstrom-Prüfung (Impp), normierte Lastprofile, realistisches Batteriemodell (Lade-/Entladeverluste + 90 % DoD), MPPT-Assistent für optimale Modulanzahl, Berechnungs-Fortschritt, Offline-Badge, Snackbar statt Alerts und konsistente Dark-Mode-Karten.</li>
+                <li><strong>v6.17:</strong> Material Expressive 3 (2026) Design-System. Google Material Symbols Rounded Vektor-Iconografie in der gesamten App. Adaptive Dual-Navigation (ergonomische M3 Bottom Navigation Bar auf Mobilgeräten + M3 Segmented Rail auf Desktop + animiertes M3 More Bottom Sheet). Konsistente Tonal Surfaces, zentrale Badge-Steuerung und vollständige Dark/Light-Mode Harmonisierung.</li>
                 <li><strong>v6.16:</strong> Umstellung auf reale historische 8.760h-Stundenwerte via seriescalc über den Synology Reverse Proxy. Direkte stundengenaue Auswertung mit physikalischer Präzision.</li>
                 <li><strong>v6.15:</strong> Umstellung auf dedizierten Synology PVGIS-Proxy (pvgis.mb10.org). Schnellerer & zuverlässiger Abruf ohne Drittanbieter-Timeouts.</li>
                 <li><strong>v6.14:</strong> Umstellung auf schlanken PVGIS-PVcalc-Endpunkt. Direkte Monats-Kalibrierung der 8.760h-Jahressimulation, Beseitigung aller Proxy-Timeouts & lückenlose Berechnung.</li>
@@ -129,4 +142,8 @@ const HandbuchHTML = `
             </ul>
         </div>
     </div>
-`;
+    `;
+}
+
+// Rückwärtskompatibler Zugriff für app.js
+const HandbuchHTML = buildHandbuchHTML();

@@ -3,11 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>PV-Planung Pro 6.17 (Material Expressive 3)</title>
-    
+    <title>PV-Planung Pro 7.0 (Material Expressive 3)</title>
+
+    <!-- Sicherheit: CSP (kein 'unsafe-inline' für Skripte – alle Handler via addEventListener) -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; connect-src 'self' https://pvgis.mb10.org https://nominatim.openstreetmap.org https://*.europa.eu; worker-src 'self';">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta name="color-scheme" content="dark light">
+
     <!-- PWA Settings -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="PVPro">
@@ -20,30 +26,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-                    },
-                    colors: {
-                        primary: {
-                            DEFAULT: 'var(--color-primary, #3b82f6)',
-                            hover: 'var(--color-primary-hover, #2563eb)',
-                            text: 'var(--color-primary-text, #ffffff)',
-                        },
-                        accent: {
-                            DEFAULT: 'var(--color-accent, #10b981)',
-                            hover: 'var(--color-accent-hover, #059669)',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="tailwind.config.js?v=7.0"></script>
+    <!-- Chart.js versionsgepinnt. TODO(SRI): Nach erstem Online-Build Hash nachtragen:
+         curl -s https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js | openssl dgst -sha384 -binary | openssl base64 -A
+         und als integrity="sha384-…" + crossorigin="anonymous" ergänzen. -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         :root {
             --color-primary: #3b82f6;
@@ -59,7 +46,7 @@
         ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 2px; }
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-        
+
         .material-symbols-rounded {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
             display: inline-block;
@@ -70,132 +57,149 @@
             font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 24;
         }
 
-        .tab-content { display: none; opacity: 0; } 
+        .tab-content { display: none; opacity: 0; }
         .tab-content.active { display: block; animation: m3FadeIn 0.28s cubic-bezier(0.2, 0, 0, 1) forwards; }
-        @keyframes m3FadeIn { 
-            from { opacity: 0; transform: translateY(8px) scale(0.995); } 
-            to { opacity: 1; transform: translateY(0) scale(1); } 
+        @keyframes m3FadeIn {
+            from { opacity: 0; transform: translateY(8px) scale(0.995); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
-        
+
         input[type="color"] { -webkit-appearance: none; border: none; width: 28px; height: 28px; border-radius: 50%; padding: 0; cursor: pointer; overflow: hidden; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: 2px solid #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
-        
+
         input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: var(--color-primary, #3b82f6); cursor: pointer; margin-top: -7px; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #cbd5e1; border-radius: 9999px; }
         .dark input[type=range]::-webkit-slider-runnable-track { background: #334155; }
         input[type=range]:focus { outline: none; }
-        
+
         .spinner { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        
+
         .glass-card { background: rgba(30, 41, 59, 0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-        
+
         .acc-content { max-height: 0; overflow: hidden; transition: max-height 0.3s cubic-bezier(0.2, 0, 0, 1); }
         .acc-content.open { max-height: 2000px; }
-        
+
         .m3-surface { background-color: rgba(15, 23, 42, 0.92); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
         .m3-bottom-nav { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
         .safe-bottom-pad { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
+
+        button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+            outline: 2px solid var(--color-primary, #3b82f6);
+            outline-offset: 2px;
+            border-radius: 0.75rem;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .tab-content.active { animation: none; opacity: 1; }
+            .spinner { animation-duration: 2.5s; }
+            * { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased h-[100dvh] flex flex-col overflow-hidden transition-colors duration-300">
 
     <header class="bg-slate-900/95 text-white shadow-md z-20 shrink-0 relative border-b border-slate-800 backdrop-blur-md">
         <div class="max-w-7xl mx-auto px-4 py-2.5 md:py-3.5">
-            <div class="flex justify-between items-center">
-                <div class="flex items-center gap-3">
+            <div class="flex justify-between items-center gap-2">
+                <div class="flex items-center gap-3 min-w-0">
                     <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-primary to-blue-400 flex items-center justify-center text-white shadow-md shadow-primary/20 shrink-0">
                         <span class="material-symbols-rounded text-xl fill-1">solar_power</span>
                     </div>
-                    <div>
-                        <h1 class="text-lg md:text-xl font-extrabold tracking-tight text-white leading-none">PV-Planung <span class="text-primary font-black">Pro 6.17</span></h1>
-                        <p class="text-slate-400 text-[10px] md:text-xs mt-0.5 font-medium flex items-center gap-1">
-                            <span class="inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>
-                            Material Expressive Architecture
+                    <div class="min-w-0">
+                        <h1 class="text-lg md:text-xl font-extrabold tracking-tight text-white leading-none">PV-Planung <span id="versionTag" class="text-primary font-black">Pro 7.0</span></h1>
+                        <p class="text-slate-400 text-[10px] md:text-xs mt-0.5 font-medium flex items-center gap-1.5 truncate">
+                            <span class="inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse shrink-0"></span>
+                            <span id="headerStats" class="truncate flex items-center gap-1">Material Expressive Architecture</span>
                         </p>
                     </div>
                 </div>
-                <div class="flex items-center gap-1.5 md:gap-2">
-                    <button id="btnPwaInstall" onclick="installPwaApp()" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-xl shadow transition-colors flex items-center gap-1.5 animate-pulse">
+                <div class="flex items-center gap-1.5 md:gap-2 shrink-0">
+                    <span id="offlineBadge" class="hidden bg-amber-500/15 text-amber-300 border border-amber-500/40 text-[11px] font-bold px-2.5 py-2 rounded-xl items-center gap-1">
+                        <span class="material-symbols-rounded text-base">wifi_off</span>
+                        <span class="hidden md:inline">Offline</span>
+                    </span>
+                    <button id="btnPwaInstall" aria-label="App installieren" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-xl shadow transition-colors items-center gap-1.5 animate-pulse">
                         <span class="material-symbols-rounded text-base">install_mobile</span>
                         <span class="hidden md:inline">Installieren</span>
                     </button>
-                    <button id="btnHeaderSave" onclick="saveConfiguration()" class="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-3 py-2 rounded-xl shadow transition-colors flex items-center gap-1.5">
+                    <button id="btnHeaderSave" aria-label="Konfiguration speichern" class="relative bg-primary hover:bg-primary-hover text-white text-xs font-bold px-3 py-2 rounded-xl shadow transition-colors flex items-center gap-1.5">
                         <span class="material-symbols-rounded text-base">save</span>
                         <span class="hidden md:inline">Speichern</span>
+                        <span id="saveDot" title="Ungespeicherte Änderungen" class="hidden absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-400 ring-2 ring-slate-900"></span>
                     </button>
-                    <button onclick="toggleThemePanel()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3 py-2 rounded-xl shadow transition-colors flex items-center gap-1.5 border border-slate-700/60">
+                    <button id="btnThemePanel" aria-label="Design-Einstellungen öffnen" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3 py-2 rounded-xl shadow transition-colors flex items-center gap-1.5 border border-slate-700/60">
                         <span class="material-symbols-rounded text-base">palette</span>
                         <span class="hidden md:inline">Design</span>
                     </button>
-                    <button onclick="clearLocalStorage()" class="bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white text-xs font-bold px-2.5 py-2 rounded-xl shadow transition-colors flex items-center gap-1 border border-rose-500/30">
+                    <button id="btnReset" aria-label="Alle Daten zurücksetzen" class="bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white text-xs font-bold px-2.5 py-2 rounded-xl shadow transition-colors flex items-center gap-1 border border-rose-500/30">
                         <span class="material-symbols-rounded text-base">restart_alt</span>
                         <span class="hidden md:inline">Reset</span>
                     </button>
                 </div>
             </div>
-            
+
             <!-- Collapsible Theme & Design Panel -->
             <div id="themeSettingsPanel" class="hidden border-t border-slate-800 pt-3 pb-1 mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
                 <div class="flex items-center justify-between bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
                     <span class="font-bold text-slate-300 flex items-center gap-2">
                         <span class="material-symbols-rounded text-primary text-base">palette</span> Hauptfarbe:
                     </span>
-                    <input type="color" id="themePrimaryColor" onchange="updateThemeColors(this.value, null)" class="w-8 h-8 rounded-full border-none cursor-pointer">
+                    <input type="color" id="themePrimaryColor" aria-label="Hauptfarbe wählen" class="w-8 h-8 rounded-full border-none cursor-pointer">
                 </div>
                 <div class="flex items-center justify-between bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
                     <span class="font-bold text-slate-300 flex items-center gap-2">
                         <span class="material-symbols-rounded text-accent text-base">colorize</span> Akzentfarbe:
                     </span>
-                    <input type="color" id="themeAccentColor" onchange="updateThemeColors(null, this.value)" class="w-8 h-8 rounded-full border-none cursor-pointer">
+                    <input type="color" id="themeAccentColor" aria-label="Akzentfarbe wählen" class="w-8 h-8 rounded-full border-none cursor-pointer">
                 </div>
                 <div class="flex items-center justify-between bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
                     <span class="font-bold text-slate-300 flex items-center gap-2">
                         <span class="material-symbols-rounded text-amber-400 text-base">dark_mode</span> Dark Mode:
                     </span>
-                    <button id="btnThemeDarkMode" onclick="toggleDarkMode()" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">Aktivieren</button>
+                    <button id="btnThemeDarkMode" class="bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">Aktivieren</button>
                 </div>
             </div>
-            
+
             <!-- Desktop / Tablet Segmented Tonal Bar (Hidden on Mobile) -->
-            <div id="navScroller" class="hidden md:flex overflow-x-auto hide-scroll space-x-1.5 bg-slate-800/50 p-1.5 rounded-2xl items-center snap-x snap-mandatory mt-3 border border-slate-700/50">
-                <button onclick="switchTab('system')" id="btn-system" class="m3-segment-btn active snap-start shrink-0 px-3.5 py-1.5 text-xs md:text-sm font-bold rounded-xl bg-primary text-white shadow-sm flex items-center gap-1.5 transition-all">
+            <nav id="navScroller" aria-label="Hauptnavigation" class="hidden md:flex overflow-x-auto hide-scroll space-x-1.5 bg-slate-800/50 p-1.5 rounded-2xl items-center snap-x snap-mandatory mt-3 border border-slate-700/50">
+                <button data-tab="system" id="btn-system" class="m3-segment-btn active snap-start shrink-0 px-3.5 py-1.5 text-xs md:text-sm font-bold rounded-xl bg-primary text-white shadow-sm flex items-center gap-1.5 transition-all">
                     <span class="material-symbols-rounded text-base fill-1">solar_power</span> Strings
                 </button>
-                <button onclick="switchTab('verbrauch')" id="btn-verbrauch" class="m3-segment-btn snap-start shrink-0 px-3.5 py-1.5 text-xs md:text-sm font-medium rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 flex items-center gap-1.5 transition-all">
+                <button data-tab="verbrauch" id="btn-verbrauch" class="m3-segment-btn snap-start shrink-0 px-3.5 py-1.5 text-xs md:text-sm font-medium rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 flex items-center gap-1.5 transition-all">
                     <span class="material-symbols-rounded text-base">bolt</span> Verbrauch
                 </button>
-                <button onclick="switchTab('invest')" id="btn-invest" class="m3-segment-btn snap-start shrink-0 px-3.5 py-1.5 text-xs md:text-sm font-medium rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 flex items-center gap-1.5 transition-all">
+                <button data-tab="invest" id="btn-invest" class="m3-segment-btn snap-start shrink-0 px-3.5 py-1.5 text-xs md:text-sm font-medium rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 flex items-center gap-1.5 transition-all">
                     <span class="material-symbols-rounded text-base">receipt_long</span> Investition
                 </button>
-                <button onclick="switchTab('finance')" id="btn-finance" class="m3-segment-btn snap-start shrink-0 px-3.5 py-1.5 text-xs md:text-sm font-medium rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 flex items-center gap-1.5 transition-all">
+                <button data-tab="finance" id="btn-finance" class="m3-segment-btn snap-start shrink-0 px-3.5 py-1.5 text-xs md:text-sm font-medium rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 flex items-center gap-1.5 transition-all">
                     <span class="material-symbols-rounded text-base">payments</span> Kosten
                 </button>
                 <div class="w-px h-5 bg-slate-700 shrink-0 mx-1"></div>
-                <button onclick="switchTab('uebersicht')" id="btn-uebersicht" class="m3-segment-btn snap-start shrink-0 px-3.5 py-1.5 text-xs md:text-sm font-medium rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 flex items-center gap-1.5 transition-all">
+                <button data-tab="uebersicht" id="btn-uebersicht" class="m3-segment-btn snap-start shrink-0 px-3.5 py-1.5 text-xs md:text-sm font-medium rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 flex items-center gap-1.5 transition-all">
                     <span class="material-symbols-rounded text-base">dashboard</span> Übersicht
                 </button>
-                <button onclick="switchTab('auswertung')" id="btn-auswertung" class="m3-segment-btn snap-start shrink-0 px-3.5 py-1.5 text-xs md:text-sm font-medium rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 flex items-center gap-1.5 transition-all text-accent">
+                <button data-tab="auswertung" id="btn-auswertung" class="m3-segment-btn snap-start shrink-0 px-3.5 py-1.5 text-xs md:text-sm font-medium rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 flex items-center gap-1.5 transition-all text-accent">
                     <span class="material-symbols-rounded text-base">analytics</span> Auswertung
                 </button>
                 <div class="w-px h-5 bg-slate-700 shrink-0 mx-1"></div>
-                <button onclick="switchTab('database')" id="btn-database" class="m3-segment-btn snap-start shrink-0 px-3.5 py-1.5 text-xs md:text-sm font-medium rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 flex items-center gap-1.5 transition-all">
+                <button data-tab="database" id="btn-database" class="m3-segment-btn snap-start shrink-0 px-3.5 py-1.5 text-xs md:text-sm font-medium rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 flex items-center gap-1.5 transition-all">
                     <span class="material-symbols-rounded text-base">database</span> Datenbank
                 </button>
-                <button onclick="switchTab('faq')" id="btn-faq" class="m3-segment-btn snap-start shrink-0 px-3.5 py-1.5 text-xs md:text-sm font-medium rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 flex items-center gap-1.5 transition-all">
+                <button data-tab="faq" id="btn-faq" class="m3-segment-btn snap-start shrink-0 px-3.5 py-1.5 text-xs md:text-sm font-medium rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 flex items-center gap-1.5 transition-all">
                     <span class="material-symbols-rounded text-base">menu_book</span> Handbuch
                 </button>
-            </div>
+            </nav>
         </div>
     </header>
 
-    <main class="flex-1 overflow-y-auto p-4 md:p-6 pb-24 w-full relative">
-        
+    <main id="mainScroll" class="flex-1 overflow-y-auto p-4 md:p-6 pb-24 w-full relative">
+
         <!-- TAB 1: STRINGS & ORT -->
         <div id="tab-system" class="tab-content active max-w-4xl mx-auto space-y-6 mt-2">
-            
+
             <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-4">
                 <div class="flex gap-3 items-center justify-between">
                     <div class="flex gap-3 items-center">
@@ -207,35 +211,36 @@
                             <p class="text-sm font-bold text-primary leading-none" id="locNameText">Villingen-Schwenningen</p>
                         </div>
                     </div>
-                    <button onclick="document.getElementById('locEditBox').classList.toggle('hidden')" class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3.5 py-1.5 rounded-xl text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center gap-1">
+                    <button id="btnLocEdit" class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3.5 py-1.5 rounded-xl text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center gap-1">
                         <span class="material-symbols-rounded text-sm">edit_location_alt</span>
                         <span>Ändern</span>
                     </button>
                 </div>
                 <div id="locEditBox" class="hidden mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex gap-2">
-                    <input type="text" id="locSearchInput" class="flex-1 text-sm border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 outline-none focus:border-primary" placeholder="Ort (z.B. Berlin)">
-                    <button onclick="searchLocation()" class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm">
+                    <input type="text" id="locSearchInput" enterkeyhint="search" autocomplete="off" class="flex-1 text-sm border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 outline-none focus:border-primary" placeholder="Ort (z.B. Berlin)">
+                    <button id="btnLocSearch" class="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm disabled:opacity-50">
                         <span class="material-symbols-rounded text-sm">search</span> Suchen
                     </button>
                 </div>
             </div>
 
-            <div class="flex justify-between items-end mb-2 mt-8">
+            <div class="flex justify-between items-end mb-2 mt-8 gap-2">
                 <div>
                     <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                         <span class="material-symbols-rounded text-primary">solar_power</span> Verschaltung & Strings
                     </h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">Definiere Dachflächen, Module und Wechselrichter.</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Definiere Dachflächen, Module und Wechselrichter. Tipp: Der MPPT-Assistent findet die ideale Modulanzahl.</p>
                 </div>
-                <button onclick="addString()" class="bg-primary hover:bg-primary-hover text-white text-xs md:text-sm font-bold px-4 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-1.5">
+                <button id="btnAddString" class="bg-primary hover:bg-primary-hover text-white text-xs md:text-sm font-bold px-4 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-1.5 shrink-0">
                     <span class="material-symbols-rounded text-base">add</span> Neuer String
                 </button>
             </div>
-            
+
             <div id="stringsList" class="space-y-3"></div>
             <div id="emptyStringMessage" class="hidden text-center py-10 bg-slate-100 dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-800">
                 <span class="material-symbols-rounded text-4xl text-slate-400 mb-2">solar_power</span>
                 <p class="text-slate-500 dark:text-slate-400 font-medium text-sm">Noch keine Strings angelegt.</p>
+                <p class="text-slate-400 dark:text-slate-500 text-xs mt-1">Lege oben einen String an – die Physik-Prüfung läuft automatisch.</p>
             </div>
         </div>
 
@@ -247,15 +252,15 @@
                 </div>
                 <div class="p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Grundbedarf (kWh / Jahr)</label>
+                        <label for="cons_base_kwh" class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Grundbedarf (kWh / Jahr)</label>
                         <div class="flex items-center gap-3">
-                            <input type="number" id="cons_base_kwh" step="100" min="500" value="3500" class="w-28 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-4 py-2 text-sm font-bold focus:border-primary outline-none" oninput="updateConsumptionEstimate(); updateHouseHint();">
+                            <input type="number" id="cons_base_kwh" step="100" min="0" max="100000" value="3500" class="w-28 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-4 py-2 text-sm font-bold focus:border-primary outline-none">
                             <span id="cons_house_hint" class="text-xs text-slate-500 dark:text-slate-400 font-medium bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg">3-Personen-Haushalt</span>
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Wohnform</label>
-                        <select id="cons_house" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-4 py-2.5 text-sm font-medium focus:border-primary outline-none" onchange="updateConsumptionEstimate()">
+                        <label for="cons_house" class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Wohnform</label>
+                        <select id="cons_house" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-4 py-2.5 text-sm font-medium focus:border-primary outline-none">
                             <option value="0">Wohnung</option><option value="500" selected>Einfamilienhaus (+500 kWh für Außen/Pumpen)</option>
                         </select>
                     </div>
@@ -268,46 +273,46 @@
                 </div>
                 <div class="p-5 md:p-6 space-y-4">
                     <div class="flex items-start gap-4 p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/40 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
-                        <div class="mt-0.5"><input type="checkbox" id="cons_it_active" class="w-5 h-5 rounded" onchange="toggleConsGroup('it')"></div>
+                        <div class="mt-0.5"><input type="checkbox" id="cons_it_active" class="w-5 h-5 rounded"></div>
                         <div class="flex-1">
                             <label for="cons_it_active" class="block text-sm font-bold text-slate-800 dark:text-slate-200 cursor-pointer">24/7 Dauerlast (IT / Server)</label>
-                            <div id="grp_it" class="hidden flex items-center gap-2 mt-2"><input type="number" id="cons_it_w" value="100" step="10" class="w-24 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-lg px-3 py-1.5 text-sm outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600 dark:text-slate-400">Watt (konstant)</span></div>
+                            <div id="grp_it" class="hidden flex items-center gap-2 mt-2"><input type="number" id="cons_it_w" value="100" step="10" min="0" max="10000" class="w-24 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-lg px-3 py-1.5 text-sm outline-none"><span class="text-xs font-bold text-slate-600 dark:text-slate-400">Watt (konstant)</span></div>
                         </div>
                     </div>
                     <div class="flex items-start gap-4 p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/40 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
-                        <div class="mt-0.5"><input type="checkbox" id="cons_ac_active" class="w-5 h-5 rounded" onchange="toggleConsGroup('ac')"></div>
+                        <div class="mt-0.5"><input type="checkbox" id="cons_ac_active" class="w-5 h-5 rounded"></div>
                         <div class="flex-1">
                             <label for="cons_ac_active" class="block text-sm font-bold text-slate-800 dark:text-slate-200 cursor-pointer">Klimaanlage(n)</label>
-                            <div id="grp_ac" class="hidden flex items-center gap-2 mt-2"><input type="number" id="cons_ac_kwh" value="400" step="100" class="w-24 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-lg px-3 py-1.5 text-sm outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600 dark:text-slate-400">kWh/a</span></div>
+                            <div id="grp_ac" class="hidden flex items-center gap-2 mt-2"><input type="number" id="cons_ac_kwh" value="400" step="100" min="0" max="100000" class="w-24 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-lg px-3 py-1.5 text-sm outline-none"><span class="text-xs font-bold text-slate-600 dark:text-slate-400">kWh/a</span></div>
                         </div>
                     </div>
                     <div class="flex items-start gap-4 p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/40 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
-                        <div class="mt-0.5"><input type="checkbox" id="cons_wp_active" class="w-5 h-5 rounded" onchange="toggleConsGroup('wp')"></div>
+                        <div class="mt-0.5"><input type="checkbox" id="cons_wp_active" class="w-5 h-5 rounded"></div>
                         <div class="flex-1">
                             <label for="cons_wp_active" class="block text-sm font-bold text-slate-800 dark:text-slate-200 cursor-pointer">Heizungs-Wärmepumpe</label>
-                            <div id="grp_wp" class="hidden flex items-center gap-2 mt-2"><input type="number" id="cons_wp_kwh" value="3500" step="100" class="w-24 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-lg px-3 py-1.5 text-sm outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600 dark:text-slate-400">kWh/a</span></div>
+                            <div id="grp_wp" class="hidden flex items-center gap-2 mt-2"><input type="number" id="cons_wp_kwh" value="3500" step="100" min="0" max="100000" class="w-24 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-lg px-3 py-1.5 text-sm outline-none"><span class="text-xs font-bold text-slate-600 dark:text-slate-400">kWh/a</span></div>
                         </div>
                     </div>
                     <div class="flex items-start gap-4 p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/40 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
-                        <div class="mt-0.5"><input type="checkbox" id="cons_bw_active" class="w-5 h-5 rounded" onchange="toggleConsGroup('bw')"></div>
+                        <div class="mt-0.5"><input type="checkbox" id="cons_bw_active" class="w-5 h-5 rounded"></div>
                         <div class="flex-1">
                             <label for="cons_bw_active" class="block text-sm font-bold text-slate-800 dark:text-slate-200 cursor-pointer">Brauchwasser-Wärmepumpe (BWWP)</label>
                             <div id="grp_bw" class="hidden flex flex-col gap-2 mt-2">
-                                <div class="flex items-center gap-2"><input type="number" id="cons_bw_kwh" value="800" step="100" class="w-24 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-lg px-3 py-1.5 text-sm outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600 dark:text-slate-400">kWh/a</span></div>
-                                <label class="flex items-center gap-2 text-xs text-accent font-bold bg-emerald-50 dark:bg-emerald-950/20 w-fit px-2 py-1 rounded cursor-pointer border border-emerald-200 dark:border-emerald-900/30"><input type="checkbox" id="cons_bw_smart" checked onchange="updateConsumptionEstimate()" class="rounded border-emerald-300"> Wetter-KI: Lädt an sonnigsten Stunden</label>
+                                <div class="flex items-center gap-2"><input type="number" id="cons_bw_kwh" value="800" step="100" min="0" max="100000" class="w-24 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-lg px-3 py-1.5 text-sm outline-none"><span class="text-xs font-bold text-slate-600 dark:text-slate-400">kWh/a</span></div>
+                                <label class="flex items-center gap-2 text-xs text-accent font-bold bg-emerald-50 dark:bg-emerald-950/20 w-fit px-2 py-1 rounded cursor-pointer border border-emerald-200 dark:border-emerald-900/30"><input type="checkbox" id="cons_bw_smart" checked class="rounded border-emerald-300"> Wetter-KI: Lädt an sonnigsten Stunden</label>
                             </div>
                         </div>
                     </div>
                     <div class="flex items-start gap-4 p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/40 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
-                        <div class="mt-0.5"><input type="checkbox" id="cons_ev_active" class="w-5 h-5 rounded" onchange="toggleConsGroup('ev')"></div>
+                        <div class="mt-0.5"><input type="checkbox" id="cons_ev_active" class="w-5 h-5 rounded"></div>
                         <div class="flex-1">
                             <label for="cons_ev_active" class="block text-sm font-bold text-slate-800 dark:text-slate-200 cursor-pointer">E-Auto (Wallbox)</label>
                             <div id="grp_ev" class="hidden flex flex-col gap-3 mt-2">
                                 <div class="flex gap-4">
-                                    <div><span class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Jahresfahrleistung</span><div class="flex items-center"><input type="number" id="cons_ev_km" value="12000" step="1000" class="w-24 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-lg px-3 py-1.5 text-sm outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600 dark:text-slate-400 ml-2">km</span></div></div>
-                                    <div><span class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Verbrauch</span><div class="flex items-center"><input type="number" id="cons_ev_kwh100" value="18" step="1" class="w-20 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-lg px-3 py-1.5 text-sm outline-none" onchange="updateConsumptionEstimate()"><span class="text-xs font-bold text-slate-600 dark:text-slate-400 ml-2">kWh/100km</span></div></div>
+                                    <div><span class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Jahresfahrleistung</span><div class="flex items-center"><input type="number" id="cons_ev_km" value="12000" step="1000" min="0" max="200000" class="w-24 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-lg px-3 py-1.5 text-sm outline-none"><span class="text-xs font-bold text-slate-600 dark:text-slate-400 ml-2">km</span></div></div>
+                                    <div><span class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Verbrauch</span><div class="flex items-center"><input type="number" id="cons_ev_kwh100" value="18" step="1" min="0" max="100" class="w-20 border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-lg px-3 py-1.5 text-sm outline-none"><span class="text-xs font-bold text-slate-600 dark:text-slate-400 ml-2">kWh/100km</span></div></div>
                                 </div>
-                                <label class="flex items-center gap-2 text-xs text-accent font-bold bg-emerald-50 dark:bg-emerald-950/20 w-fit px-2 py-1 rounded cursor-pointer border border-emerald-200 dark:border-emerald-900/30"><input type="checkbox" id="cons_ev_smart" onchange="updateConsumptionEstimate()" class="rounded border-emerald-300"> Wetter-KI: Lädt am PV-Optimum der Woche</label>
+                                <label class="flex items-center gap-2 text-xs text-accent font-bold bg-emerald-50 dark:bg-emerald-950/20 w-fit px-2 py-1 rounded cursor-pointer border border-emerald-200 dark:border-emerald-900/30"><input type="checkbox" id="cons_ev_smart" class="rounded border-emerald-300"> Wetter-KI: Lädt am PV-Optimum der Woche</label>
                             </div>
                         </div>
                     </div>
@@ -319,7 +324,7 @@
             </div>
         </div>
 
-                <!-- TAB 3: INVESTITIONSKOSTEN -->
+        <!-- TAB 3: INVESTITIONSKOSTEN -->
         <div id="tab-invest" class="tab-content max-w-4xl mx-auto space-y-6 mt-2">
             <div class="flex justify-between items-center mb-2">
                 <div>
@@ -328,13 +333,12 @@
                     </h2>
                     <p class="text-xs text-slate-500 dark:text-slate-400">Detaillierte Aufstellung aller Anschaffungs- und Montagekosten.</p>
                 </div>
-                <div class="text-right">
+                <div class="text-right shrink-0">
                     <p class="text-[10px] uppercase font-bold text-slate-400">Gesamt-Investition</p>
                     <p class="text-2xl font-black text-primary"><span id="lbl_invest_total">0</span> €</p>
                 </div>
             </div>
 
-            <!-- Kategorie 1: Module & Unterkonstruktion -->
             <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                 <div class="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex justify-between items-center">
                     <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -344,17 +348,16 @@
                 </div>
                 <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Solarmodule Gesamt (€)</label>
-                        <input type="number" step="10" id="inv_cost_panels" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary" oninput="calcInvestTotal()">
+                        <label for="inv_cost_panels" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Solarmodule Gesamt (€)</label>
+                        <input type="number" step="10" min="0" id="inv_cost_panels" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Unterkonstruktion / Schienen (€)</label>
-                        <input type="number" step="10" id="inv_cost_mounting" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary" oninput="calcInvestTotal()">
+                        <label for="inv_cost_mounting" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Unterkonstruktion / Schienen (€)</label>
+                        <input type="number" step="10" min="0" id="inv_cost_mounting" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
                     </div>
                 </div>
             </div>
 
-            <!-- Kategorie 2: Elektronik & Speicher -->
             <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                 <div class="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex justify-between items-center">
                     <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -364,21 +367,20 @@
                 </div>
                 <div class="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Wechselrichter (€)</label>
-                        <input type="number" step="10" id="inv_cost_inverter" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary" oninput="calcInvestTotal()">
+                        <label for="inv_cost_inverter" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Wechselrichter (€)</label>
+                        <input type="number" step="10" min="0" id="inv_cost_inverter" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Batteriespeicher (€)</label>
-                        <input type="number" step="10" id="inv_cost_battery" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary" oninput="calcInvestTotal()">
+                        <label for="inv_cost_battery" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Batteriespeicher (€)</label>
+                        <input type="number" step="10" min="0" id="inv_cost_battery" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Smart Meter / Backup Box (€)</label>
-                        <input type="number" step="10" id="inv_cost_smartmeter" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary" oninput="calcInvestTotal()">
+                        <label for="inv_cost_smartmeter" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Smart Meter / Backup Box (€)</label>
+                        <input type="number" step="10" min="0" id="inv_cost_smartmeter" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
                     </div>
                 </div>
             </div>
 
-            <!-- Kategorie 3: Elektroinstallation & Zubehör -->
             <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                 <div class="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex justify-between items-center">
                     <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -388,21 +390,20 @@
                 </div>
                 <div class="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">DC-Kabel & Stecker (€)</label>
-                        <input type="number" step="10" id="inv_cost_cables" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary" oninput="calcInvestTotal()">
+                        <label for="inv_cost_cables" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">DC-Kabel & Stecker (€)</label>
+                        <input type="number" step="10" min="0" id="inv_cost_cables" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Überspannungsschutz / GAK (€)</label>
-                        <input type="number" step="10" id="inv_cost_gak" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary" oninput="calcInvestTotal()">
+                        <label for="inv_cost_gak" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Überspannungsschutz / GAK (€)</label>
+                        <input type="number" step="10" min="0" id="inv_cost_gak" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Zählerschrank / AC-Material (€)</label>
-                        <input type="number" step="10" id="inv_cost_acmat" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary" oninput="calcInvestTotal()">
+                        <label for="inv_cost_acmat" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Zählerschrank / AC-Material (€)</label>
+                        <input type="number" step="10" min="0" id="inv_cost_acmat" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
                     </div>
                 </div>
             </div>
 
-            <!-- Kategorie 4: Montage & Dienstleistung -->
             <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                 <div class="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex justify-between items-center">
                     <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -412,16 +413,16 @@
                 </div>
                 <div class="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Dachmontage / Gerüst (€)</label>
-                        <input type="number" step="10" id="inv_cost_scaffold" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary" oninput="calcInvestTotal()">
+                        <label for="inv_cost_scaffold" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Dachmontage / Gerüst (€)</label>
+                        <input type="number" step="10" min="0" id="inv_cost_scaffold" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Elektriker-Abnahme / IBN (€)</label>
-                        <input type="number" step="10" id="inv_cost_electrician" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary" oninput="calcInvestTotal()">
+                        <label for="inv_cost_electrician" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Elektriker-Abnahme / IBN (€)</label>
+                        <input type="number" step="10" min="0" id="inv_cost_electrician" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Sonstiges / Puffer (€)</label>
-                        <input type="number" step="10" id="inv_cost_misc" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary" oninput="calcInvestTotal()">
+                        <label for="inv_cost_misc" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Sonstiges / Puffer (€)</label>
+                        <input type="number" step="10" min="0" id="inv_cost_misc" value="0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
                     </div>
                 </div>
             </div>
@@ -431,7 +432,7 @@
                     <span class="material-symbols-rounded text-base">info</span>
                     <span>Die Gesamtsumme wird automatisch in den Tab <strong>Kosten</strong> als Anlagenkosten übernommen.</span>
                 </p>
-                <button onclick="switchTab('finance')" class="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-colors flex items-center gap-1.5 shrink-0 shadow-sm">
+                <button data-tab="finance" class="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-colors flex items-center gap-1.5 shrink-0 shadow-sm">
                     <span>Weiter zu Kosten</span>
                     <span class="material-symbols-rounded text-sm">arrow_forward</span>
                 </button>
@@ -443,7 +444,7 @@
             <h2 class="text-2xl font-black text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
                 <span class="material-symbols-rounded text-primary">payments</span> Wirtschaftlichkeit & Parameter
             </h2>
-            
+
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 space-y-5">
                     <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800 pb-2 flex items-center gap-2">
@@ -451,18 +452,18 @@
                     </h3>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Strombezug (€/kWh)</label>
-                            <input type="number" step="0.01" id="fin_grid_price" value="0.32" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary" onchange="updateEEGPreview()">
+                            <label for="fin_grid_price" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Strombezug (€/kWh)</label>
+                            <input type="number" step="0.01" min="0" max="10" id="fin_grid_price" value="0.32" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Anlagenkosten (€)</label>
-                            <input type="number" step="500" id="fin_sys_cost" value="15000" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
+                            <label for="fin_sys_cost" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Anlagenkosten (€)</label>
+                            <input type="number" step="500" min="0" id="fin_sys_cost" value="15000" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
                         </div>
                     </div>
                     <div class="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">EEG-Inbetriebnahme (Monat)</label>
+                        <label for="fin_eeg_date" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">EEG-Inbetriebnahme (Monat)</label>
                         <div class="flex gap-3 items-center">
-                            <input type="month" id="fin_eeg_date" min="2023-01" value="2024-05" class="border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary" onchange="updateEEGPreview()">
+                            <input type="month" id="fin_eeg_date" min="2023-01" value="2024-05" class="border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
                             <div class="text-right flex-1">
                                 <p class="text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase leading-tight">Misch-Vergütung</p>
                                 <p class="text-lg font-black text-emerald-600 dark:text-emerald-400 leading-none"><span id="lbl_eeg_rate_pre">8.11</span> ct</p>
@@ -478,36 +479,45 @@
                     </h3>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Heizen: Öl/Gas (€ pro L/m³)</label>
-                            <input type="number" step="0.01" id="fin_gas_price" value="1.10" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
+                            <label for="fin_gas_price" class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Heizen: Öl/Gas (€ pro L/m³)</label>
+                            <input type="number" step="0.01" min="0" max="10" id="fin_gas_price" value="1.10" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">WP Jahresarbeitszahl (JAZ)</label>
-                            <input type="number" step="0.1" id="fin_wp_jaz" value="3.5" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
+                            <label for="fin_wp_jaz" class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">WP Jahresarbeitszahl (JAZ)</label>
+                            <input type="number" step="0.1" min="1" max="8" id="fin_wp_jaz" value="3.5" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-800 pt-4">
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Benzin (€ pro Liter)</label>
-                            <input type="number" step="0.01" id="fin_petrol_price" value="1.75" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
+                            <label for="fin_petrol_price" class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Benzin (€ pro Liter)</label>
+                            <input type="number" step="0.01" min="0" max="10" id="fin_petrol_price" value="1.75" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Verbrenner (L / 100km)</label>
-                            <input type="number" step="0.1" id="fin_ice_cons" value="7.0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
+                            <label for="fin_ice_cons" class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Verbrenner (L / 100km)</label>
+                            <input type="number" step="0.1" min="0" max="50" id="fin_ice_cons" value="7.0" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
                         </div>
                     </div>
                 </div>
             </div>
 
-            <button id="btnCalculateMain" onclick="calculateYieldAPI()" class="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary-hover hover:to-blue-700 text-white font-extrabold text-base md:text-lg py-4 md:py-5 px-6 rounded-2xl shadow-xl transition-all transform active:scale-95 flex items-center justify-center gap-3">
+            <button id="btnCalculateMain" class="w-full bg-gradient-to-r from-primary to-blue-600 hover:from-primary-hover hover:to-blue-700 disabled:opacity-60 text-white font-extrabold text-base md:text-lg py-4 md:py-5 px-6 rounded-2xl shadow-xl transition-all transform active:scale-95 flex items-center justify-center gap-3">
                 <span class="material-symbols-rounded text-2xl fill-1">bolt</span>
                 <span>Berechnung starten (8.760h Historie)</span>
             </button>
+            <div id="calcProgressWrap" class="hidden bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
+                <div class="flex justify-between items-center mb-2">
+                    <p id="calcStatus" class="text-xs font-bold text-slate-600 dark:text-slate-300">Berechnung läuft …</p>
+                    <span class="material-symbols-rounded text-primary spinner">progress_activity</span>
+                </div>
+                <div class="h-2.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                    <div id="calcProgressBar" class="h-full w-0 rounded-full bg-gradient-to-r from-primary to-accent transition-all duration-300"></div>
+                </div>
+            </div>
         </div>
 
-        <!-- TAB 4: ÜBERSICHT (KPIs & STEUERERKLÄRUNG) -->
+        <!-- TAB 5: ÜBERSICHT (KPIs & STEUERERKLÄRUNG) -->
         <div id="tab-uebersicht" class="tab-content max-w-5xl mx-auto space-y-6 mt-2">
-            
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="bg-gradient-to-br from-primary to-blue-600 text-white p-5 rounded-3xl shadow-md border border-blue-400/20">
                     <p class="text-[10px] font-bold uppercase tracking-widest text-blue-100 flex items-center gap-1.5">
@@ -528,18 +538,16 @@
                         <span class="material-symbols-rounded text-sm fill-1">savings</span> Ersparnis pro Jahr
                     </p>
                     <p class="text-3xl font-black mt-2" id="kpi_savings">0 €</p>
-                    <p class="text-xs text-emerald-100 mt-2 font-medium">Amortisation in <span id="kpi_roi" class="font-bold text-white">0</span> Jahren</p>
+                    <p class="text-xs text-emerald-100 mt-2 font-medium">Amortisation (statisch) in <span id="kpi_roi" class="font-bold text-white">0</span> Jahren</p>
                 </div>
             </div>
 
-            <!-- STEUERERKLÄRUNG -->
             <div class="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 md:p-10 mt-8">
                 <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100 mb-6 border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
                     <span class="material-symbols-rounded text-primary">description</span> Abrechnungsbericht (Pro Jahr)
                 </h3>
-                
+
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-10">
-                    <!-- Szenario A -->
                     <div class="bg-rose-50/50 dark:bg-rose-950/20 p-5 rounded-2xl border border-rose-100 dark:border-rose-900/30">
                         <div class="bg-rose-100/70 dark:bg-rose-900/40 border border-rose-200 dark:border-rose-800/50 p-3 rounded-xl mb-4">
                             <h4 class="font-bold text-rose-800 dark:text-rose-200 text-sm flex items-center gap-1.5">
@@ -555,7 +563,6 @@
                         </div>
                     </div>
 
-                    <!-- Szenario B -->
                     <div class="bg-emerald-50/50 dark:bg-emerald-950/20 p-5 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
                         <div class="bg-emerald-100/70 dark:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800/50 p-3 rounded-xl mb-4">
                             <h4 class="font-bold text-emerald-800 dark:text-emerald-200 text-sm flex items-center gap-1.5">
@@ -578,40 +585,37 @@
                     <span id="rep_diff" class="text-2xl md:text-3xl font-black text-amber-400 font-mono">0,00 €</span>
                 </div>
             </div>
-            
+
             <div id="stringBreakdown" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-8"></div>
         </div>
 
-        <!-- TAB 5: AUSWERTUNG (CHARTS & AUTARKIE) -->
+        <!-- TAB 6: AUSWERTUNG (CHARTS & AUTARKIE) -->
         <div id="tab-auswertung" class="tab-content max-w-7xl mx-auto space-y-6 mt-2">
-            
+
             <div class="bg-slate-900 rounded-3xl shadow-xl overflow-hidden text-white relative p-6 md:p-10">
                 <h2 class="text-2xl font-bold mb-8 text-center md:text-left">Autarkie & Energiefluss</h2>
-                
+
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                    <!-- Ring 1 -->
                     <div class="glass-card rounded-2xl p-6 flex flex-col items-center justify-center relative">
                         <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Autarkiegrad</h3>
                         <div class="relative w-32 h-32 flex items-center justify-center">
-                            <svg class="w-full h-full transform -rotate-90 absolute top-0 left-0" viewBox="0 0 36 36">
+                            <svg class="w-full h-full transform -rotate-90 absolute top-0 left-0" viewBox="0 0 36 36" aria-hidden="true">
                                 <path class="text-slate-700/50" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                                 <path id="gauge-autarky" class="text-emerald-400 transition-all duration-1000 ease-out" stroke-width="3" stroke-dasharray="0 100" pathLength="100" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                             </svg>
                             <span class="text-3xl font-black text-white z-10" id="d2-val-autarky">0%</span>
                         </div>
                     </div>
-                    <!-- Ring 2 -->
                     <div class="glass-card rounded-2xl p-6 flex flex-col items-center justify-center relative">
                         <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Eigenverbrauch</h3>
                         <div class="relative w-32 h-32 flex items-center justify-center">
-                            <svg class="w-full h-full transform -rotate-90 absolute top-0 left-0" viewBox="0 0 36 36">
+                            <svg class="w-full h-full transform -rotate-90 absolute top-0 left-0" viewBox="0 0 36 36" aria-hidden="true">
                                 <path class="text-slate-700/50" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                                 <path id="gauge-eigen" class="text-blue-400 transition-all duration-1000 ease-out" stroke-width="3" stroke-dasharray="0 100" pathLength="100" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                             </svg>
                             <span class="text-3xl font-black text-white z-10" id="d2-val-eigen">0%</span>
                         </div>
                     </div>
-                    <!-- Data Blocks -->
                     <div class="flex flex-col gap-4 justify-center lg:col-span-2">
                         <div class="grid grid-cols-2 gap-4">
                             <div class="glass-card rounded-xl p-4">
@@ -649,18 +653,17 @@
                 <div class="relative h-64 md:h-80 w-full"><canvas id="yieldChart"></canvas></div>
             </div>
 
-            <!-- EINZELTAGE (DETAIL) -->
             <div class="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 md:p-10 mt-8">
                 <div class="flex items-center justify-between mb-8">
                     <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                         <span class="material-symbols-rounded text-primary">calendar_month</span> Tagesgenaue Auflösung
                     </h3>
                     <div class="flex items-center gap-2 md:gap-6 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-inner">
-                        <button onclick="changeDetailMonth(-1)" class="w-8 h-8 bg-white dark:bg-slate-700 rounded-xl shadow-sm text-slate-700 dark:text-slate-200 font-bold hover:text-primary transition-colors flex items-center justify-center">
+                        <button id="detailPrev" aria-label="Voriger Monat" class="w-8 h-8 bg-white dark:bg-slate-700 rounded-xl shadow-sm text-slate-700 dark:text-slate-200 font-bold hover:text-primary transition-colors flex items-center justify-center">
                             <span class="material-symbols-rounded text-base">chevron_left</span>
                         </button>
                         <h2 class="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 w-28 text-center" id="detailMonthName">Januar</h2>
-                        <button onclick="changeDetailMonth(1)" class="w-8 h-8 bg-white dark:bg-slate-700 rounded-xl shadow-sm text-slate-700 dark:text-slate-200 font-bold hover:text-primary transition-colors flex items-center justify-center">
+                        <button id="detailNext" aria-label="Nächster Monat" class="w-8 h-8 bg-white dark:bg-slate-700 rounded-xl shadow-sm text-slate-700 dark:text-slate-200 font-bold hover:text-primary transition-colors flex items-center justify-center">
                             <span class="material-symbols-rounded text-base">chevron_right</span>
                         </button>
                     </div>
@@ -682,13 +685,13 @@
             </div>
         </div>
 
-        <!-- TAB 6: GERÄTEDATENBANK -->
+        <!-- TAB 7: GERÄTEDATENBANK -->
         <div id="tab-database" class="tab-content max-w-7xl mx-auto space-y-6 mt-2">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                     <span class="material-symbols-rounded text-primary">database</span> Geräte & Zuweisung
                 </h3>
-                <button onclick="toggleCustomDbForm()" class="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-md flex items-center gap-1.5">
+                <button id="btnCustomDbToggle" class="bg-primary hover:bg-primary-hover text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-md flex items-center gap-1.5">
                     <span class="material-symbols-rounded text-base">add_circle</span> Eigene Hardware
                 </button>
             </div>
@@ -699,35 +702,34 @@
                 </h4>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Typ</label>
-                        <select id="cdb_type" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary" onchange="updateCustomDbFields()">
+                        <label for="cdb_type" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Typ</label>
+                        <select id="cdb_type" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
                             <option value="panel">Solarmodul</option><option value="inv">Wechselrichter</option><option value="bat">Batterie</option>
                         </select>
                     </div>
                     <div class="md:col-span-3">
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Bezeichnung (Name)</label>
-                        <input type="text" id="cdb_name" placeholder="Z.B. Trina Vertex S+ 440W" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
+                        <label for="cdb_name" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Bezeichnung (Name)</label>
+                        <input type="text" id="cdb_name" maxlength="80" placeholder="Z.B. Trina Vertex S+ 440W" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary">
                     </div>
                 </div>
-                <!-- Dynamic Fields -->
                 <div id="cdb_fields_panel" class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div><label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Pmax (W)</label><input type="number" id="cdb_pmax" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"></div>
-                    <div><label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Voc (V)</label><input type="number" step="0.1" id="cdb_voc" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"></div>
-                    <div><label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Vmp (V)</label><input type="number" step="0.1" id="cdb_vmp" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"></div>
-                    <div><label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Isc (A)</label><input type="number" step="0.1" id="cdb_isc" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"></div>
+                    <div><label for="cdb_pmax" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Pmax (W)</label><input type="number" id="cdb_pmax" min="1" max="2000" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"></div>
+                    <div><label for="cdb_voc" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Voc (V)</label><input type="number" step="0.1" id="cdb_voc" min="1" max="200" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"></div>
+                    <div><label for="cdb_vmp" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Vmp (V)</label><input type="number" step="0.1" id="cdb_vmp" min="1" max="200" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"></div>
+                    <div><label for="cdb_isc" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Isc (A)</label><input type="number" step="0.1" id="cdb_isc" min="0.1" max="50" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"></div>
                 </div>
                 <div id="cdb_fields_inv" class="hidden grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div><label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">AC Max (W)</label><input type="number" id="cdb_acmax" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"></div>
-                    <div><label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Start V</label><input type="number" id="cdb_startv" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"></div>
-                    <div><label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Max V</label><input type="number" id="cdb_maxv" value="1000" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"></div>
-                    <div><label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Anzahl MPPTs</label><input type="number" id="cdb_mppts" value="2" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"></div>
+                    <div><label for="cdb_acmax" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">AC Max (W)</label><input type="number" id="cdb_acmax" min="100" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"></div>
+                    <div><label for="cdb_startv" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Start V</label><input type="number" id="cdb_startv" min="1" max="1500" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"></div>
+                    <div><label for="cdb_maxv" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Max V</label><input type="number" id="cdb_maxv" value="1000" min="10" max="1500" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"></div>
+                    <div><label for="cdb_mppts" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Anzahl MPPTs</label><input type="number" id="cdb_mppts" value="2" min="1" max="8" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"></div>
                 </div>
                 <div id="cdb_fields_bat" class="hidden grid grid-cols-2 gap-4">
-                    <div><label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Kapazität (kWh)</label><input type="number" step="0.1" id="cdb_cap" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"></div>
-                    <div><label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Max. Lade-Power (W)</label><input type="number" id="cdb_power" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"></div>
+                    <div><label for="cdb_cap" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Kapazität (kWh)</label><input type="number" step="0.1" id="cdb_cap" min="0.1" max="500" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"></div>
+                    <div><label for="cdb_power" class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase">Max. Lade-Power (W)</label><input type="number" id="cdb_power" min="100" class="w-full border-2 border-slate-200 dark:border-slate-700 dark:bg-slate-950 rounded-xl px-3 py-2 text-sm outline-none focus:border-primary"></div>
                 </div>
                 <div class="mt-4 text-right">
-                    <button onclick="saveCustomDevice()" class="bg-primary hover:bg-primary-hover text-white font-bold px-6 py-2.5 rounded-xl transition-all shadow-md flex items-center gap-1.5 ml-auto">
+                    <button id="btnSaveCustom" class="bg-primary hover:bg-primary-hover text-white font-bold px-6 py-2.5 rounded-xl transition-all shadow-md flex items-center gap-1.5 ml-auto text-sm">
                         <span class="material-symbols-rounded text-base">save</span> Speichern & Neuladen
                     </button>
                 </div>
@@ -755,40 +757,44 @@
             </div>
         </div>
 
-        <!-- TAB 7: GLOSSAR & HANDBUCH -->
+        <!-- TAB 8: GLOSSAR & HANDBUCH -->
         <div id="tab-faq" class="tab-content max-w-4xl mx-auto space-y-4 mt-2">
             <!-- Wird von content.js via app.js gefüllt -->
         </div>
+
+        <footer class="max-w-4xl mx-auto mt-10 mb-2 text-center">
+            <p id="footerVersion" class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">PV-Planung Pro · Offline-fähige PWA · Alle Daten bleiben lokal auf deinem Gerät</p>
+        </footer>
     </main>
 
     <!-- Mobile M3 Bottom Navigation Bar (< 768px) -->
-    <nav class="md:hidden fixed bottom-0 left-0 right-0 m3-surface border-t border-slate-800/80 z-30 m3-bottom-nav">
+    <nav aria-label="Mobile Navigation" class="md:hidden fixed bottom-0 left-0 right-0 m3-surface border-t border-slate-800/80 z-30 m3-bottom-nav">
         <div class="flex justify-around items-center px-2 py-1">
-            <button onclick="switchTab('system')" id="bnav-system" class="flex flex-col items-center justify-center py-1 flex-1">
+            <button data-tab="system" id="bnav-system" class="flex flex-col items-center justify-center py-1 flex-1">
                 <div class="m3-bnav-pill px-4 py-1 rounded-full bg-primary/20 text-primary transition-all flex items-center justify-center">
                     <span class="material-symbols-rounded text-xl fill-1">solar_power</span>
                 </div>
                 <span class="m3-bnav-label text-[10px] font-bold text-primary mt-0.5 tracking-tight">Strings</span>
             </button>
-            <button onclick="switchTab('verbrauch')" id="bnav-verbrauch" class="flex flex-col items-center justify-center py-1 flex-1">
+            <button data-tab="verbrauch" id="bnav-verbrauch" class="flex flex-col items-center justify-center py-1 flex-1">
                 <div class="m3-bnav-pill px-4 py-1 rounded-full bg-transparent text-slate-400 transition-all flex items-center justify-center">
                     <span class="material-symbols-rounded text-xl">bolt</span>
                 </div>
                 <span class="m3-bnav-label text-[10px] font-medium text-slate-400 mt-0.5 tracking-tight">Verbrauch</span>
             </button>
-            <button onclick="switchTab('finance')" id="bnav-finance" class="flex flex-col items-center justify-center py-1 flex-1">
+            <button data-tab="finance" id="bnav-finance" class="flex flex-col items-center justify-center py-1 flex-1">
                 <div class="m3-bnav-pill px-4 py-1 rounded-full bg-transparent text-slate-400 transition-all flex items-center justify-center">
                     <span class="material-symbols-rounded text-xl">payments</span>
                 </div>
                 <span class="m3-bnav-label text-[10px] font-medium text-slate-400 mt-0.5 tracking-tight">Kosten</span>
             </button>
-            <button onclick="switchTab('auswertung')" id="bnav-auswertung" class="flex flex-col items-center justify-center py-1 flex-1">
+            <button data-tab="auswertung" id="bnav-auswertung" class="flex flex-col items-center justify-center py-1 flex-1">
                 <div class="m3-bnav-pill px-4 py-1 rounded-full bg-transparent text-slate-400 transition-all flex items-center justify-center">
                     <span class="material-symbols-rounded text-xl">analytics</span>
                 </div>
                 <span class="m3-bnav-label text-[10px] font-medium text-slate-400 mt-0.5 tracking-tight">Auswertung</span>
             </button>
-            <button onclick="openMoreSheet()" id="bnav-more" class="flex flex-col items-center justify-center py-1 flex-1">
+            <button id="bnav-more" aria-label="Weitere Module öffnen" class="flex flex-col items-center justify-center py-1 flex-1">
                 <div class="m3-bnav-pill px-4 py-1 rounded-full bg-transparent text-slate-400 transition-all flex items-center justify-center">
                     <span class="material-symbols-rounded text-xl">apps</span>
                 </div>
@@ -798,40 +804,40 @@
     </nav>
 
     <!-- M3 More Bottom Sheet (Mobile Dialog) -->
-    <div id="m3SheetBackdrop" onclick="closeMoreSheet()" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-40 transition-opacity"></div>
-    <div id="m3MoreSheet" class="fixed bottom-0 left-0 right-0 m3-surface rounded-t-3xl border-t border-slate-700/80 shadow-2xl z-50 transform translate-y-full transition-transform duration-300 ease-out p-6 m3-bottom-nav">
+    <div id="m3SheetBackdrop" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-40 transition-opacity"></div>
+    <div id="m3MoreSheet" role="dialog" aria-label="Weitere Module" class="fixed bottom-0 left-0 right-0 m3-surface rounded-t-3xl border-t border-slate-700/80 shadow-2xl z-50 transform translate-y-full transition-transform duration-300 ease-out p-6 m3-bottom-nav">
         <div class="w-12 h-1.5 bg-slate-600 rounded-full mx-auto mb-5"></div>
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-base font-bold text-white flex items-center gap-2">
                 <span class="material-symbols-rounded text-primary">apps</span> Weitere Module & Tools
             </h3>
-            <button onclick="closeMoreSheet()" class="text-slate-400 hover:text-white p-1">
+            <button id="sheetClose" aria-label="Menü schließen" class="text-slate-400 hover:text-white p-1">
                 <span class="material-symbols-rounded text-xl">close</span>
             </button>
         </div>
         <div class="grid grid-cols-2 gap-3 mb-2">
-            <button onclick="switchTab('invest')" class="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-left transition-all">
+            <button data-tab="invest" class="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-left transition-all">
                 <span class="material-symbols-rounded text-2xl text-primary">receipt_long</span>
                 <div>
                     <p class="text-xs font-bold text-white">Investition</p>
                     <p class="text-[10px] text-slate-400">4 Kosten-Kategorien</p>
                 </div>
             </button>
-            <button onclick="switchTab('uebersicht')" class="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-left transition-all">
+            <button data-tab="uebersicht" class="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-left transition-all">
                 <span class="material-symbols-rounded text-2xl text-amber-400">dashboard</span>
                 <div>
                     <p class="text-xs font-bold text-white">Übersicht</p>
                     <p class="text-[10px] text-slate-400">Steuererklärung & KPIs</p>
                 </div>
             </button>
-            <button onclick="switchTab('database')" class="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-left transition-all">
+            <button data-tab="database" class="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-left transition-all">
                 <span class="material-symbols-rounded text-2xl text-accent">database</span>
                 <div>
                     <p class="text-xs font-bold text-white">Datenbank</p>
                     <p class="text-[10px] text-slate-400">WR, Akkus, Module</p>
                 </div>
             </button>
-            <button onclick="switchTab('faq')" class="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-left transition-all">
+            <button data-tab="faq" class="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-left transition-all">
                 <span class="material-symbols-rounded text-2xl text-blue-400">menu_book</span>
                 <div>
                     <p class="text-xs font-bold text-white">Handbuch</p>
@@ -841,9 +847,26 @@
         </div>
     </div>
 
-    <!-- HIER WERDEN DIE 3 AUSGELAGERTEN DATEIEN GELADEN -->
-    <script src="database.js?v=6.17"></script>
-    <script src="content.js?v=6.17"></script>
-    <script src="app.js?v=6.17"></script>
+    <!-- M3 Snackbar (Toast) -->
+    <div id="snack" role="status" aria-live="polite" class="hidden fixed left-1/2 -translate-x-1/2 bottom-24 md:bottom-8 z-[70] max-w-[92vw] md:max-w-xl items-center gap-2.5 pl-4 pr-5 py-3 rounded-2xl border shadow-2xl text-sm font-semibold">
+        <span id="snackIcon" class="material-symbols-rounded text-xl shrink-0">info</span>
+        <span id="snackMsg"></span>
+    </div>
+
+    <!-- M3 Bestätigungs-Dialog -->
+    <div id="dlgBackdrop" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[80]"></div>
+    <div id="dlg" role="alertdialog" aria-modal="true" aria-labelledby="dlgTitle" class="hidden fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[81] w-[92vw] max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-2xl p-6 scale-95 opacity-0 transition-all">
+        <h3 id="dlgTitle" class="text-lg font-black text-slate-800 dark:text-slate-100 mb-2">Bitte bestätigen</h3>
+        <p id="dlgMsg" class="text-sm text-slate-600 dark:text-slate-300 mb-6"></p>
+        <div class="flex gap-3">
+            <button id="dlgCancel" class="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold px-4 py-2.5 rounded-xl transition-colors text-sm">Abbrechen</button>
+            <button id="dlgOk" class="flex-1 bg-primary hover:bg-primary-hover text-white font-bold px-4 py-2.5 rounded-xl transition-colors text-sm">OK</button>
+        </div>
+    </div>
+
+    <script src="version.js?v=7.0"></script>
+    <script src="database.js?v=7.0"></script>
+    <script src="content.js?v=7.0"></script>
+    <script src="app.js?v=7.0"></script>
 </body>
 </html>
